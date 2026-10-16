@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: voidzero-dev/setup-vp@v1.21.2
+        with:
+          node-version-file: package.json
+          cache: true
+
+      # Vite Task cache is disabled: tsc (TypeScript 7) escapes automatic file
+      # tracking, so a restored cache can replay a passing type check for code
+      # with type errors. Re-enable once all cached tasks track inputs reliably.
+      # - name: Restore Vite Task cache
+      #   id: vite-task-cache
+      #   uses: actions/cache/restore@v6
+      #   with:
+      #     path: node_modules/.vite/task-cache
+      #     key: vite-task-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}-${{ github.run_attempt }}
+      #     restore-keys: |
+      #       vite-task-${{ runner.os }}-${{ runner.arch }}-
+
+      - run: vp check
+      - run: vp run -r test
+      - run: vp run -r build
+
+      # - name: Save Vite Task cache
+      #   if: success()
+      #   uses: actions/cache/save@v6
+      #   with:
+      #     path: node_modules/.vite/task-cache
+      #     key: ${{ steps.vite-task-cache.outputs.cache-primary-key }}
