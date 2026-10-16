@@ -1,8 +1,32 @@
 # Toolspell
 
+## State of the code base
+
+- The code base is in very early pre-alpha state, everything may be changed.
+
 ## Conventions
 
-- When committing use conventional commits message
+- When committing use conventional commits message.
+- **Hard rule**: Never edit or create files named `CLAUDE.md` or `AGENTS.md` unless the user explicitly approves.
+- Typescript: NEVER use `any` unless absolutely necessary. Type public APIs explicitly and let inference handle the rest.
+- Comment only where code can't explain itself, and describe why, not what.
+- Comments and docs move, change, delete with the code
+- Treat linter warnings as code smell, errors as bugs.
+- **always** investigate whether a fix or change would break something before acting.
+- **Hard rule**: Questions are read-only. Read files and run read-only commands to answer,
+  but never treat a question as consent to change files or system state.
+
+## Unit tests
+
+- Create or update unit tests for code you add or change.
+- Unit tests must cover meaningful test cases and exercise the code from the outside, as consumers do.
+- Unit tests are not meant to set code in stone. Avoid tests that need updating after every code change.
+- Make your code unit-testable. Avoid integration tests where a unit test would do.
+
+# Long running processes and dev servers
+
+- When launching a background task or long running process, note the PID and kill it by PID when you are done.
+- Never kill your own processes by name; always use the PID to ensure you are killing the correct process.
 
 <!--VITE PLUS START-->
 
