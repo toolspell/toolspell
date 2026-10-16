@@ -1,8 +1,15 @@
-# Vite+ Monorepo Starter
-
-A starter for creating a Vite+ monorepo.
+# Toolspell
 
 ## Development
+
+- [Vite+](https://viteplus.dev) is required
+- Vite+ manages node version and package manager
+
+- Install packages
+
+```bash
+vp install
+```
 
 - Check everything is ready:
 

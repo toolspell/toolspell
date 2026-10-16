@@ -1,3 +1,9 @@
+# Toolspell
+
+## Conventions
+
+- When committing use conventional commits message
+
 <!--VITE PLUS START-->
 
 # Using Vite+, the Unified Toolchain for the Web
