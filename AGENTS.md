@@ -9,6 +9,7 @@
 - When committing use conventional commits message.
 - **Hard rule**: Never edit or create files named `CLAUDE.md` or `AGENTS.md` unless the user explicitly approves.
 - Typescript: NEVER use `any` unless absolutely necessary. Type public APIs explicitly and let inference handle the rest.
+- Use TypeScript Version 7
 - Comment only where code can't explain itself, and describe why, not what.
 - Comments and docs move, change, delete with the code
 - Treat linter warnings as code smell, errors as bugs.
