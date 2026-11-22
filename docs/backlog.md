@@ -78,6 +78,13 @@ None of the contribution workflows can run before the repository is on GitHub.
   without one close it (`gh workflow run stale-needs-more-info.yml` runs the check now).
 - **Templates**: the issue chooser shows the bug and feature forms and the security policy link,
   and a new PR starts from the template.
+- **Review bots**: install the Macroscope and CodeRabbit GitHub apps on the repository. On a test
+  PR that touches server code, a web component, and a test: CodeRabbit reviews without a summary
+  or status comment and cites the `docs/internals` page for each path; Macroscope skips the files
+  in `.macroscope/ignore.md`, starts its three check-run agents only after `Check` passes
+  (`requires: Check`), and does not auto-approve a change under `apps/server/src/auth/`. If a bot
+  ignores its config file, fix that before relying on its reviews.
+- **PR assets**: a test PR that commits a file under `.github/pr-assets/` fails the lint job.
 
 ## Checks for the Windows and Linux VMs
 
