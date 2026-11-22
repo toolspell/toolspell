@@ -11,7 +11,7 @@ const ICONS: Partial<Record<string, typeof CircleAlertIcon>> = {
   success: CircleCheckIcon,
 };
 
-/** The one toast host, on Base UI's toast as in T3 Code. Mounted in the root route. */
+/** The one toast host, mounted in the root route. */
 function Toaster() {
   return (
     <Toast.Provider toastManager={toastManager}>

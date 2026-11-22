@@ -63,7 +63,7 @@ const expected = (id: ThemeId) => ({
 
 const runBootScript = (stored: string | undefined, systemDark: boolean) => {
   const document = fakeDocument();
-  // oxlint-disable-next-line no-new-func -- runs the inline script against fakes, as the browser would.
+  // Runs the inline script against fakes, as the browser would.
   new Function("localStorage", "matchMedia", "document", bootScript)(
     storageWith(stored),
     () => ({ matches: systemDark }),

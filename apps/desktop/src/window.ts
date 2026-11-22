@@ -1,6 +1,4 @@
-// The main window: no white flash, a local page while the server starts or fails, a context menu,
-// and recovery from a crashed renderer. Adapted from T3 Code's
-// apps/desktop/src/window/DesktopWindow.ts (MIT).
+// Adapted from T3 Code's apps/desktop/src/window/DesktopWindow.ts (MIT).
 import * as NodePath from "node:path";
 
 import {

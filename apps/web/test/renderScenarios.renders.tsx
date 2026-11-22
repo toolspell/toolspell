@@ -1,6 +1,5 @@
-// Render scenarios. Each one mounts the real app on the workspace page with fake atoms, counts
-// React commits and component renders while it drives them, asserts the render budgets that
-// matter, and writes the counts for scripts/render-metrics.ts through writeRenderReport.
+// Each scenario mounts the real app on the workspace page with fake atoms, asserts its render
+// budgets, and writes the counts for scripts/render-metrics.ts through writeRenderReport.
 import { applyJobsItem, applyWorkspacesItem } from "@toolspell/client-runtime/views";
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
