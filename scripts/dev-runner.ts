@@ -62,7 +62,7 @@ const portsFree = async (ports: ReadonlyArray<number>) => {
 };
 
 const USAGE = `Usage: dev-runner <${Object.keys(MODES).join("|")}> [--home-dir <dir>] [--host <host>]`;
-const VALUE_FLAGS = ["--home-dir", "--host"];
+const VALUE_FLAGS = new Set(["--home-dir", "--host"]);
 
 /** Rejects anything unknown, so a typo or `--help` never starts servers by accident. */
 export const parseArgs = (argv: ReadonlyArray<string>) => {
@@ -72,7 +72,7 @@ export const parseArgs = (argv: ReadonlyArray<string>) => {
   for (let index = 0; index < rest.length; index += 2) {
     const name = rest[index]!;
     const value = rest[index + 1];
-    if (!VALUE_FLAGS.includes(name) || value === undefined) throw new Error(USAGE);
+    if (!VALUE_FLAGS.has(name) || value === undefined) throw new Error(USAGE);
     flags.set(name, value);
   }
   return { mode: mode as Mode, homeDir: flags.get("--home-dir"), host: flags.get("--host") };

@@ -117,9 +117,9 @@ const main = async () => {
   const code = present.filter((file) => CODE.test(file));
   const workspace = readWorkspace(root);
   const affected = affectedPackages(workspace, files);
-  const typecheckFilters = (affected ?? workspace.map((pkg) => pkg.name))
-    .filter((name) => workspace.find((pkg) => pkg.name === name)?.scripts.has("typecheck"))
-    .flatMap((name) => ["--filter", name]);
+  const typecheckFilters = (affected ?? workspace.map((pkg) => pkg.name)).flatMap((name) =>
+    workspace.find((pkg) => pkg.name === name)?.scripts.has("typecheck") ? ["--filter", name] : [],
+  );
 
   const parallel: Array<Step> = [
     ...(present.length > 0
