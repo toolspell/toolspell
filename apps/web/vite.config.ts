@@ -60,6 +60,8 @@ const browserTestProject = {
       "effect/Effect",
       "effect/Layer",
       "effect/Option",
+      "effect/persistence/KeyValueStore",
+      "effect/Record",
       "effect/Schedule",
       "effect/Schema",
       "effect/SchemaGetter",
