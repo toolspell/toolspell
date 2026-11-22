@@ -41,8 +41,14 @@ entry moves into an issue (labels from `.github/labels.json`) and the file is de
   queued runs, per-platform `workflow_call`, a release smoke job on pull requests).
 - **GitHub, with outside contributors**: a PR comment comparing `report:renders` with main, in the
   pattern of the test delta comment in `.github/scripts/pr-size.cjs`.
-- **Third-party license notices** before the first build ships to users: T3 Code generates them at
-  build time and shows them in Settings (its `docs/internals/open-source-licenses.md`).
+- **Third-party license notices** before the first web or desktop release: adapt T3 Code's build-time
+  generator (its `docs/internals/open-source-licenses.md` and `third-party-licenses.config.json`),
+  including a custom notice for T3 Code itself (today in `THIRD_PARTY_NOTICES.md`).
+- **Name, company, trademark**: before publishing, check "ToolSpell" for name conflicts (DPMA,
+  EUIPO, USPTO). Once the company exists, the maintainer grants it exclusive usage rights (under
+  German law, § 29 UrhG, copyright itself cannot be transferred); then update the copyright line
+  in `LICENSE` and the README. Once the trademark is registered, a trademark policy replaces the
+  README line about the name and logo.
 - **Performance, later** (T3 Code has each; budgets pin today's values first): merge `job.progressed`
   per job in a short window (`ThreadLiveEventCoalescer`) once a runner reports often; bound each
   subscriber's queue and make it resume from its cursor (`LiveStreamBudget`); cap resume and send a

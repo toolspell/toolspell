@@ -34,7 +34,9 @@ Review capacity is small, so focused bug fixes are the most likely to land. Read
 [CONTRIBUTING.md](CONTRIBUTING.md) before you open an issue or a pull request. Report
 vulnerabilities privately, as [SECURITY.md](SECURITY.md#report-a-vulnerability) describes.
 
-## Credits
+## License
 
-The architecture, agent guidance, lint rules, and verification tooling are adapted from
-[T3 Code](https://github.com/pingdotgg/t3code) (MIT).
+- ToolSpell is licensed under the MIT License; see [LICENSE](LICENSE).
+- Its architecture is inspired by [T3 Code](https://github.com/pingdotgg/t3code), and portions are
+  adapted from it; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+- The MIT License covers the code, not the ToolSpell name or logo.

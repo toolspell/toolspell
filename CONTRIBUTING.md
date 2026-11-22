@@ -117,4 +117,5 @@ The [architecture overview](docs/internals/overview.md) explains how ToolSpell w
 
 ## License
 
-Contributions are licensed under the repository's license (see LICENSE).
+By submitting a contribution you agree it is licensed under the MIT License (see
+[LICENSE](LICENSE)). There is no CLA and no sign-off.

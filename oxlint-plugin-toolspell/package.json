@@ -1,6 +1,7 @@
 {
   "name": "@toolspell/oxlint-plugin-toolspell",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "typecheck": "effect-tsgo tsrs --noEmit",
