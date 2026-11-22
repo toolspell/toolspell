@@ -13,9 +13,6 @@ entry moves into an issue (labels from `.github/labels.json`) and the file is de
 
 - **Move this backlog to GitHub Issues** at the first public push, then delete this file and point
   AGENTS.md at the issues.
-- **Job list re-renders**: render metrics show every `job.progressed` event re-renders all job rows
-  (600 of 780 renders in the 20-job scenario). Keep unchanged rows from re-rendering, then confirm
-  with `vp run report:renders`.
 - **Desktop packaging**: electron-builder, signing and notarization, auto-update. `backend.ts`
   already expects the bundled server at `resources/server/bin.mjs`.
 - **A real runner**: first decide what a ToolSpell job does. See [runners](internals/runners.md).

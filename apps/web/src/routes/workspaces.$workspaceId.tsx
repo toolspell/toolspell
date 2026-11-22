@@ -3,7 +3,7 @@ import { CommandId, isJobSettled, JobId, WorkspaceId, type Job } from "@toolspel
 import { createFileRoute } from "@tanstack/react-router";
 import * as Option from "effect/Option";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
-import { useState } from "react";
+import { memo, useState } from "react";
 
 import { InlineForm } from "~/components/InlineForm";
 import { Badge } from "~/components/ui/badge";
@@ -23,7 +23,9 @@ const STATUS_VARIANT = {
   cancelled: "ghost",
 } as const satisfies Record<Job["status"], string>;
 
-function JobRow({ job }: { readonly job: Job }) {
+// Every event builds a new jobs array, so the compiler cannot reuse the row elements. The views
+// keep an unchanged job's object, and this boundary skips the rows whose job is the same.
+const JobRow = memo(function JobRow({ job }: { readonly job: Job }) {
   const dispatch = useAtomSet(atoms.dispatchAtom, { mode: "promise" });
   const [error, setError] = useState<string | null>(null);
   const cancel = () =>
@@ -51,7 +53,7 @@ function JobRow({ job }: { readonly job: Job }) {
       {problem && <FieldError>{problem}</FieldError>}
     </li>
   );
-}
+});
 
 function WorkspacePage() {
   const workspaceId = WorkspaceId.make(Route.useParams().workspaceId);
