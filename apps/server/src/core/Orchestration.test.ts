@@ -1,3 +1,4 @@
+import * as NodeServices from "@effect/platform-node/NodeServices";
 import { assert, describe, it } from "@effect/vitest";
 import {
   CommandId,
@@ -12,19 +13,25 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as Queue from "effect/Queue";
+import * as Ref from "effect/Ref";
 import * as Stream from "effect/Stream";
+import * as TestClock from "effect/testing/TestClock";
 
+import * as ServerConfig from "../config.ts";
+import * as Sqlite from "../persistence/Sqlite.ts";
 import { Runner, RunnerError, type RunnerUpdate } from "../runners/Runner.ts";
 import { layerServicesTest } from "../testkit.ts";
 import {
   EffectWorker,
   INTERRUPTED_BY_RESTART,
+  layer as effectWorkerLayer,
   make as makeEffectWorker,
+  retryDelay,
   RUNNER_CRASHED,
 } from "./EffectWorker.ts";
-import { EventSink } from "./EventSink.ts";
-import { Orchestrator } from "./Orchestrator.ts";
-import { ProjectionStore } from "./ProjectionStore.ts";
+import { EventSink, layer as eventSinkLayer } from "./EventSink.ts";
+import { layer as orchestratorLayer, Orchestrator } from "./Orchestrator.ts";
+import { layer as projectionStoreLayer, ProjectionStore } from "./ProjectionStore.ts";
 import { layer as subscriptionsLayer, Subscriptions } from "./Subscriptions.ts";
 
 const workspaceId = WorkspaceId.make("w1");
@@ -63,6 +70,37 @@ const getJob = Effect.gen(function* () {
   const projections = yield* ProjectionStore;
   return Option.getOrThrow(yield* projections.getJob(jobId).pipe(Effect.orDie));
 });
+
+/** The worker and its storage, with the first `job.markStarted` dispatch failing. */
+const layerWithFailingFirstStart = (startFailed: Deferred.Deferred<void>) => {
+  const failingFirstStart = Layer.effect(
+    Orchestrator,
+    Effect.gen(function* () {
+      const real = yield* Orchestrator;
+      const failed = yield* Ref.make(false);
+      return Orchestrator.of({
+        dispatch: (command) =>
+          command.type !== "job.markStarted"
+            ? real.dispatch(command)
+            : Effect.flatMap(Ref.getAndSet(failed, true), (already) =>
+                already
+                  ? real.dispatch(command)
+                  : Deferred.succeed(startFailed, undefined).pipe(
+                      Effect.andThen(Effect.die(new Error("disk I/O error"))),
+                    ),
+              ),
+      });
+    }),
+  ).pipe(Layer.provide(orchestratorLayer));
+  const storage = Layer.provideMerge(projectionStoreLayer, Sqlite.layer);
+  return effectWorkerLayer.pipe(
+    Layer.provide(completingRunner),
+    Layer.provideMerge(failingFirstStart),
+    Layer.provideMerge(Layer.provideMerge(eventSinkLayer, storage)),
+    Layer.provide(ServerConfig.layerTest()),
+    Layer.provide(NodeServices.layer),
+  );
+};
 
 describe("orchestration", () => {
   it.effect("a started job runs to completion through the effect worker", () =>
@@ -166,6 +204,27 @@ describe("orchestration", () => {
       assert.strictEqual((yield* getJob).status, "cancelled");
     }).pipe(Effect.provide(layerServicesTest(blockingRunner)));
   });
+
+  it.effect(
+    "a job whose start failed to record runs after a backoff, without a new command",
+    () => {
+      const startFailed = Deferred.makeUnsafe<void>();
+      return Effect.gen(function* () {
+        const orchestrator = yield* Orchestrator;
+        const events = yield* (yield* EventSink).subscribe;
+        yield* orchestrator.dispatch(createWorkspace);
+        yield* orchestrator.dispatch(startJob);
+        yield* Deferred.await(startFailed);
+        assert.strictEqual((yield* getJob).status, "queued");
+        yield* TestClock.adjust(retryDelay(0));
+        yield* Stream.fromSubscription(events).pipe(
+          Stream.filter(({ event }) => event.type === "job.succeeded"),
+          Stream.runHead,
+        );
+        assert.strictEqual((yield* getJob).output, "Echo: go");
+      }).pipe(Effect.scoped, Effect.provide(layerWithFailingFirstStart(startFailed)));
+    },
+  );
 
   it.effect("a job left running by a stopped server fails when the worker starts", () =>
     Effect.gen(function* () {
