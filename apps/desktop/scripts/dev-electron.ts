@@ -23,6 +23,7 @@ const launch = resolveLaunchMode({
   env: process.env,
   interactive: NodeTty.isatty(0),
 });
+const cdpPort = process.env.TOOLSPELL_DESKTOP_CDP_PORT?.trim();
 
 let electron: NodeChildProcess.ChildProcess | undefined;
 let shuttingDown = false;
@@ -32,6 +33,7 @@ let queue = Promise.resolve();
 const say = (message: string) => process.stdout.write(`[dev-electron] ${message}\n`);
 const override = launch.mode === "background" ? "--foreground" : "--background";
 say(`Launch mode: ${launch.mode} (${launch.reason}; ${override} overrides it).`);
+if (cdpPort) say(`CDP for agents: http://127.0.0.1:${cdpPort}`);
 
 const run = (command: string, args: ReadonlyArray<string>) => {
   const result = NodeChildProcess.spawnSync(command, args, { encoding: "utf8" });
@@ -99,9 +101,11 @@ const stopElectron = async () => {
 const startElectron = () => {
   // Inherited, ELECTRON_RUN_AS_NODE would run Electron as plain Node.
   const { ELECTRON_RUN_AS_NODE: _, ...env } = process.env;
+  // Chromium binds the DevTools endpoint to 127.0.0.1 only.
+  const debugging = cdpPort ? [`--remote-debugging-port=${cdpPort}`] : [];
   // vp kills this process with SIGKILL when another dev task fails; the stdin pipe still closes
   // then, and the app quits on that.
-  const child = NodeChildProcess.spawn(electronBinary, ["."], {
+  const child = NodeChildProcess.spawn(electronBinary, [...debugging, "."], {
     cwd: desktopDir,
     env: { ...env, TOOLSPELL_DESKTOP_EXIT_WITH_STDIN: "1", [LAUNCH_MODE_ENV]: launch.mode },
     stdio: ["pipe", "inherit", "inherit"],

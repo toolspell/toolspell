@@ -22,6 +22,8 @@ import { vpCommand } from "./lib/vp.ts";
 
 const BASE_SERVER_PORT = 24100;
 const BASE_WEB_PORT = 28100;
+/** dev:desktop's Chrome DevTools Protocol endpoint, for agents driving the window. */
+const BASE_CDP_PORT = 32100;
 const MAX_OFFSET = 3000;
 
 const MODES = {
@@ -128,13 +130,16 @@ export const parseArgs = (argv: ReadonlyArray<string>) => {
 
 const main = async () => {
   const args = parseArgs(process.argv.slice(2));
+  const isDesktop = args.mode === "dev:desktop";
+  const bases = [BASE_SERVER_PORT, BASE_WEB_PORT, ...(isDesktop ? [BASE_CDP_PORT] : [])];
   let offset = offsetFor(process.env, checkout);
-  while (!(await portsFree([BASE_SERVER_PORT + offset, BASE_WEB_PORT + offset]))) {
+  while (!(await portsFree(bases.map((base) => base + offset)))) {
     offset += 1;
-    if (offset > MAX_OFFSET * 2) throw new Error("No free dev port pair found.");
+    if (offset > MAX_OFFSET * 2) throw new Error("No free set of dev ports found.");
   }
   const serverPort = BASE_SERVER_PORT + offset;
   const webPort = BASE_WEB_PORT + offset;
+  const cdpPort = BASE_CDP_PORT + offset;
   const homeDir = NodePath.resolve(args.homeDir ?? NodePath.join(checkout, ".toolspell"));
 
   const env: NodeJS.ProcessEnv = {
@@ -145,6 +150,7 @@ const main = async () => {
     PORT: String(webPort),
     // Browsers only talk to Vite, which proxies to the server, so only Vite is exposed.
     ...(args.host ? { TOOLSPELL_WEB_HOST: args.host } : {}),
+    ...(isDesktop ? { TOOLSPELL_DESKTOP_CDP_PORT: String(cdpPort) } : {}),
     // The desktop supervisor resolves the mode itself when no flag picked one.
     ...(args.desktop ? { TOOLSPELL_DESKTOP_MODE: args.desktop } : {}),
   };
@@ -152,7 +158,7 @@ const main = async () => {
   delete env.TOOLSPELL_BOOTSTRAP_FD;
 
   process.stdout.write(
-    `[dev-runner] mode=${args.mode} serverPort=${serverPort} webPort=${webPort} homeDir=${homeDir}\n`,
+    `[dev-runner] mode=${args.mode} serverPort=${serverPort} webPort=${webPort}${isDesktop ? ` cdpPort=${cdpPort}` : ""} homeDir=${homeDir}\n`,
   );
 
   // vp does not forward signals to Vite and the server, so teardown stops the whole tree: a
