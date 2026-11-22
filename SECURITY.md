@@ -60,9 +60,12 @@ boundary.
 - Pairing and sessions: [`AuthStore.ts`](apps/server/src/auth/AuthStore.ts), [`http.ts`](apps/server/src/http.ts)
 - Per-call scopes: [`RpcAuthorization.ts`](apps/server/src/auth/RpcAuthorization.ts), [`rpc.ts`](packages/contracts/src/rpc.ts)
 - Socket admission and revocation: [`ws.ts`](apps/server/src/ws.ts)
-- Desktop window isolation: [`window.ts`](apps/desktop/src/window.ts) (sandbox, navigation, web
-  permission requests denied), [`ipc.ts`](apps/desktop/src/ipc.ts) (sender checks),
+- Desktop window isolation: [`window.ts`](apps/desktop/src/window.ts) (sandbox, navigation and
+  redirects, web permission requests denied), [`ipc.ts`](apps/desktop/src/ipc.ts) (sender checks),
   [`preload.ts`](apps/desktop/src/preload.ts)
+- Desktop loads only its own server: [`readiness.ts`](apps/desktop/src/readiness.ts) (the
+  spawned server's ready signal, Vite's proof in development), [`main.ts`](apps/desktop/src/main.ts)
+  (no load or request before it)
 - Content Security Policy on the served app: [`http.ts`](apps/server/src/http.ts)
 
 ## How to audit and triage

@@ -30,12 +30,6 @@ Reviewers: Opus 5.5 and GPT 6.2 Sol (two lenses each), Fable 5.2 and GPT 6.2 Ast
   and the session lists decode a closed list strictly, so one new scope locks every older client
   out at boot. `ForwardCompatibleArray` in responses only; grants and authorization stay strict.
   Trigger: before the first release, at the latest before the first new scope.
-- **Desktop readiness from the spawned child** (Sol: critical; Astra, Sol's second lens: before
-  packaging): the shell releases its port before spawning, accepts any 200 from `/health`, then
-  loads that origin with the one-time admin token in the fragment, and has no `will-redirect`
-  guard. The child signals readiness on its process channel after it binds and registers the grant;
-  probe and window reject cross-origin redirects (T3 Code `DesktopBackendManager.ts`). Trigger:
-  before the first packaged build, or as soon as a wrong server shows up in the desktop window.
 - **Agent loop leftovers** (Sol, Opus): first-use downloads of `act` and `actionlint` race when
   several worktrees start at once (`scripts/lib/tools.ts` replaces the shared directory); worktree
   setup links a `.env` nothing reads; every worktree setup runs `sync:repos` although most changes
@@ -94,9 +88,8 @@ Reviewers: Opus 5.5 and GPT 6.2 Sol (two lenses each), Fable 5.2 and GPT 6.2 Ast
   support is experimental; a GitHub Windows runner is the likely route once the repo is on GitHub.
 - **Desktop, later**: saved window position that survives display changes; Linux desktop entry,
   `setDesktopName` and Wayland flags; Windows AppUserModelId; deep links; secret storage
-  (`safeStorage`, Linux password store); a server "ready" signal instead of polling `/health`;
-  killing child processes before exit in an AppImage; clearing the GPU cache after an Electron
-  upgrade; live theme switching on Linux.
+  (`safeStorage`, Linux password store); killing child processes before exit in an AppImage;
+  clearing the GPU cache after an Electron upgrade; live theme switching on Linux.
 - **Platform, later**: a 1 s read timeout for the bootstrap fd, as T3 Code does (on macOS and
   Linux a stray `TOOLSPELL_BOOTSTRAP_FD` hits one of Node's own fds); no copy-on-write for the
   state directory on btrfs; warn when the pnpm store is on another filesystem; Windows long paths for `.repos`; a bootstrap-fd read that treats a

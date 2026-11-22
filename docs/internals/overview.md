@@ -84,6 +84,15 @@ hands it a one-time token over an inherited pipe, and opens a sandboxed window o
 origin. New native capability goes behind the typed preload bridge, and anything the server can do
 belongs in the RPC contract instead, so remote clients get it too.
 
+The app trusts only its own child, never an answer on the port: it picks a free port and releases
+it before the server binds, and between restarts the port is free again, so another process, even
+another OS user's, can take it. The server writes the origin it serves to a second inherited pipe
+once it listens and holds the token, and the window loads nothing and sends no request to that
+origin until the current run has said so. In `dev:desktop` the window loads Vite instead, which
+binds `127.0.0.1` (`localhost` binds one address family and leaves the other free) and answers a
+fresh challenge with a secret the dev runner gives it and the app
+([`readiness.ts`](../../apps/desktop/src/readiness.ts)).
+
 The server's stdin is the app's lifeline: closing it is how quit asks the server to stop, and it
 closes by itself when the app dies, even by SIGKILL, so finalizers run and the home lock is
 released. A server that dies on its own is restarted on the same port, so the window keeps its
