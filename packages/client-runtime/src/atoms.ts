@@ -50,6 +50,11 @@ class RpcConnection extends Context.Service<RpcConnection, Rpc>()(
 ) {}
 
 const Health = Schema.Struct({ protocolVersion: Schema.Int });
+const PairFailure = Schema.Struct({ message: Schema.String });
+
+class PairingError extends Schema.TaggedError<PairingError>()("PairingError", {
+  message: Schema.String,
+}) {}
 
 const RESUBSCRIBE_DELAY = "1 second";
 
@@ -182,14 +187,20 @@ export const makeToolSpellAtoms = (options: { readonly origin: string }) => {
   );
 
   /** Exchanges a pairing token for a session cookie. */
-  const pair = (token: string) =>
-    HttpClientRequest.post(`${origin}${AUTH_HTTP_PATHS.pair}`).pipe(
+  const pair = Effect.fn("ToolSpell.pair")(function* (token: string) {
+    const request = yield* HttpClientRequest.post(`${origin}${AUTH_HTTP_PATHS.pair}`).pipe(
       HttpClientRequest.schemaBodyJson(PairRequest)({ token }),
-      Effect.flatMap(HttpClient.execute),
-      Effect.flatMap(HttpClientResponse.filterStatusOk),
-      Effect.flatMap(HttpClientResponse.schemaBodyJson(SessionStatus)),
-      Effect.provide(FetchHttpClient.layer),
     );
+    const response = yield* HttpClient.execute(request);
+    if (response.status !== 200) {
+      // The server explains why, such as an expired or already used link.
+      const body = yield* HttpClientResponse.schemaBodyJson(PairFailure)(response).pipe(
+        Effect.orElseSucceed(() => ({ message: "Pairing failed." })),
+      );
+      return yield* new PairingError({ message: body.message });
+    }
+    return yield* HttpClientResponse.schemaBodyJson(SessionStatus)(response);
+  }, Effect.provide(FetchHttpClient.layer));
 
   return {
     accessAtom,

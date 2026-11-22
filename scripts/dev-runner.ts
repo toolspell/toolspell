@@ -5,7 +5,8 @@
 //   node scripts/dev-runner.ts dev:web        web only
 //   node scripts/dev-runner.ts dev:desktop    web + Electron (which starts its own server)
 //
-// Flags: --home-dir <dir> (default <checkout>/.toolspell), --host <host> (server bind host).
+// Flags: --home-dir <dir> (default <checkout>/.toolspell), --host <host> (Vite bind host, for
+// other devices; the server stays on loopback behind Vite's proxy).
 // Env: TOOLSPELL_PORT_OFFSET (exact offset) or TOOLSPELL_DEV_INSTANCE (hashed seed).
 //
 // Ports derive from the checkout path, so each worktree keeps the same ports across
@@ -92,9 +93,10 @@ const main = async () => {
     ...process.env,
     TOOLSPELL_HOME: homeDir,
     TOOLSPELL_PORT: String(serverPort),
-    TOOLSPELL_WEB_URL: `http://localhost:${webPort}`,
+    TOOLSPELL_WEB_URL: `http://${args.host && args.host !== "0.0.0.0" ? args.host : "localhost"}:${webPort}`,
     PORT: String(webPort),
-    ...(args.host ? { TOOLSPELL_HOST: args.host } : {}),
+    // Browsers only talk to Vite, which proxies to the server, so only Vite is exposed.
+    ...(args.host ? { TOOLSPELL_WEB_HOST: args.host } : {}),
   };
   // A bootstrap pipe from an outer launcher does not exist in the dev servers.
   delete env.TOOLSPELL_BOOTSTRAP_FD;
