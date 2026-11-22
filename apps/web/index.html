@@ -6,7 +6,15 @@
     <title>ToolSpell</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Shown until React mounts, so a slow boot is never a blank page. -->
+      <div
+        id="boot-shell"
+        class="flex min-h-screen items-center justify-center text-sm text-muted-foreground"
+      >
+        Loading ToolSpell…
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

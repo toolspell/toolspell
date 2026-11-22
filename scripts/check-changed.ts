@@ -37,7 +37,7 @@ export const changedFiles = (baseRef: string | undefined): ReadonlyArray<string>
   return [...new Set([...tracked.split("\n"), ...untracked.split("\n")])].filter(Boolean).sort();
 };
 
-/** The test files a change should run: changed tests, and `x.test.ts` beside a changed `x.ts`. */
+/** The tests a change runs: changed tests, and `x.test.ts` or `x.browser.test.tsx` beside `x.ts`. */
 export const testsFor = (files: ReadonlyArray<string>, exists: (file: string) => boolean) =>
   [
     ...new Set(
@@ -45,7 +45,7 @@ export const testsFor = (files: ReadonlyArray<string>, exists: (file: string) =>
         if (TEST.test(file)) return exists(file) ? [file] : [];
         if (!CODE.test(file)) return [];
         const stem = file.replace(/\.[^.]+$/, "");
-        return [`${stem}.test.ts`, `${stem}.test.tsx`].filter(exists);
+        return [`${stem}.test.ts`, `${stem}.test.tsx`, `${stem}.browser.test.tsx`].filter(exists);
       }),
     ),
   ].sort();

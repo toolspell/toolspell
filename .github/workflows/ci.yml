@@ -48,6 +48,8 @@ jobs:
     needs: changes
     if: needs.changes.outputs.all == 'true' || needs.changes.outputs.packages != ''
     runs-on: ubuntu-latest
+    env:
+      WEB: ${{ needs.changes.outputs.all == 'true' || contains(needs.changes.outputs.packages, '@toolspell/web') }}
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/setup
@@ -60,13 +62,24 @@ jobs:
           filters=(); for p in $PACKAGES; do filters+=(--filter "$p"); done
           vp run --cache --parallel "${filters[@]}" typecheck
       - run: vp run build
+      # Source-level browser tests never run the production chunk graph, where boot breaks hide.
+      - if: env.WEB == 'true'
+        uses: ./.github/actions/chromium
+      - name: Boot the built web client
+        if: env.WEB == 'true'
+        run: vp run --filter @toolspell/web verify:boot
 
   test:
     needs: changes
     runs-on: ubuntu-latest
+    env:
+      WEB: ${{ needs.changes.outputs.all == 'true' || contains(needs.changes.outputs.packages, '@toolspell/web') }}
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/setup
+      # The web package's browser project runs its tests in headless Chromium.
+      - if: env.WEB == 'true'
+        uses: ./.github/actions/chromium
       - name: Test
         env:
           ALL: ${{ needs.changes.outputs.all }}

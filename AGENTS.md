@@ -128,10 +128,24 @@ before writing rows directly.
     the worker.
   - No per-test timeout argument or `retry`. Flaky tests are fixed, not retried.
   - No `performance.now()` or `Date.now()` deltas. Assert on events and counts, not elapsed time.
+  - Browser tests assert through `expect.element` or `vi.waitFor`, never `requestAnimationFrame`
+    or `transitionend`.
   - `it.skip` and friends need a tracking issue on the line above: `// quarantine: #1234 <why>`.
   - Lint enforces this: `toolspell/no-test-timeout-or-unreasoned-skip`,
-    `toolspell/no-wall-clock-in-tests`, `toolspell/no-real-time-wait-in-tests`,
-    `toolspell/no-polling-loop-in-tests`.
+    `toolspell/no-frame-waits-in-browser-tests`, `toolspell/no-wall-clock-in-tests`,
+    `toolspell/no-real-time-wait-in-tests`, `toolspell/no-polling-loop-in-tests`.
+- Web browser tests are `*.browser.test.{ts,tsx}` and render with
+  `await using screen = await render(...)` from `apps/web/test/render.tsx`, inside a fresh atom
+  registry (`screen.registry`). `toolspell/require-disposable-render` errors on other patterns.
+  - Acquire what the test drives after mounting (fake timers it advances, spies it sets up after
+    mounting) after the render, so it disposes before the unmount. Anything the first render
+    reads comes before it.
+  - A helper that renders and then waits or clicks puts the screen in an `AsyncDisposableStack`
+    and `move()`s it out only on success, so a failed wait still unmounts.
+  - `rerender` needs a fresh element on every call.
+  - No lifecycle hooks and no module-level mutable state. Shared mock state that `vi.mock`
+    factories read is reset by a `setup()` call at the top of the test.
+  - `router` is on by default. Pass `router: false` only with a one-line comment saying why.
 - [Testing](docs/internals/testing.md) carries these rules plus review guidance. Change both
   together.
 - User-visible changes get one integrated pass in a real client: the

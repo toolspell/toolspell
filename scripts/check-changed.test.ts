@@ -6,19 +6,25 @@ describe("testsFor", () => {
   it("runs changed tests and the tests beside changed source files", () => {
     const existing = new Set([
       "apps/server/src/core/Decider.test.ts",
+      "apps/web/src/components/InlineForm.browser.test.tsx",
       "apps/web/src/reactCompilerCoverage.test.ts",
     ]);
     assert.deepStrictEqual(
       testsFor(
         [
           "apps/server/src/core/Decider.ts",
+          "apps/web/src/components/InlineForm.tsx",
           "apps/web/src/reactCompilerCoverage.test.ts",
           "apps/server/src/core/Gone.test.ts",
           "docs/README.md",
         ],
         (file) => existing.has(file),
       ),
-      ["apps/server/src/core/Decider.test.ts", "apps/web/src/reactCompilerCoverage.test.ts"],
+      [
+        "apps/server/src/core/Decider.test.ts",
+        "apps/web/src/components/InlineForm.browser.test.tsx",
+        "apps/web/src/reactCompilerCoverage.test.ts",
+      ],
     );
   });
 });

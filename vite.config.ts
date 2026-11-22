@@ -103,6 +103,18 @@ export default defineConfig({
         rules: { "toolspell/prefer-effect-fn": "off" },
       },
       {
+        files: ["apps/web/**/*.test.{ts,tsx}"],
+        rules: { "toolspell/require-disposable-render": "error" },
+      },
+      {
+        files: ["apps/web/src/**/*.browser.test.{ts,tsx}"],
+        rules: { "toolspell/no-frame-waits-in-browser-tests": "error" },
+      },
+      {
+        files: ["apps/**/src/**", "packages/**/src/**"],
+        rules: { "toolspell/no-dom-test-environment": "error" },
+      },
+      {
         files: ["apps/web/src/**", "apps/desktop/src/**"],
         rules: { "toolspell/no-unreasoned-state-sync": "error" },
       },

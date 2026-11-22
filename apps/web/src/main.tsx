@@ -5,6 +5,7 @@ import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
+import { showBootError } from "./bootError.ts";
 import { atoms, errorMessage, pairingErrorAtom } from "./client.ts";
 import { routeTree } from "./routeTree.gen.ts";
 import "./styles.css";
@@ -31,8 +32,6 @@ const applyTheme = () => document.documentElement.classList.toggle("dark", darkQ
 darkQuery.addEventListener("change", applyTheme);
 applyTheme();
 
-await consumePairingToken();
-
 const router = createRouter({ routeTree });
 
 declare module "@tanstack/react-router" {
@@ -41,10 +40,17 @@ declare module "@tanstack/react-router" {
   }
 }
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <RegistryContext.Provider value={registry}>
-      <RouterProvider router={router} />
-    </RegistryContext.Provider>
-  </StrictMode>,
-);
+const startup = async () => {
+  await consumePairingToken();
+
+  // React unmounts the whole tree on an error no boundary catches; show why instead of a blank page.
+  createRoot(document.getElementById("root")!, { onUncaughtError: showBootError }).render(
+    <StrictMode>
+      <RegistryContext.Provider value={registry}>
+        <RouterProvider router={router} />
+      </RegistryContext.Provider>
+    </StrictMode>,
+  );
+};
+
+startup().catch(showBootError);

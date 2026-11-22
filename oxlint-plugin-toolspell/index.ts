@@ -2,6 +2,8 @@
 import { definePlugin } from "@oxlint/plugins";
 
 import namespaceNodeImports from "./rules/namespace-node-imports.ts";
+import noDomTestEnvironment from "./rules/no-dom-test-environment.ts";
+import noFrameWaitsInBrowserTests from "./rules/no-frame-waits-in-browser-tests.ts";
 import noHooklessUseFunction from "./rules/no-hookless-use-function.ts";
 import noManualMemo from "./rules/no-manual-memo.ts";
 import noPollingLoopInTests from "./rules/no-polling-loop-in-tests.ts";
@@ -10,6 +12,7 @@ import noTestTimeoutOrUnreasonedSkip from "./rules/no-test-timeout-or-unreasoned
 import noUnreasonedStateSync from "./rules/no-unreasoned-state-sync.ts";
 import noWallClockInTests from "./rules/no-wall-clock-in-tests.ts";
 import preferEffectFn from "./rules/prefer-effect-fn.ts";
+import requireDisposableRender from "./rules/require-disposable-render.ts";
 import requireSuppressionReason from "./rules/require-suppression-reason.ts";
 
 export default definePlugin({
@@ -18,6 +21,8 @@ export default definePlugin({
   },
   rules: {
     "namespace-node-imports": namespaceNodeImports,
+    "no-dom-test-environment": noDomTestEnvironment,
+    "no-frame-waits-in-browser-tests": noFrameWaitsInBrowserTests,
     "no-hookless-use-function": noHooklessUseFunction,
     "no-manual-memo": noManualMemo,
     "no-polling-loop-in-tests": noPollingLoopInTests,
@@ -26,6 +31,7 @@ export default definePlugin({
     "no-unreasoned-state-sync": noUnreasonedStateSync,
     "no-wall-clock-in-tests": noWallClockInTests,
     "prefer-effect-fn": preferEffectFn,
+    "require-disposable-render": requireDisposableRender,
     "require-suppression-reason": requireSuppressionReason,
   },
 });

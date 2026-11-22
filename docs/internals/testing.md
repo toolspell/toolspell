@@ -40,12 +40,44 @@ rules under Verifying; change both together.
   - No per-test timeout argument or `retry`. The project timeout is the ceiling, and flaky tests are
     fixed, not retried.
   - No `performance.now()` or `Date.now()` deltas. Assert on events and counts, not elapsed time.
+  - Browser tests assert through `expect.element` or `vi.waitFor`, never `requestAnimationFrame`
+    or `transitionend`.
   - `it.skip` and friends need a tracking issue on the line above: `// quarantine: #1234 <why>`.
   - Lint enforces this: `toolspell/no-test-timeout-or-unreasoned-skip`,
-    `toolspell/no-wall-clock-in-tests`, `toolspell/no-real-time-wait-in-tests`,
-    `toolspell/no-polling-loop-in-tests`.
+    `toolspell/no-frame-waits-in-browser-tests`, `toolspell/no-wall-clock-in-tests`,
+    `toolspell/no-real-time-wait-in-tests`, `toolspell/no-polling-loop-in-tests`.
 - A runner that must block until a test cancels it waits on a `Deferred` and signals another one
   when interrupted. [`Orchestration.test.ts`](../../apps/server/src/core/Orchestration.test.ts)
   shows the pattern.
 - Server tests run all services on an in-memory database through
   [`testkit.ts`](../../apps/server/src/testkit.ts), with a scripted runner layer as the only fake.
+
+## Web browser tests
+
+- Web browser tests are `*.browser.test.{ts,tsx}` and render with
+  `await using screen = await render(...)` from
+  [`apps/web/test/render.tsx`](../../apps/web/test/render.tsx), inside a fresh atom registry
+  (`screen.registry`). `toolspell/require-disposable-render` errors on other patterns.
+  - Acquire what the test drives after mounting (fake timers it advances, spies it sets up after
+    mounting) after the render, so it disposes before the unmount. Anything the first render
+    reads comes before it.
+  - A helper that renders and then waits or clicks puts the screen in an `AsyncDisposableStack`
+    and `move()`s it out only on success, so a failed wait still unmounts.
+  - `rerender` needs a fresh element on every call.
+  - No lifecycle hooks and no module-level mutable state. Shared mock state that `vi.mock`
+    factories read is reset by a `setup()` call at the top of the test.
+  - `router` is on by default. Pass `router: false` only with a one-line comment saying why.
+
+  ```tsx
+  it("saves on Enter", async () => {
+    const onSave = vi.fn(() => Promise.resolve());
+    using _now = vi.spyOn(Date, "now").mockReturnValue(0);
+    await using screen = await render(<TitleEditor onSave={onSave} />, { router: "/settings" });
+    await userEvent.type(screen.getByRole("textbox"), "Title{Enter}");
+    expect(onSave).toHaveBeenCalledWith("Title");
+  });
+  ```
+
+- A dependency Vite first meets mid-run reloads the page, which can fail the run or load React
+  twice. When a new browser test or route imports a package the others do not, add it to
+  `optimizeDeps.include` in [`apps/web/vite.config.ts`](../../apps/web/vite.config.ts).

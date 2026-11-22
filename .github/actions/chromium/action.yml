@@ -1,0 +1,29 @@
+name: Chromium
+description: Install Playwright's headless Chromium for the web package, cached per Playwright version.
+runs:
+  using: composite
+  steps:
+    - name: Resolve Playwright version
+      id: version
+      shell: bash
+      run: echo "version=$(node -p "require('./apps/web/node_modules/playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+    - name: Cache Chromium
+      id: cache
+      # Pinned like T3 Code's CI; bump deliberately.
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-chromium-shell-${{ runner.os }}-${{ runner.arch }}-${{ steps.version.outputs.version }}
+    - name: Install Chromium
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      working-directory: apps/web
+      run: vp exec playwright install --only-shell chromium
+    # The runner image usually has every library; apt runs only when one is missing.
+    - name: Install missing system libraries
+      shell: bash
+      working-directory: apps/web
+      run: |
+        browser=$(find "$HOME/.cache/ms-playwright" -name chrome-headless-shell -type f -print -quit)
+        test -n "$browser"
+        if ldd "$browser" | grep '=> not found'; then vp exec playwright install-deps chromium; fi

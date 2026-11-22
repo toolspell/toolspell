@@ -7,8 +7,9 @@ where to start, not a plan.
 
 ## Next up
 
-- **Playwright checks** (in progress): browser tests in apps/web, a built-app boot check, render
-  metrics, and Chromium in CI.
+- **Job list re-renders**: render metrics show every `job.progressed` event re-renders all job rows
+  (600 of 780 renders in the 20-job scenario). Keep unchanged rows from re-rendering, then confirm
+  with `vp run report:renders`.
 - **actionlint and `vp run ci:local`**: actionlint in `check:changed` when `.github/**` changes; act
   runs the workflow on local Docker (arm64 images) or on a remote engine via `--context`. Contexts
   `build-box` (Linux) and `windows-box` (Windows containers) exist and
