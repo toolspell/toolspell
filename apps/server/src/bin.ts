@@ -125,6 +125,13 @@ const serverCommand = Command.make(
   Command.withSubcommands([pairCommand]),
 );
 
+// A launcher such as the desktop app holds stdin open as a lifeline. When it dies, even by
+// SIGKILL, the pipe closes and the server shuts down instead of holding the home lock.
+if (process.env.TOOLSPELL_EXIT_WITH_STDIN === "1") {
+  process.stdin.on("end", () => process.kill(process.pid, "SIGTERM"));
+  process.stdin.resume();
+}
+
 Command.run(serverCommand, { version: packageJson.version }).pipe(
   Effect.provide(NodeServices.layer),
   NodeRuntime.runMain,

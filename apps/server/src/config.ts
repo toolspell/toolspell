@@ -1,5 +1,6 @@
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
+import * as Hash from "effect/Hash";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as Path from "effect/Path";
@@ -19,6 +20,10 @@ export interface ServerConfigShape {
   readonly staticDir: Option.Option<string>;
   /** One-time admin pairing token handed over by a launcher such as the desktop app. */
   readonly bootstrapToken: Option.Option<Redacted.Redacted<string>>;
+  /** Cookies do not isolate ports, so servers sharing a host need distinct cookie names. */
+  readonly sessionCookieName: string;
+  /** Set when the web origin is HTTPS, such as behind a TLS proxy. */
+  readonly secureCookies: boolean;
 }
 
 export class ServerConfig extends Context.Service<ServerConfig, ServerConfigShape>()(
@@ -40,6 +45,7 @@ const make = Effect.fn("ServerConfig.make")(function* (input: ServerConfigInput)
   const homeDir = path.resolve(input.homeDir);
   const stateDir = path.join(homeDir, "userdata");
   const displayHost = input.host === "0.0.0.0" || input.host === "::" ? "localhost" : input.host;
+  const webOrigin = Option.getOrElse(input.webOrigin, () => `http://${displayHost}:${input.port}`);
   return ServerConfig.of({
     version: input.version,
     homeDir,
@@ -47,9 +53,11 @@ const make = Effect.fn("ServerConfig.make")(function* (input: ServerConfigInput)
     databasePath: path.join(stateDir, "state.sqlite"),
     host: input.host,
     port: input.port,
-    webOrigin: Option.getOrElse(input.webOrigin, () => `http://${displayHost}:${input.port}`),
+    webOrigin,
     staticDir: input.staticDir,
     bootstrapToken: input.bootstrapToken,
+    sessionCookieName: `toolspell_session_${(Hash.string(stateDir) >>> 0).toString(36)}`,
+    secureCookies: webOrigin.startsWith("https:"),
   });
 });
 
@@ -69,6 +77,8 @@ export const layerTest = (overrides: Partial<ServerConfigShape> = {}) =>
       webOrigin: "http://localhost:0",
       staticDir: Option.none(),
       bootstrapToken: Option.none(),
+      sessionCookieName: "toolspell_session_test",
+      secureCookies: false,
       ...overrides,
     }),
   );

@@ -33,6 +33,7 @@ boundary.
 5. A credential leaks into logs, URLs sent to the server, process listings, or child environments.
 6. Rendered content runs script in the app's origin or reaches the desktop preload bridge.
 7. The desktop window navigates to, or loads, an origin other than its server.
+8. A page from another origin, including another port on the same host, opens the socket or pairs.
 
 ## Intended
 

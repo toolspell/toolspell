@@ -51,10 +51,12 @@ export const startBackend = async (): Promise<Backend> => {
       TOOLSPELL_HOST: LOOPBACK,
       TOOLSPELL_PORT: String(port),
       TOOLSPELL_BOOTSTRAP_FD: "3",
+      TOOLSPELL_EXIT_WITH_STDIN: "1",
     },
-    // fd 3 carries the token: unlike an env var, a pipe is not inherited by every
-    // child process or visible in process listings.
-    stdio: ["ignore", "inherit", "inherit", "pipe"],
+    // stdin stays open as a lifeline: if this app dies, the server sees it close and exits.
+    // fd 3 carries the token: unlike an env var, a pipe is not inherited by every child
+    // process or visible in process listings.
+    stdio: ["pipe", "inherit", "inherit", "pipe"],
   });
   const bootstrapPipe = child.stdio[3];
   if (bootstrapPipe == null || !("end" in bootstrapPipe)) {

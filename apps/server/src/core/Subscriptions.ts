@@ -52,13 +52,15 @@ const make = Effect.gen(function* () {
         const live = yield* sink.subscribe;
         let first: Snapshot | EventsBatch;
         let covered: EventSequence;
-        if (options.afterSequence === undefined) {
+        const cursor = options.afterSequence;
+        // A cursor past the head means the server's database was replaced; start over.
+        if (cursor === undefined || cursor > (yield* sink.headSequence)) {
           first = yield* sql.withTransaction(options.snapshot);
           covered = first.sequence;
         } else {
-          const missed = yield* sink.readAfter(options.afterSequence);
+          const missed = yield* sink.readAfter(cursor);
           first = { type: "events", events: missed.filter(options.matches) };
-          covered = missed.at(-1)?.sequence ?? options.afterSequence;
+          covered = missed.at(-1)?.sequence ?? cursor;
         }
         return Stream.make(first).pipe(
           Stream.concat(

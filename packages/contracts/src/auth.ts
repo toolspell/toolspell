@@ -53,8 +53,6 @@ export class RpcAuthorization extends RpcMiddleware.Service<RpcAuthorization>()(
 // HTTP auth endpoints. The session credential travels as an HttpOnly cookie, so
 // browser JavaScript never holds it.
 
-export const AUTH_SESSION_COOKIE = "toolspell_session";
-
 export const AUTH_HTTP_PATHS = {
   pair: "/api/auth/pair",
   session: AUTH_SESSION_PATH,

@@ -11,6 +11,12 @@ JavaScript never holds the credential. Both tokens are stored only as SHA-256 ha
 database cannot be used to sign in. Consuming a grant is one statement, so two racing requests
 cannot both pair. See [`AuthStore.ts`](../../apps/server/src/auth/AuthStore.ts).
 
+Cookies do not isolate ports, so SameSite alone does not stop a page on another localhost port
+from riding the session. The socket upgrade and pairing refuse browser requests whose `Origin` is
+neither the configured web origin nor the server itself, and the cookie name is derived from the
+server's home, so servers sharing a host (parallel worktrees) keep separate sessions. See
+[`origin.ts`](../../apps/server/src/auth/origin.ts).
+
 A pairing link carries its token in the URL fragment, which browsers never send to a server, so it
 stays out of logs. The web client exchanges it before the first render and removes it from history.
 

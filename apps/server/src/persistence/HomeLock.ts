@@ -16,7 +16,17 @@ class HomeInUseError extends Schema.TaggedError<HomeInUseError>()("HomeInUseErro
   }
 }
 
-const isAlive = (pid: number) => {
+const readOwner = (path: string) => {
+  try {
+    return Number(NodeFS.readFileSync(path, "utf8").trim());
+  } catch {
+    return Number.NaN;
+  }
+};
+
+/** An empty or garbled file (a crash mid-write) holds no owner; PID 0 would signal our own group. */
+const isLiveOwner = (pid: number) => {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
   try {
     process.kill(pid, 0);
     return true;
@@ -26,18 +36,37 @@ const isAlive = (pid: number) => {
   }
 };
 
-const tryAcquire = (lockPath: string): number | undefined => {
+/** Takes the lock and returns `undefined`, or returns the PID of the live owner. */
+export const acquireHomeLock = (lockPath: string): number | undefined => {
   try {
     NodeFS.writeFileSync(lockPath, String(process.pid), { flag: "wx" });
     return undefined;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
-    const owner = Number(NodeFS.readFileSync(lockPath, "utf8").trim());
-    if (Number.isInteger(owner) && owner !== process.pid && isAlive(owner)) return owner;
-    // The previous owner died without cleaning up; take the lock over.
-    NodeFS.rmSync(lockPath, { force: true });
-    return tryAcquire(lockPath);
   }
+  const owner = readOwner(lockPath);
+  if (owner !== process.pid && isLiveOwner(owner)) return owner;
+  // Move the stale lock aside atomically; of two contenders, only one renames this file.
+  const aside = `${lockPath}.${process.pid}.stale`;
+  try {
+    NodeFS.renameSync(lockPath, aside);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    return acquireHomeLock(lockPath);
+  }
+  const moved = readOwner(aside);
+  if (moved !== owner && isLiveOwner(moved)) {
+    // Another server replaced the stale lock between our read and the rename: put it back.
+    NodeFS.renameSync(aside, lockPath);
+    return moved;
+  }
+  NodeFS.rmSync(aside, { force: true });
+  return acquireHomeLock(lockPath);
+};
+
+/** Removes the lock only while it is still ours. */
+export const releaseHomeLock = (lockPath: string) => {
+  if (readOwner(lockPath) === process.pid) NodeFS.rmSync(lockPath, { force: true });
 };
 
 /**
@@ -52,12 +81,12 @@ export const layer = Layer.effectDiscard(
     yield* Effect.acquireRelease(
       Effect.gen(function* () {
         NodeFS.mkdirSync(config.stateDir, { recursive: true });
-        const owner = tryAcquire(lockPath);
+        const owner = acquireHomeLock(lockPath);
         if (owner !== undefined) {
           return yield* new HomeInUseError({ stateDir: config.stateDir, pid: owner });
         }
       }),
-      () => Effect.sync(() => NodeFS.rmSync(lockPath, { force: true })),
+      () => Effect.sync(() => releaseHomeLock(lockPath)),
     );
   }),
 );

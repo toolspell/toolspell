@@ -1,7 +1,9 @@
 import type { JobId } from "@toolspell/contracts";
+import * as Cause from "effect/Cause";
 import * as Clock from "effect/Clock";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
+import * as Exit from "effect/Exit";
 import * as FiberMap from "effect/FiberMap";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
@@ -21,6 +23,11 @@ import { ProjectionStore } from "./ProjectionStore.ts";
 const decodeEffect = Schema.decodeUnknownEffect(Schema.fromJsonString(OutboxEffect));
 
 export const INTERRUPTED_BY_RESTART = "The server stopped while this job was running.";
+export const RUNNER_CRASHED = "The runner stopped unexpectedly.";
+
+/** Runners report loosely; the event contract wants an integer from 0 to 100. */
+const toProgress = (value: number) =>
+  Number.isFinite(value) ? Math.min(100, Math.max(0, Math.round(value))) : 0;
 
 export interface EffectWorkerShape {
   /**
@@ -57,14 +64,21 @@ export const make = Effect.gen(function* () {
           : report({
               type: "job.reportProgress",
               jobId,
-              progress: update.progress,
+              progress: toProgress(update.progress),
               message: update.message,
             }),
       ),
-      Effect.result,
+      Effect.exit,
     );
-    if (Result.isFailure(outcome)) {
-      return yield* report({ type: "job.fail", jobId, error: outcome.failure.message });
+    // Any failure, a defect included, fails the job; otherwise it would stay running.
+    if (Exit.isFailure(outcome)) {
+      const failure = Cause.findError(outcome.cause);
+      if (Result.isFailure(failure)) yield* Effect.logError("Runner crashed", outcome.cause);
+      return yield* report({
+        type: "job.fail",
+        jobId,
+        error: Result.isSuccess(failure) ? failure.success.message : RUNNER_CRASHED,
+      });
     }
     const result = yield* Ref.get(output);
     yield* report(
@@ -81,7 +95,10 @@ export const make = Effect.gen(function* () {
         const job = yield* projections.getJob(effect.jobId).pipe(Effect.orDie);
         // Cancelled before it started: the decider ignored the start, so nothing runs.
         if (Option.isNone(job) || job.value.status !== "running") return;
-        yield* FiberMap.run(runningJobs, effect.jobId, runJob(effect.jobId, effect.input));
+        // A row handled twice (its done mark was lost) must not restart a running job.
+        yield* FiberMap.run(runningJobs, effect.jobId, runJob(effect.jobId, effect.input), {
+          onlyIfMissing: true,
+        });
         return;
       }
       case "job.cancel":
@@ -96,8 +113,11 @@ export const make = Effect.gen(function* () {
         SELECT id, payload FROM outbox WHERE done_at IS NULL ORDER BY id
       `;
       for (const row of rows) {
-        const effect = yield* decodeEffect(row.payload).pipe(Effect.orDie);
-        yield* handle(effect);
+        // One bad row is logged and skipped; it must not stall every later job.
+        const handled = yield* decodeEffect(row.payload).pipe(Effect.flatMap(handle), Effect.exit);
+        if (Exit.isFailure(handled)) {
+          yield* Effect.logError(`Skipping outbox row ${row.id}`, handled.cause);
+        }
         const now = yield* Clock.currentTimeMillis;
         yield* sql`UPDATE outbox SET done_at = ${now} WHERE id = ${row.id}`;
       }
@@ -112,9 +132,11 @@ export const make = Effect.gen(function* () {
     report({ type: "job.fail", jobId: job.id, error: INTERRUPTED_BY_RESTART }),
   );
 
-  yield* Effect.forever(Effect.andThen(processPending, sink.awaitOutboxWork)).pipe(
-    Effect.forkScoped,
+  // A storage failure ends one pass, not the worker; the next commit wakes it again.
+  const pass = processPending.pipe(
+    Effect.catchCause((cause) => Effect.logError("Outbox pass failed", cause)),
   );
+  yield* Effect.forever(Effect.andThen(pass, sink.awaitOutboxWork)).pipe(Effect.forkScoped);
 
   const drain: Effect.Effect<void> = Effect.gen(function* () {
     while ((yield* processPending) > 0 || (yield* FiberMap.size(runningJobs)) > 0) {

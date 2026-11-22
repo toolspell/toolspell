@@ -17,7 +17,7 @@ import * as RpcAuthorization from "./auth/RpcAuthorization.ts";
 import { ServerConfig } from "./config.ts";
 import { Orchestrator } from "./core/Orchestrator.ts";
 import { Subscriptions } from "./core/Subscriptions.ts";
-import { authenticateRequest } from "./http.ts";
+import { authenticateRequest, isSameOriginRequest } from "./http.ts";
 
 // Handlers stay thin: decode (done by the RPC layer), call one service method, map errors.
 // Storage failures are defects here; the client sees a generic error, the log has the cause.
@@ -69,11 +69,18 @@ export const route = HttpRouter.add(
     if (url.searchParams.get(PROTOCOL_QUERY_PARAM) !== String(PROTOCOL_VERSION)) {
       return incompatibleProtocol;
     }
+    if (!(yield* isSameOriginRequest(request))) {
+      return HttpServerResponse.jsonUnsafe(
+        { message: "Requests from other origins are not allowed." },
+        { status: 403 },
+      );
+    }
+    const auth = yield* AuthStore;
+    const awaitRevocation = yield* auth.watchRevocations;
     const session = yield* authenticateRequest(request);
     if (Option.isNone(session)) {
       return HttpServerResponse.jsonUnsafe({ message: "Pair this device first." }, { status: 401 });
     }
-    const auth = yield* AuthStore;
     const { protocol, httpEffect } = yield* RpcServer.makeProtocolWithHttpEffectWebsocket;
     yield* RpcServer.make(ToolSpellRpcs, { disableFatalDefects: true }).pipe(
       Effect.provideService(RpcServer.Protocol, protocol),
@@ -85,7 +92,7 @@ export const route = HttpRouter.add(
     // Revoking the session closes its open sockets too, not only future ones.
     return yield* Effect.raceFirst(
       httpEffect,
-      auth.awaitRevocation(session.value.id).pipe(Effect.as(HttpServerResponse.empty())),
+      awaitRevocation(session.value.id).pipe(Effect.as(HttpServerResponse.empty())),
     );
   }).pipe(Effect.provide(RpcSerialization.layerJson)),
 );

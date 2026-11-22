@@ -58,8 +58,15 @@ export interface AuthStoreShape {
     currentId: AuthSessionId,
   ) => Effect.Effect<ReadonlyArray<AuthSession>, SqlError.SqlError>;
   readonly revoke: (id: AuthSessionId) => Effect.Effect<void, SqlError.SqlError>;
-  /** Ends when the session is revoked, so its open sockets can close. */
-  readonly awaitRevocation: (id: AuthSessionId) => Effect.Effect<void, never, Scope.Scope>;
+  /**
+   * Subscribes now and returns a wait that ends when the given session is revoked.
+   * Subscribe before authenticating, so a revocation in between is not missed.
+   */
+  readonly watchRevocations: Effect.Effect<
+    (id: AuthSessionId) => Effect.Effect<void>,
+    never,
+    Scope.Scope
+  >;
 }
 
 export class AuthStore extends Context.Service<AuthStore, AuthStoreShape>()(
@@ -183,13 +190,15 @@ const make = Effect.gen(function* () {
     yield* insertGrant(Redacted.value(token), scopes);
   });
 
-  const awaitRevocation = Effect.fn("AuthStore.awaitRevocation")(function* (id: AuthSessionId) {
-    const subscription = yield* PubSub.subscribe(revocations);
-    yield* Stream.fromSubscription(subscription).pipe(
-      Stream.filter((revoked) => revoked === id),
-      Stream.runHead,
-    );
-  });
+  const watchRevocations = Effect.map(
+    PubSub.subscribe(revocations),
+    (subscription) => (id: AuthSessionId) =>
+      Stream.fromSubscription(subscription).pipe(
+        Stream.filter((revoked) => revoked === id),
+        Stream.runHead,
+        Effect.asVoid,
+      ),
+  );
 
   return AuthStore.of({
     createPairingGrant,
@@ -198,7 +207,7 @@ const make = Effect.gen(function* () {
     authenticate,
     list,
     revoke,
-    awaitRevocation,
+    watchRevocations,
   });
 });
 

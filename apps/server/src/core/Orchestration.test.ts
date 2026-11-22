@@ -15,7 +15,12 @@ import * as Stream from "effect/Stream";
 
 import { Runner, RunnerError, type RunnerUpdate } from "../runners/Runner.ts";
 import { layerServicesTest } from "../testkit.ts";
-import { EffectWorker, INTERRUPTED_BY_RESTART, make as makeEffectWorker } from "./EffectWorker.ts";
+import {
+  EffectWorker,
+  INTERRUPTED_BY_RESTART,
+  make as makeEffectWorker,
+  RUNNER_CRASHED,
+} from "./EffectWorker.ts";
 import { EventSink } from "./EventSink.ts";
 import { Orchestrator } from "./Orchestrator.ts";
 import { ProjectionStore } from "./ProjectionStore.ts";
@@ -98,6 +103,35 @@ describe("orchestration", () => {
       Effect.provide(
         layerServicesTest(
           scriptedRunner([{ type: "progress", progress: 10, message: null }], "disk full"),
+        ),
+      ),
+    ),
+  );
+
+  it.effect("a crashing runner fails the job too, and its progress is kept in range", () =>
+    Effect.gen(function* () {
+      const orchestrator = yield* Orchestrator;
+      const worker = yield* EffectWorker;
+      yield* orchestrator.dispatch(createWorkspace);
+      yield* orchestrator.dispatch(startJob);
+      yield* worker.drain;
+      const job = yield* getJob;
+      assert.strictEqual(job.status, "failed");
+      assert.strictEqual(job.error, RUNNER_CRASHED);
+      assert.strictEqual(job.progress, 100);
+    }).pipe(
+      Effect.provide(
+        layerServicesTest(
+          Layer.succeed(Runner, {
+            run: () =>
+              Stream.make({
+                type: "progress",
+                progress: 250.7,
+                message: null,
+              } as RunnerUpdate).pipe(
+                Stream.concat(Stream.die(new Error("segfault in a native module"))),
+              ),
+          }),
         ),
       ),
     ),
@@ -203,6 +237,11 @@ describe("subscriptions", () => {
         first?.type === "events" ? first.events.map(({ event }) => event.type) : [],
         ["job.queued"],
       );
+      // A cursor past the head (the server's database was replaced) starts over from a snapshot.
+      const [restarted] = yield* subscriptions
+        .jobs(workspaceId, EventSequence.make(999))
+        .pipe(Stream.take(1), Stream.runCollect);
+      assert.strictEqual(restarted?.type, "snapshot");
     }).pipe(Effect.provide(layerServicesTest(completingRunner))),
   );
 });

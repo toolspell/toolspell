@@ -85,7 +85,7 @@ const make = Effect.gen(function* () {
 
   const commit = Effect.fn("EventSink.commit")(function* (input: CommitInput) {
     const now = yield* Clock.currentTimeMillis;
-    const envelopes = yield* sql.withTransaction(
+    const sequence = yield* sql.withTransaction(
       Effect.gen(function* () {
         const appended: Array<EventEnvelope> = [];
         for (const event of input.events) {
@@ -110,12 +110,18 @@ const make = Effect.gen(function* () {
           const payload = yield* encodeEffect(effect).pipe(Effect.orDie);
           yield* sql`INSERT INTO outbox (payload, created_at) VALUES (${payload}, ${now})`;
         }
-        return { appended, sequence };
+        // Runs uninterruptibly once COMMIT succeeds, so an interrupt right after the commit
+        // cannot drop the publish: a subscriber whose cursor moved past it would never recover.
+        yield* sql.afterCommit(
+          Effect.gen(function* () {
+            yield* PubSub.publishAll(published, appended);
+            if (input.effects.length > 0) yield* Queue.offer(outboxWork, undefined);
+          }),
+        );
+        return sequence;
       }),
     );
-    yield* PubSub.publishAll(published, envelopes.appended);
-    if (input.effects.length > 0) yield* Queue.offer(outboxWork, undefined);
-    return envelopes.sequence;
+    return sequence;
   });
 
   const receiptSequence = Effect.fn("EventSink.receiptSequence")(function* (commandId: CommandId) {

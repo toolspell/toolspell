@@ -1,6 +1,5 @@
 import {
   AUTH_HTTP_PATHS,
-  AUTH_SESSION_COOKIE,
   PairRequest,
   PROTOCOL_VERSION,
   type SessionStatus,
@@ -12,17 +11,41 @@ import * as Redacted from "effect/Redacted";
 import { HttpRouter, HttpServerRequest, HttpServerResponse, HttpStaticServer } from "effect/http";
 
 import { AuthStore } from "./auth/AuthStore.ts";
+import { isAllowedOrigin } from "./auth/origin.ts";
 import { ServerConfig } from "./config.ts";
 
 const SESSION_COOKIE_MAX_AGE = "400 days";
 
+const invalidRequest = HttpServerResponse.jsonUnsafe(
+  { message: "Invalid request." },
+  { status: 400 },
+);
+
 const unauthenticated: SessionStatus = { authenticated: false, scopes: [] };
+
+/** Whether a browser request comes from a page this server (or its dev proxy) served. */
+export const isSameOriginRequest = Effect.fn("http.isSameOriginRequest")(function* (
+  request: HttpServerRequest.HttpServerRequest,
+) {
+  const config = yield* ServerConfig;
+  return isAllowedOrigin({
+    origin: request.headers.origin,
+    host: request.headers.host,
+    webOrigin: config.webOrigin,
+  });
+});
+
+const forbiddenOrigin = HttpServerResponse.jsonUnsafe(
+  { message: "Requests from other origins are not allowed." },
+  { status: 403 },
+);
 
 /** Reads the session cookie and resolves it to a live session, if any. */
 export const authenticateRequest = Effect.fn("http.authenticateRequest")(function* (
   request: HttpServerRequest.HttpServerRequest,
 ) {
-  const token = request.cookies[AUTH_SESSION_COOKIE];
+  const config = yield* ServerConfig;
+  const token = request.cookies[config.sessionCookieName];
   if (token === undefined) return Option.none();
   const auth = yield* AuthStore;
   return yield* auth.authenticate(token).pipe(Effect.orDie);
@@ -46,28 +69,28 @@ const pairRoute = HttpRouter.add(
   AUTH_HTTP_PATHS.pair,
   Effect.gen(function* () {
     const auth = yield* AuthStore;
+    const config = yield* ServerConfig;
     const request = yield* HttpServerRequest.HttpServerRequest;
+    if (!(yield* isSameOriginRequest(request))) return forbiddenOrigin;
     const body = yield* HttpServerRequest.schemaBodyJson(PairRequest);
     const label = body.label ?? request.headers["user-agent"] ?? "Unknown device";
     const paired = yield* auth.pair(body.token, label.slice(0, 200));
     const status: SessionStatus = { authenticated: true, scopes: paired.session.scopes };
     return yield* HttpServerResponse.jsonUnsafe(status).pipe(
-      HttpServerResponse.setCookie(AUTH_SESSION_COOKIE, Redacted.value(paired.sessionToken), {
+      HttpServerResponse.setCookie(config.sessionCookieName, Redacted.value(paired.sessionToken), {
         httpOnly: true,
         sameSite: "strict",
         path: "/",
         maxAge: SESSION_COOKIE_MAX_AGE,
-        secure: request.url.startsWith("https:"),
+        secure: config.secureCookies,
       }),
     );
   }).pipe(
     Effect.catchTags({
       PairingFailedError: (error) =>
         Effect.succeed(HttpServerResponse.jsonUnsafe({ message: error.message }, { status: 401 })),
-      SchemaError: () =>
-        Effect.succeed(
-          HttpServerResponse.jsonUnsafe({ message: "Invalid request." }, { status: 400 }),
-        ),
+      SchemaError: () => Effect.succeed(invalidRequest),
+      HttpServerError: () => Effect.succeed(invalidRequest),
     }),
     Effect.orDie,
   ),
