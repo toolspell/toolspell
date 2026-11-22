@@ -49,20 +49,33 @@ export const readWorkspace = (root: string): ReadonlyArray<WorkspacePackage> =>
     });
 
 /** Affected package names, or `undefined` when a shared file changed and everything must run. */
+const ownerOf = (workspace: ReadonlyArray<WorkspacePackage>, file: string) =>
+  workspace
+    .filter((pkg) => file.startsWith(`${pkg.dir}/`))
+    .sort((a, b) => b.dir.length - a.dir.length)[0];
+
+/** The first changed file that forces a full run, or `undefined` when packages suffice. */
+export const fullRunTrigger = (
+  workspace: ReadonlyArray<WorkspacePackage>,
+  files: ReadonlyArray<string>,
+): string | undefined =>
+  files.find(
+    (file) =>
+      !INERT.some((pattern) => pattern.test(file)) &&
+      // Shared config, or a file outside every package: fail open and run everything.
+      (GLOBAL.some((pattern) => pattern.test(file)) || ownerOf(workspace, file) === undefined),
+  );
+
 export const affectedPackages = (
   workspace: ReadonlyArray<WorkspacePackage>,
   files: ReadonlyArray<string>,
 ): ReadonlyArray<string> | undefined => {
+  if (fullRunTrigger(workspace, files) !== undefined) return undefined;
   const affected = new Set<string>();
   for (const file of files) {
     if (INERT.some((pattern) => pattern.test(file))) continue;
-    if (GLOBAL.some((pattern) => pattern.test(file))) return undefined;
-    const owner = workspace
-      .filter((pkg) => file.startsWith(`${pkg.dir}/`))
-      .sort((a, b) => b.dir.length - a.dir.length)[0];
-    // A file outside every package is unexpected; fail open and run everything.
-    if (owner === undefined) return undefined;
-    affected.add(owner.name);
+    const owner = ownerOf(workspace, file);
+    if (owner !== undefined) affected.add(owner.name);
   }
   let grew = true;
   while (grew) {

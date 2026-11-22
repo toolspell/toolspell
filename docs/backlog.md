@@ -42,6 +42,14 @@ where to start, not a plan.
 - **Platform, later**: no copy-on-write for the state directory on btrfs; warn when the pnpm store
   is on another filesystem; Windows long paths for `.repos`; a bootstrap-fd read that treats a
   missing fd as "no token"; Cmd versus Ctrl helpers once the web app has shortcuts.
+- **GitHub, once pushed**: Dependabot for `github-actions` only, to keep the SHA pins fresh; a
+  `~/.vite-plus` and pnpm store cache saved only on main (T3 Code `.github/actions/setup-ci-deps`);
+  issue templates (areas: web, server, desktop, packages, CI, docs) and labels once this backlog
+  moves to issues; a "Reporting" section in `SECURITY.md` once public.
+- **GitHub, with releases**: T3 Code's release patterns (`resolve_commit`, `concurrency` with
+  queued runs, per-platform `workflow_call`, a release smoke job on pull requests).
+- **GitHub, with outside contributors**: PR size labels, contributor limits, a test-count delta
+  comment; a PR comment comparing `report:renders` with main follows the same pattern.
 - **Server**: event-log retention and paged resume (resume currently reads every missed event);
   seeding dev state from the live install; sharing a dev server over the tailnet.
 

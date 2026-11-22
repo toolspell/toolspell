@@ -12,4 +12,7 @@ runs:
         run-install: false
     - name: Install
       shell: bash
+      env:
+        # Slow registry or GitHub downloads fail the step instead of hanging the job.
+        VP_DOWNLOAD_TIMEOUT: "120"
       run: vp i --frozen-lockfile

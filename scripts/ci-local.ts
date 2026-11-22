@@ -11,8 +11,8 @@ import * as NodeChildProcess from "node:child_process";
 
 import { runTool } from "./lib/tools.ts";
 
-// A medium-size community image with Node and the usual CLI tools; multi-arch.
-const UBUNTU_IMAGE = "catthehacker/ubuntu:act-latest";
+// A medium-size community image matching the workflow's `ubuntu-24.04` runner; multi-arch.
+const UBUNTU_IMAGE = "catthehacker/ubuntu:act-24.04";
 
 export const parseArgs = (argv: ReadonlyArray<string>) => {
   const separator = argv.indexOf("--");
@@ -57,7 +57,7 @@ const main = async () => {
       "--container-architecture",
       architecture,
       "-P",
-      `ubuntu-latest=${UBUNTU_IMAGE}`,
+      `ubuntu-24.04=${UBUNTU_IMAGE}`,
       // The artifact and cache server would listen on this machine, which a remote engine cannot reach.
       ...(context === undefined ? [] : ["--no-cache-server"]),
       ...passthrough,

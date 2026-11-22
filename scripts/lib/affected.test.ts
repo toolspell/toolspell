@@ -1,6 +1,6 @@
 import { assert, describe, it } from "@effect/vitest";
 
-import { affectedPackages, type WorkspacePackage } from "./affected.ts";
+import { affectedPackages, fullRunTrigger, type WorkspacePackage } from "./affected.ts";
 
 const pkg = (
   name: string,
@@ -36,5 +36,9 @@ describe("affectedPackages", () => {
     );
     assert.isUndefined(affectedPackages(workspace, ["pnpm-lock.yaml"]));
     assert.isUndefined(affectedPackages(workspace, ["somewhere/else.ts"]));
+    assert.strictEqual(
+      fullRunTrigger(workspace, ["docs/README.md", "apps/web/src/x.ts", "pnpm-lock.yaml"]),
+      "pnpm-lock.yaml",
+    );
   });
 });

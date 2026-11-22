@@ -8,13 +8,16 @@
     "dev": "vp pack && electron .",
     "build": "vp pack",
     "typecheck": "effect-tsgo tsrs --noEmit",
-    "test": "vp test run --passWithNoTests"
+    "test": "vp test run --passWithNoTests",
+    "verify:preload": "node scripts/verify-preload-bundle.ts"
   },
   "dependencies": {
     "@toolspell/contracts": "workspace:*"
   },
   "devDependencies": {
+    "@effect/vitest": "catalog:",
     "@types/node": "catalog:",
+    "acorn": "catalog:",
     "electron": "catalog:",
     "vite-plus": "catalog:"
   }

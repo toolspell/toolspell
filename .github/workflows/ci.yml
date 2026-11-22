@@ -7,8 +7,10 @@ on:
   push:
     branches: [main]
 
+# One group per pull request or per commit on main, so a burst of pushes to main does not
+# cancel the runs of the commits in between.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
@@ -20,25 +22,32 @@ env:
 
 jobs:
   changes:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
     outputs:
       all: ${{ steps.changes.outputs.all }}
       packages: ${{ steps.changes.outputs.packages }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           fetch-depth: 2
-      - uses: actions/setup-node@v5
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
-          node-version: 24
+          node-version-file: package.json
       # A pull request's merge commit has the base as its first parent. Pushes to main run everything.
       - id: changes
-        run: node scripts/ci-changes.ts ${{ github.event_name == 'pull_request' && 'HEAD^1' || '' }}
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && 'HEAD^1' || '' }}
+        run: node scripts/ci-changes.ts $BASE
 
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
       - uses: ./.github/actions/setup
       - run: vp fmt --check
       - run: vp lint --report-unused-disable-directives
@@ -47,11 +56,15 @@ jobs:
   typecheck_build:
     needs: changes
     if: needs.changes.outputs.all == 'true' || needs.changes.outputs.packages != ''
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     env:
       WEB: ${{ needs.changes.outputs.all == 'true' || contains(needs.changes.outputs.packages, '@toolspell/web') }}
+      DESKTOP: ${{ needs.changes.outputs.all == 'true' || contains(needs.changes.outputs.packages, '@toolspell/desktop') }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
       - uses: ./.github/actions/setup
       - name: Typecheck
         env:
@@ -62,20 +75,29 @@ jobs:
           filters=(); for p in $PACKAGES; do filters+=(--filter "$p"); done
           vp run --cache --parallel "${filters[@]}" typecheck
       - run: vp run build
+      # A preload that breaks in Electron's sandbox only shows up at runtime as a missing bridge.
+      - name: Check the desktop preload bundle
+        if: env.DESKTOP == 'true'
+        timeout-minutes: 2
+        run: vp run --filter @toolspell/desktop verify:preload
       # Source-level browser tests never run the production chunk graph, where boot breaks hide.
       - if: env.WEB == 'true'
         uses: ./.github/actions/chromium
       - name: Boot the built web client
         if: env.WEB == 'true'
+        timeout-minutes: 3
         run: vp run --filter @toolspell/web verify:boot
 
   test:
     needs: changes
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     env:
       WEB: ${{ needs.changes.outputs.all == 'true' || contains(needs.changes.outputs.packages, '@toolspell/web') }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
       - uses: ./.github/actions/setup
       # The web package's browser project runs its tests in headless Chromium.
       - if: env.WEB == 'true'
@@ -91,13 +113,20 @@ jobs:
           vp run "${filters[@]}" test
 
   check:
+    name: Check
     if: ${{ always() }}
     needs: [changes, lint, typecheck_build, test]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
-      - name: Every job passed or was skipped for an unaffected change
+      # Only typecheck_build may be skipped, and only when change detection found no package.
+      - name: Every job passed, or was skipped because change detection asked for it
         env:
           RESULTS: ${{ toJSON(needs) }}
+          TYPECHECK_NOT_NEEDED: ${{ needs.changes.outputs.all != 'true' && needs.changes.outputs.packages == '' }}
         run: |
-          echo "$RESULTS" | jq -e 'to_entries | all(.value.result == "success" or .value.result == "skipped")'
-          echo "$RESULTS" | jq -e '.changes.result == "success"'
+          echo "$RESULTS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          echo "$RESULTS" | jq -e --arg notNeeded "$TYPECHECK_NOT_NEEDED" '
+            .changes.result == "success" and .lint.result == "success" and .test.result == "success"
+            and (.typecheck_build.result == "success"
+              or (.typecheck_build.result == "skipped" and $notNeeded == "true"))'

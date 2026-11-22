@@ -218,6 +218,9 @@ catalogs:
     '@vitest/browser-playwright':
       specifier: 5.1.0
       version: 5.1.0
+    acorn:
+      specifier: 8.19.0
+      version: 8.19.0
     class-variance-authority:
       specifier: ^0.7.1
       version: 0.7.1
@@ -284,9 +287,15 @@ importers:
         specifier: workspace:*
         version: link:../../packages/contracts
     devDependencies:
+      '@effect/vitest':
+        specifier: 'catalog:'
+        version: 4.1.5(effect@4.1.5)(vitest@5.1.0)
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.5
+      acorn:
+        specifier: 'catalog:'
+        version: 8.19.0
       electron:
         specifier: 'catalog:'
         version: 45.4.1
@@ -2199,6 +2208,11 @@ packages:
 
   '@yuku-toolchain/types@0.19.0':
     resolution: {integrity: sha512-tFkNbsP4WXX9UMUC5syJGdK9dPMLK0PPaIuXCcCYH75sZ8MrebfBZ2XvCILRTw8AgLivSSCfDa4R67iYBDa4Kg==}
+
+  acorn@8.19.0:
+    resolution: {integrity: sha512-oJlA3XiRm7Cyk6qFD2Jn8ak9B7jSy0qy00ADO3+8dpT0LSjFihQYv4C02LFCSYJV3Q37xYwwRy5m+IpIiUzqWw==}
+    engines: {node: '>=0.4.0'}
+    hasBin: true
 
   ajv-formats@2.1.1:
     resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
@@ -4745,6 +4759,8 @@ snapshots:
     optional: true
 
   '@yuku-toolchain/types@0.19.0': {}
+
+  acorn@8.19.0: {}
 
   ajv-formats@2.1.1:
     dependencies:
