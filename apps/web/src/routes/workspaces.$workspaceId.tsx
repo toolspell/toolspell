@@ -17,8 +17,8 @@ export const Route = createFileRoute("/workspaces/$workspaceId")({ component: Wo
 
 const STATUS_VARIANT = {
   queued: "secondary",
-  running: "default",
-  succeeded: "outline",
+  running: "info",
+  succeeded: "success",
   failed: "destructive",
   cancelled: "ghost",
 } as const satisfies Record<Job["status"], string>;
