@@ -32,6 +32,34 @@ const git = (cwd: string, args: ReadonlyArray<string>) =>
   });
 
 /**
+ * The paths that differ from HEAD in the working tree, staged or not, and the untracked ones.
+ * `ls-files --modified` would miss staged-only edits, additions and deletions.
+ */
+const changedSinceHead = (root: string) =>
+  [
+    ...new Set(
+      [
+        git(root, ["diff", "--name-only", "--no-renames", "-z", "HEAD"]),
+        git(root, ["ls-files", "--others", "--exclude-standard", "-z"]),
+      ].flatMap((list) => list.split("\0").filter(Boolean)),
+    ),
+  ].sort();
+
+/** Copies each changed path from `root` into `dir`, removing those `root` no longer has. */
+export const overlayChanges = (root: string, dir: string) => {
+  for (const file of changedSinceHead(root)) {
+    const source = NodePath.join(root, file);
+    const target = NodePath.join(dir, file);
+    if (!NodeFS.existsSync(source)) {
+      NodeFS.rmSync(target, { force: true });
+      continue;
+    }
+    NodeFS.mkdirSync(NodePath.dirname(target), { recursive: true });
+    NodeFS.copyFileSync(source, target);
+  }
+};
+
+/**
  * act copies the checkout into its containers. In a git worktree `.git` is only a pointer to
  * the main checkout, which the container lacks, so git fails there. A worktree therefore runs
  * from a temporary clone of the same commit with the uncommitted changes copied over.
@@ -43,17 +71,7 @@ const standaloneCheckout = (root: string) => {
   const dir = NodeFS.mkdtempSync(NodePath.join(NodeOS.tmpdir(), "toolspell-ci-"));
   git(root, ["clone", "--quiet", "--no-hardlinks", root, dir]);
   git(dir, ["checkout", "--quiet", "--detach", git(root, ["rev-parse", "HEAD"]).trim()]);
-  const list = (args: ReadonlyArray<string>) =>
-    git(root, ["ls-files", "-z", ...args])
-      .split("\0")
-      .filter(Boolean);
-  for (const file of list(["--modified", "--others", "--exclude-standard"])) {
-    const source = NodePath.join(root, file);
-    if (!NodeFS.existsSync(source)) continue;
-    NodeFS.mkdirSync(NodePath.dirname(NodePath.join(dir, file)), { recursive: true });
-    NodeFS.copyFileSync(source, NodePath.join(dir, file));
-  }
-  for (const file of list(["--deleted"])) NodeFS.rmSync(NodePath.join(dir, file), { force: true });
+  overlayChanges(root, dir);
   process.stderr.write(`[ci:local] running from a temporary clone of this worktree: ${dir}\n`);
   return { dir, cleanup: () => NodeFS.rmSync(dir, { recursive: true, force: true }) };
 };
