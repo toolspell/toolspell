@@ -42,6 +42,13 @@ entry moves into an issue (labels from `.github/labels.json`) and the file is de
   queued runs, per-platform `workflow_call`, a release smoke job on pull requests).
 - **GitHub, with outside contributors**: PR size labels, contributor limits, a test-count delta
   comment; a PR comment comparing `report:renders` with main follows the same pattern.
+- **Performance, later** (T3 Code has each; budgets pin today's values first): merge `job.progressed`
+  per job in a short window (`ThreadLiveEventCoalescer`) once a runner reports often; bound each
+  subscriber's queue and make it resume from its cursor (`LiveStreamBudget`); cap resume and send a
+  snapshot past it; keep large job output off the wire (`WireProjection`); WebSocket compression
+  (`perMessageDeflate`) for remote clients; page the job list past about 500 jobs; a startup profile
+  for slow-start reports (`scripts/profile-startup.mjs`); a PR comment comparing budgets with main
+  (`thread-transfer-report`); a smoke test that opens an old-version database.
 - **Server**: event-log retention and paged resume (resume currently reads every missed event);
   seeding dev state from the live install; sharing a dev server over the tailnet.
 
