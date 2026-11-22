@@ -70,6 +70,7 @@ export default defineConfig({
       "eslint/no-new": "error",
       "eslint/no-shadow": "off",
       "eslint/no-await-in-loop": "off",
+      "eslint/no-underscore-dangle": "off",
       "unicorn/consistent-function-scoping": "off",
       "unicorn/no-array-sort": "off",
       "typescript/no-extraneous-class": "error",
