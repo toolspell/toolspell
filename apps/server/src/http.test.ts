@@ -228,7 +228,8 @@ describe("transport guards", () => {
   it.layer(layerLoopback, { excludeTestServices: true })((it) => {
     const protocol = `${PROTOCOL_QUERY_PARAM}=${PROTOCOL_VERSION}`;
     it.effect.each([
-      { name: "an up-to-date, paired, same-origin client", status: 101 },
+      { name: "an up-to-date, paired, same-origin client", origin: "self", status: 101 },
+      { name: "a client that sends no origin, such as a CLI", status: 101 },
       { name: "no protocol version", query: "", status: 426 },
       {
         name: "another protocol version",
@@ -242,14 +243,11 @@ describe("transport guards", () => {
       Effect.gen(function* () {
         const session = yield* pairSession(STANDARD_AUTH_SCOPES);
         const cookie = "cookie" in row ? row.cookie : session.cookie;
-        const status = yield* upgradeStatus(
-          yield* serverOrigin,
-          "query" in row ? row.query : protocol,
-          {
-            ...(cookie === "none" ? {} : { cookie }),
-            ...("origin" in row ? { origin: row.origin } : {}),
-          },
-        );
+        const origin = yield* serverOrigin;
+        const status = yield* upgradeStatus(origin, "query" in row ? row.query : protocol, {
+          ...(cookie === "none" ? {} : { cookie }),
+          ...("origin" in row ? { origin: row.origin === "self" ? origin : row.origin } : {}),
+        });
         assert.strictEqual(status, row.status);
       }),
     );
