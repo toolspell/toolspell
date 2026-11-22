@@ -231,12 +231,13 @@ describe("subscriptions", () => {
         name: "Other",
       });
       yield* orchestrator.dispatch(startJob);
+      yield* (yield* EffectWorker).drain;
       const [first] = yield* subscriptions
         .jobs(workspaceId, sequence)
         .pipe(Stream.take(1), Stream.runCollect);
       assert.deepStrictEqual(
         first?.type === "events" ? first.events.map(({ event }) => event.type) : [],
-        ["job.queued"],
+        ["job.queued", "job.started", "job.progressed", "job.succeeded"],
       );
       // A cursor past the head (the server's database was replaced) starts over from a snapshot.
       const [restarted] = yield* subscriptions
