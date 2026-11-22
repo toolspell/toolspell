@@ -6,8 +6,6 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import { HttpRouter } from "effect/http";
-// @effect-diagnostics-next-line nodeBuiltinImport:off -- NodeHttpServer wraps a Node HTTP server.
-import * as NodeHttp from "node:http";
 
 import { AuthStore } from "./auth/AuthStore.ts";
 import * as AuthStoreLayer from "./auth/AuthStore.ts";
@@ -18,6 +16,7 @@ import * as Orchestrator from "./core/Orchestrator.ts";
 import * as ProjectionStore from "./core/ProjectionStore.ts";
 import * as Subscriptions from "./core/Subscriptions.ts";
 import * as Http from "./http.ts";
+import { createGuardedServer } from "./httpResponseErrorGuard.ts";
 import * as TraceFile from "./observability/TraceFile.ts";
 import * as HomeLock from "./persistence/HomeLock.ts";
 import * as RuntimeState from "./persistence/RuntimeState.ts";
@@ -57,7 +56,13 @@ const layerHttpServer = Layer.unwrap(
     const config = yield* ServerConfig;
     return HttpRouter.serve(Layer.mergeAll(Http.routes, Ws.route)).pipe(
       Layer.provide(
-        NodeHttpServer.layer(NodeHttp.createServer, { port: config.port, host: config.host }),
+        NodeHttpServer.layer(createGuardedServer, {
+          port: config.port,
+          host: config.host,
+          // Shutdown sends each WebSocket a close frame at once. Waiting for peers to answer, and
+          // for keep-alive connections, takes up to 20 s; the desktop app kills the server at 5 s.
+          gracefulShutdownTimeout: 0,
+        }),
       ),
     );
   }),
