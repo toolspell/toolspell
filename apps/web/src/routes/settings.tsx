@@ -8,9 +8,34 @@ import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { FieldError } from "~/components/ui/field";
-import { atoms, errorMessage } from "~/client";
+import { atoms, errorMessage, preferences } from "~/client";
+import { THEME_IDS, THEMES, type ThemePreference } from "~/theme";
 
 export const Route = createFileRoute("/settings")({ component: SettingsPage });
+
+const THEME_OPTIONS: ReadonlyArray<{ readonly value: ThemePreference; readonly label: string }> = [
+  { value: "system", label: "System" },
+  ...THEME_IDS.map((id) => ({ value: id, label: THEMES[id].label })),
+];
+
+function ThemePicker() {
+  const theme = useAtomValue(preferences.themeAtom);
+  const setTheme = useAtomSet(preferences.themeAtom);
+  return (
+    <div role="group" aria-label="Theme" className="flex gap-2">
+      {THEME_OPTIONS.map(({ value, label }) => (
+        <Button
+          key={value}
+          variant={value === theme ? "default" : "outline"}
+          aria-pressed={value === theme}
+          onClick={() => setTheme(value)}
+        >
+          {label}
+        </Button>
+      ))}
+    </div>
+  );
+}
 
 function SettingsPage() {
   const sessions = useAtomValue(atoms.sessionsAtom);
@@ -39,6 +64,13 @@ function SettingsPage() {
   return (
     <section className="flex flex-col gap-6">
       <h1 className="text-xl font-semibold">Settings</h1>
+      <div className="flex flex-col gap-3">
+        <h2 className="font-medium">Appearance</h2>
+        <p className="text-sm text-muted-foreground">
+          The theme applies to this device only. System follows its light or dark mode.
+        </p>
+        <ThemePicker />
+      </div>
       <div className="flex flex-col gap-3">
         <h2 className="font-medium">Devices</h2>
         <p className="text-sm text-muted-foreground">
