@@ -20,9 +20,8 @@ import { Subscriptions } from "./core/Subscriptions.ts";
 import { authenticateRequest, isSameOriginRequest } from "./http.ts";
 import * as DefectReporter from "./observability/DefectReporter.ts";
 
-// Handlers stay thin: decode (done by the RPC layer), call one service method, map errors.
-// Storage failures are defects here. The reporter logs each once with its cause in the request's
-// span; the contracts' defect schema sends the client a generic error.
+// Storage failures are defects here: the reporter logs each once with its cause in the request's
+// span, and the contracts' defect schema sends the client a generic error.
 const handlersFor = (session: AuthenticatedSession) =>
   ToolSpellRpcs.toLayer(
     Effect.gen(function* () {

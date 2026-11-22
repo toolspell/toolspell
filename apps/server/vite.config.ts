@@ -26,7 +26,6 @@ export default mergeConfig(
       format: "esm",
       platform: "node",
       outDir: "dist",
-      // Bundle workspace packages; npm dependencies stay external.
       deps: { alwaysBundle: [/^@toolspell\//] },
     },
   }),

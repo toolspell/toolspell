@@ -1,10 +1,7 @@
 // @effect-diagnostics nodeBuiltinImport:off globalConsole:off globalDate:off globalTimers:off - a plain Node launcher around the server.
-// Runs the server and restarts it when its sources or a workspace package change.
+// Not `node --watch`: on Windows, libuv reports NTFS last-access updates as changes. A path counts
+// as changed only when it is gone or was written after the running server started.
 // Adapted from T3 Code's apps/server/scripts/dev.ts (MIT).
-//
-// Not `node --watch`: on Windows, libuv reports NTFS last-access updates as changes, so merely
-// reading a source file restarted the server. A path counts as changed only when it is gone or
-// was written after the running server started.
 import * as NodeChildProcess from "node:child_process";
 import * as NodeFS from "node:fs";
 import * as NodePath from "node:path";
