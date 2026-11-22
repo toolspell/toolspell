@@ -1,9 +1,6 @@
-// Prepares a fresh git worktree: installs dependencies, links the main checkout's env files
-// and copies its .repos. T3 Code runs it on worktree creation (t3.json). Adapted from T3 Code (MIT).
-//
-// Setup runs in the background, so agents can start before it ends. `setup-running`
-// holds this PID until setup ends with `setup-done` or `setup-failed`, so agents wait
-// instead of racing it with their own `vp i`.
+// Prepares a fresh git worktree; T3 Code runs it on worktree creation (t3.json). Agents may start
+// before it ends, so `setup-running` holds this PID until `setup-done` or `setup-failed` and they
+// wait instead of racing it with their own `vp i`. Adapted from T3 Code (MIT).
 import * as NodeChildProcess from "node:child_process";
 import * as NodeFS from "node:fs";
 import * as NodePath from "node:path";

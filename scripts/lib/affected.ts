@@ -1,5 +1,4 @@
-// Maps changed files to the workspace packages they affect, plus every package that
-// depends on those. CI and `check:changed` share this, so local checks and CI agree.
+// CI and `check:changed` share this, so local checks and CI agree.
 // Adapted from T3 Code's .github/scripts/ci-changes.cjs (MIT).
 import * as NodeFS from "node:fs";
 import * as NodePath from "node:path";
@@ -48,7 +47,6 @@ export const readWorkspace = (root: string): ReadonlyArray<WorkspacePackage> =>
       };
     });
 
-/** Affected package names, or `undefined` when a shared file changed and everything must run. */
 const ownerOf = (workspace: ReadonlyArray<WorkspacePackage>, file: string) =>
   workspace
     .filter((pkg) => file.startsWith(`${pkg.dir}/`))

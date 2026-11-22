@@ -1,5 +1,4 @@
-// Creates and updates the repository's labels from .github/labels.json, the one place they are
-// defined. It never deletes a label, so GitHub's defaults and hand-made labels survive.
+// Never deletes a label, so GitHub's defaults and hand-made labels survive.
 // Adapted from T3 Code's label sync steps in pr-vouch.yml, pr-size.yml and issue-labels.yml (MIT).
 const fs = require("node:fs");
 const path = require("node:path");

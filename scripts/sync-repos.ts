@@ -1,7 +1,6 @@
-// Keeps .repos/<id> as a read-only copy of upstream source at the version the workspace
-// installs, for agents to read: real API usage in tests, LLMS.md, MIGRATION.md.
-// Gitignored rather than committed; run `vp run sync:repos` after bumping the catalog
-// version. Adapted from T3 Code's scripts/sync-reference-repos.ts (MIT).
+// Keeps .repos/<id> as a gitignored, read-only copy of upstream source at the installed version,
+// for agents to read. Run `vp run sync:repos` after bumping the catalog version.
+// Adapted from T3 Code's scripts/sync-reference-repos.ts (MIT).
 import * as NodeChildProcess from "node:child_process";
 import * as NodeFS from "node:fs";
 import * as NodePath from "node:path";

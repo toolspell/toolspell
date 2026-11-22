@@ -1,18 +1,6 @@
-// Starts ToolSpell's dev processes with ports and state that belong to this checkout.
-//
-//   node scripts/dev-runner.ts dev            server + web (Vite proxies /api and /ws)
-//   node scripts/dev-runner.ts dev:server     server only
-//   node scripts/dev-runner.ts dev:web        web only
-//   node scripts/dev-runner.ts dev:desktop    web + Electron (which starts its own server)
-//
-// Flags: --home-dir <dir> (default <checkout>/.toolspell), --host <host> (Vite bind host, for
-// other devices; the server stays on loopback behind Vite's proxy), --background or --foreground
-// (dev:desktop; without one, the app runs in the background unless a person launched it).
-// Env: TOOLSPELL_PORT_OFFSET (exact offset) or TOOLSPELL_DEV_INSTANCE (hashed seed).
-//
-// Ports derive from the checkout path, so each worktree keeps the same ports across
-// restarts and parallel worktrees do not collide. Occupied ports shift to the next
-// free pair. Dev state always lives in the checkout, never in the live ~/.toolspell.
+// Ports derive from the checkout path, so each worktree keeps the same ports across restarts and
+// parallel worktrees do not collide; occupied ports shift to the next free pair. Dev state always
+// lives in the checkout, never in the live ~/.toolspell.
 import * as NodeChildProcess from "node:child_process";
 import * as NodeCrypto from "node:crypto";
 import * as NodeNet from "node:net";

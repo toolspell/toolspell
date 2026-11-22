@@ -15,8 +15,8 @@ type LoopNode = ESTree.ForStatement | ESTree.WhileStatement | ESTree.DoWhileStat
 const isNode = (value: unknown): value is ESTree.Node =>
   typeof value === "object" && value !== null && "type" in value && typeof value.type === "string";
 
-// Visits `node` and its descendants, skipping nested functions: a wait or exit
-// inside a callback runs on the callback's schedule, not the loop's.
+// Skips nested functions: a wait or exit inside a callback runs on the callback's schedule, not
+// the loop's.
 const someDescendant = (node: unknown, match: (node: ESTree.Node) => boolean): boolean => {
   if (Array.isArray(node)) return node.some((child) => someDescendant(child, match));
   if (!isNode(node)) return false;

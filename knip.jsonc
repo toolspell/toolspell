@@ -1,7 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  // Finds unused files, exports and dependencies. Types stay out, as in T3 Code:
-  // exported schema types are often consumed only through inference.
+  // Types stay out: exported schema types are often consumed only through inference.
   "rules": { "types": "off", "nsTypes": "off" },
   "ignoreBinaries": ["vp", "vpx", "electron", "effect-tsgo"],
   "workspaces": {

@@ -1,13 +1,7 @@
-// Runs CI's fast checks for this branch's changes, so a push rarely fails CI:
-// format and lint of the changed files, knip, typecheck of the affected packages and
-// their dependents, the tests beside the changed files, the agent-docs check, and actionlint
-// when a workflow changes.
+// Runs CI's fast checks for this branch's changes, uncommitted and untracked files included.
+// `vp run check:changed [ref]` compares against the merge base with <ref>, by default origin/main
+// or main. CI still runs the full suites.
 // Adapted from T3 Code's scripts/check-changed.ts (MIT).
-//
-//   vp run check:changed          compare against the merge base with origin/main (or main)
-//   vp run check:changed <ref>    compare against the merge base with <ref>
-//
-// Uncommitted and untracked files count. CI still runs the full suites.
 import * as NodeChildProcess from "node:child_process";
 import * as NodeFS from "node:fs";
 import * as NodePath from "node:path";

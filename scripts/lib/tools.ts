@@ -1,7 +1,6 @@
-// Pinned developer tools that are not npm packages. Each is downloaded once from its
-// official GitHub release into a per-user cache and verified against the release's
-// checksum file, so every machine, worktree and VM runs the same version without a
-// system-wide install. Bump a version here; the next run downloads it.
+// Pinned developer tools that are not npm packages, downloaded once from their GitHub release into
+// a per-user cache and verified against its checksum file. Bump a version here; the next run
+// downloads it.
 import * as NodeChildProcess from "node:child_process";
 import * as NodeCrypto from "node:crypto";
 import * as NodeFS from "node:fs";
@@ -106,7 +105,6 @@ export const ensureTool = async (name: ToolName): Promise<string> => {
   return binary;
 };
 
-/** Runs a pinned tool with inherited stdio and returns its exit code. */
 export const runTool = async (
   name: ToolName,
   args: ReadonlyArray<string>,

@@ -65,7 +65,6 @@ export function runOnce(): RenderMetrics {
   }
 }
 
-/** Scenarios whose counts differ between runs, by name. */
 export function nondeterministic(runs: ReadonlyArray<RenderMetrics>): string[] {
   const [first, ...rest] = runs;
   if (!first) return [];

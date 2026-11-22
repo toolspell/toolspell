@@ -1,12 +1,7 @@
-// Runs the CI workflow locally with nektos/act, to check CI changes before they reach GitHub.
-//
-//   vp run ci:local                          every job, on local Docker in the host's architecture
-//   vp run ci:local --context build-box      on a remote Docker engine, through its docker context
-//   vp run ci:local -- -j lint               anything after `--` goes to act (here: one job)
-//
-// act is not GitHub: images, caching and architecture differ, so a green run here is evidence,
-// not proof. Remote engines cannot see this machine's files, so act copies the checkout into
-// its containers instead of mounting it.
+// Runs the CI workflow locally with nektos/act: `vp run ci:local [--context <docker context>]
+// [-- <act args>]`. act is not GitHub (images, caching and architecture differ), so a green run is
+// evidence, not proof. Remote engines cannot see this machine's files, so act copies the checkout
+// into its containers instead of mounting it.
 import * as NodeChildProcess from "node:child_process";
 import * as NodeFS from "node:fs";
 import * as NodeOS from "node:os";

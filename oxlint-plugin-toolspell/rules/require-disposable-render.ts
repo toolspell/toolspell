@@ -87,7 +87,6 @@ export default defineRule({
   },
   create(context) {
     const isBrowserTest = BROWSER_TEST_FILE.test(context.filename);
-    // Local names bound to React's act or the render helper's act.
     const actNames = new Set<string>();
     const reactNamespaces = new Set<string>();
     const runnerNamespaces = new Set<string>();

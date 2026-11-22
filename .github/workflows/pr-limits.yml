@@ -1,10 +1,7 @@
-# Deterministic PR rules from CONTRIBUTING.md: the open PR limit, the conflict window, and the 72
-# hour close window that follows a triage notice. See .github/scripts/pr-limits.cjs.
-# Adapted from T3 Code's pr-limits.yml (MIT).
-#
+# See .github/scripts/pr-limits.cjs. Adapted from T3 Code's pr-limits.yml (MIT).
 # Nothing is labeled, commented on, or closed until the repository variable PR_LIMITS_ENFORCE is
-# "true". Until then every run logs what it would do. A sweep reads the variable once when it
-# starts; to stop one, cancel the run.
+# "true"; until then runs only log. A sweep reads the variable once when it starts; to stop one,
+# cancel the run.
 name: PR Limits
 
 on:

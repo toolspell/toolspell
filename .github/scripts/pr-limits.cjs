@@ -1,6 +1,5 @@
-// The deterministic PR rules from CONTRIBUTING.md: the open PR limit, the conflict window, and the
-// 72 hour close window that follows a triage notice. They apply to authors who are not trusted by
-// vouch.cjs; what denounced authors open is closed by vouch.yml instead.
+// The deterministic PR rules from CONTRIBUTING.md, for authors vouch.cjs does not trust. What
+// denounced authors open is closed by vouch.yml instead.
 // Adapted from T3 Code's .github/scripts/pr-limits.cjs (MIT).
 const { LABELS, loadVouchList, trustOf } = require("./vouch.cjs");
 
@@ -87,8 +86,8 @@ function labeledAt(pr, name) {
   return last ? Date.parse(last.createdAt) : undefined;
 }
 
-// The whole policy for the two windows. Activity is anything that moves the PR's updatedAt: a
-// push, a comment, a review, a label. Nobody can set that time, so nothing here trusts the author.
+// Activity is anything that moves the PR's updatedAt: a push, a comment, a review, a label.
+// Nobody can set that time, so nothing here trusts the author.
 function decide(pr, now) {
   const labels = new Set(pr.labels.nodes.map((label) => label.name));
   if (labels.has(KEEP_OPEN_LABEL)) return "skip";

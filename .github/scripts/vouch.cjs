@@ -1,9 +1,6 @@
-// Author trust for issues and PRs. Write access and bots are trusted; everyone else is vouched,
-// denounced, or unvouched by .github/VOUCHED.td on the default branch, so a PR cannot vouch for
-// itself. vouch.yml labels authors with it and closes what denounced authors open; pr-limits.cjs
-// uses it to decide who the limits apply to.
-// Adapted from T3 Code's pr-vouch.yml and issue-vouch.yml (MIT). T3 Code runs the
-// mitchellh/vouch action for PRs and its own parser for issues; one parser here keeps both agreeing.
+// VOUCHED.td is read from the default branch, so a PR cannot vouch for itself. One parser serves
+// PRs and issues so both agree; T3 Code uses the mitchellh/vouch action for PRs.
+// Adapted from T3 Code's pr-vouch.yml and issue-vouch.yml (MIT).
 const VOUCHED_PATH = ".github/VOUCHED.td";
 const LABELS = {
   trusted: "vouch:trusted",

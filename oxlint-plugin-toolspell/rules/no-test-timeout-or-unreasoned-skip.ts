@@ -4,8 +4,8 @@ import * as Option from "effect/Option";
 import { getPropertyName, unwrapExpression } from "../utils.ts";
 
 const TEST_FILE_PATTERN = /\.(?:test|spec)\.[cm]?[jt]sx?$/u;
-// Opt-in suites that drive real provider agents through whole turns; minutes are the
-// expected cost there, not a hidden wait.
+// Opt-in suites against real outside systems; minutes are the expected cost there, not a hidden
+// wait.
 const LIVE_TEST_FILE_PATTERN = /\.live\.(?:test|spec)\.[cm]?[jt]sx?$/u;
 const TEST_FUNCTIONS = new Set(["describe", "it", "suite", "test"]);
 const HOOK_FUNCTIONS = new Set(["afterAll", "afterEach", "beforeAll", "beforeEach"]);

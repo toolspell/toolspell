@@ -9,10 +9,8 @@ import * as Stream from "effect/Stream";
 import { ChildProcess, ChildProcessSpawner } from "effect/process";
 import * as NodeModule from "node:module";
 
-// oxlint is only a transitive dependency (via vite-plus), so its bin placement
-// varies by package manager: pnpm hoists it into the virtual store, while
-// other layouts expose vite-plus's LSP-only wrapper instead. Resolve the real
-// package through vite-plus rather than hardcoding either layout, and do it at
+// oxlint is only a transitive dependency of vite-plus, and its bin placement varies by package
+// manager, so resolve the real package through vite-plus.
 const oxlintPackageJsonPath = NodeModule.createRequire(
   NodeModule.createRequire(import.meta.url).resolve("vite-plus/package.json"),
 ).resolve("oxlint/package.json");

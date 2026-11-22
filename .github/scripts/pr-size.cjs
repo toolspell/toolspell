@@ -1,6 +1,5 @@
-// Labels a PR by its effective size and comments when it grows the test suite noticeably.
 // The PR's commits are fetched as git data and only diffed: nothing from the PR is checked out or
-// run, which is what keeps this safe under pull_request_target.
+// run, which keeps this safe under pull_request_target.
 // Adapted from T3 Code's pr-size.yml and .github/scripts/test-delta.cjs (MIT).
 const { execFileSync } = require("node:child_process");
 
@@ -35,7 +34,7 @@ function sizeLabel(changedLines) {
   return SIZES.find((size) => changedLines < size.max).label;
 }
 
-/** Sums `git diff --numstat` output. Binary files report `-` and count as zero. */
+/** Binary files report `-` and count as zero. */
 function sumNumstat(text) {
   return text
     .split("\n")
