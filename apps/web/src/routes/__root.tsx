@@ -4,8 +4,11 @@ import * as Option from "effect/Option";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import type { ReactNode } from "react";
 
+import { ConfirmDialogHost } from "~/components/ConfirmDialogHost";
 import { Button } from "~/components/ui/button";
+import { Toaster } from "~/components/ui/toast";
 import { atoms, pairingErrorAtom } from "~/client";
+import { useDelayedStatus } from "~/hooks/useDelayedStatus";
 
 export const Route = createRootRoute({ component: RootLayout });
 
@@ -17,7 +20,18 @@ function Centered({ children }: { readonly children: ReactNode }) {
   );
 }
 
+// The hosts sit above every screen, so a toast or question survives a switch such as signing out.
 function RootLayout() {
+  return (
+    <>
+      <RootScreen />
+      <Toaster />
+      <ConfirmDialogHost />
+    </>
+  );
+}
+
+function RootScreen() {
   const access = useAtomValue(atoms.accessAtom);
   const retry = useAtomRefresh(atoms.accessAtom);
   const pairError = useAtomValue(pairingErrorAtom);
@@ -61,7 +75,7 @@ function RootLayout() {
 }
 
 function AppShell() {
-  const connection = useAtomValue(atoms.connectionAtom);
+  const reconnecting = useDelayedStatus(useAtomValue(atoms.connectionAtom) === "reconnecting");
   return (
     <div className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 p-6">
       <header className="flex items-center gap-4">
@@ -80,7 +94,7 @@ function AppShell() {
             Settings
           </Link>
         </nav>
-        {connection === "reconnecting" && (
+        {reconnecting && (
           <span role="status" className="ml-auto text-xs text-muted-foreground">
             Reconnecting…
           </span>

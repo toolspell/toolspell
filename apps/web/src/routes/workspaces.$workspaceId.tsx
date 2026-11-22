@@ -1,17 +1,27 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { CommandId, isJobSettled, JobId, WorkspaceId, type Job } from "@toolspell/contracts";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import * as Option from "effect/Option";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
-import { memo, useState } from "react";
+import { memo } from "react";
 
 import { InlineForm } from "~/components/InlineForm";
+import { ListSkeleton } from "~/components/ListSkeleton";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from "~/components/ui/empty";
 import { FieldError } from "~/components/ui/field";
 import { Progress } from "~/components/ui/progress";
-import { atoms, errorMessage, newId } from "~/client";
+import { Spinner } from "~/components/ui/spinner";
+import { atoms, newId } from "~/client";
+import { useAction } from "~/hooks/useAction";
 
 export const Route = createFileRoute("/workspaces/$workspaceId")({ component: WorkspacePage });
 
@@ -27,12 +37,10 @@ const STATUS_VARIANT = {
 // keep an unchanged job's object, and this boundary skips the rows whose job is the same.
 const JobRow = memo(function JobRow({ job }: { readonly job: Job }) {
   const dispatch = useAtomSet(atoms.dispatchAtom, { mode: "promise" });
-  const [error, setError] = useState<string | null>(null);
-  const cancel = () =>
-    dispatch({ type: "job.cancel", commandId: CommandId.make(newId()), jobId: job.id }).catch(
-      (cause: unknown) => setError(errorMessage(cause)),
-    );
-  const problem = job.error ?? error;
+  const cancel = useAction(
+    () => dispatch({ type: "job.cancel", commandId: CommandId.make(newId()), jobId: job.id }),
+    "Could not cancel the job",
+  );
 
   return (
     <li className="flex flex-col gap-2 px-4 py-3">
@@ -40,7 +48,13 @@ const JobRow = memo(function JobRow({ job }: { readonly job: Job }) {
         <Badge variant={STATUS_VARIANT[job.status]}>{job.status}</Badge>
         <span className="min-w-0 flex-1 truncate text-sm">{job.input}</span>
         {!isJobSettled(job.status) && (
-          <Button variant="destructive" size="sm" onClick={cancel}>
+          <Button
+            variant="destructive"
+            size="sm"
+            disabled={cancel.pending}
+            onClick={() => cancel.run()}
+          >
+            {cancel.slow && <Spinner data-icon="inline-start" />}
             Cancel
           </Button>
         )}
@@ -50,7 +64,7 @@ const JobRow = memo(function JobRow({ job }: { readonly job: Job }) {
         <p className="text-xs text-muted-foreground">{job.message}</p>
       )}
       {job.output && <p className="text-sm">{job.output}</p>}
-      {problem && <FieldError>{problem}</FieldError>}
+      {job.error && <FieldError>{job.error}</FieldError>}
     </li>
   );
 });
@@ -82,7 +96,17 @@ function WorkspacePage() {
     });
 
   if (Option.isSome(workspaces) && Option.isNone(workspace)) {
-    return <p className="text-sm text-muted-foreground">This workspace does not exist.</p>;
+    return (
+      <Empty>
+        <EmptyHeader>
+          <EmptyTitle>This workspace does not exist</EmptyTitle>
+          <EmptyDescription>It may have been removed, or the link is wrong.</EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <Button render={<Link to="/" />}>Go to workspaces</Button>
+        </EmptyContent>
+      </Empty>
+    );
   }
 
   const jobs = Option.map(view, ({ jobs: all }) => all.toReversed());
@@ -98,9 +122,14 @@ function WorkspacePage() {
         onSubmit={start}
       />
       {Option.isNone(jobs) ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <ListSkeleton />
       ) : jobs.value.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No jobs yet.</p>
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>No jobs yet</EmptyTitle>
+            <EmptyDescription>Describe a job above to start one.</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <Card>
           <ul className="divide-y">

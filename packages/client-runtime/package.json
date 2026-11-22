@@ -9,6 +9,18 @@
       "types": "./src/atoms.ts",
       "import": "./src/atoms.ts"
     },
+    "./clock": {
+      "types": "./src/clock.ts",
+      "import": "./src/clock.ts"
+    },
+    "./delayed-status": {
+      "types": "./src/delayedStatus.ts",
+      "import": "./src/delayedStatus.ts"
+    },
+    "./relative-time": {
+      "types": "./src/relativeTime.ts",
+      "import": "./src/relativeTime.ts"
+    },
     "./views": {
       "types": "./src/views.ts",
       "import": "./src/views.ts"

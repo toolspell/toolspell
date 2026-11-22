@@ -5,7 +5,9 @@ import * as Option from "effect/Option";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 
 import { InlineForm } from "~/components/InlineForm";
+import { ListSkeleton } from "~/components/ListSkeleton";
 import { Card } from "~/components/ui/card";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "~/components/ui/empty";
 import { atoms, newId } from "~/client";
 
 export const Route = createFileRoute("/")({ component: WorkspacesPage });
@@ -36,11 +38,14 @@ function WorkspacesPage() {
         onSubmit={create}
       />
       {Option.isNone(view) ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <ListSkeleton />
       ) : view.value.workspaces.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          No workspaces yet. Create one to start a job.
-        </p>
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>No workspaces yet</EmptyTitle>
+            <EmptyDescription>Create one to start a job.</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <Card>
           <ul className="divide-y">

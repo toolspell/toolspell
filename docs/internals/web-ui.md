@@ -50,6 +50,20 @@ Views read atoms from [`client-runtime`](../../packages/client-runtime/src/atoms
 keeps its last value, so a reconnect does not flash a loading state. Local, ephemeral UI state
 stays in `useState`.
 
+## Feedback
+
+- A button's mutation runs through [`useAction`](../../apps/web/src/hooks/useAction.ts): the
+  control disables while it runs, a spinner appears only if it is slow, and a failure becomes a
+  toast. An error that belongs to a field, as in `InlineForm`, stays inline.
+- A destructive action asks first with `confirm()` from
+  [`confirmDialog.ts`](../../apps/web/src/confirmDialog.ts), never `window.confirm`.
+- An indicator for work that is usually fast (a spinner, a skeleton, "Reconnecting…") waits for
+  [`useDelayedStatus`](../../apps/web/src/hooks/useDelayedStatus.ts), so it never flashes. Relative
+  times read the one shared clock through `useRelativeTime`.
+- A route that throws or a URL that matches nothing renders the router's default error or
+  not-found view inside the app shell ([`router.ts`](../../apps/web/src/router.ts)). A chunk that
+  fails to load after a deploy reloads the page once per build.
+
 ## Motion
 
 Users keep ToolSpell open for hours, often on high-refresh displays, where an animation that never

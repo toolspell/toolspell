@@ -3,7 +3,9 @@ import { useState, type FormEvent } from "react";
 import { Button } from "~/components/ui/button";
 import { FieldError } from "~/components/ui/field";
 import { Input } from "~/components/ui/input";
+import { Spinner } from "~/components/ui/spinner";
 import { errorMessage } from "~/client";
+import { useDelayedStatus } from "~/hooks/useDelayedStatus";
 
 /** One text field and a submit button. Clears on success and shows the server's error otherwise. */
 export function InlineForm({
@@ -20,6 +22,7 @@ export function InlineForm({
   const [value, setValue] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const slow = useDelayedStatus(pending);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -46,6 +49,7 @@ export function InlineForm({
           onChange={(event) => setValue(event.target.value)}
         />
         <Button type="submit" disabled={pending || value.trim() === ""}>
+          {slow && <Spinner data-icon="inline-start" />}
           {submitLabel}
         </Button>
       </div>

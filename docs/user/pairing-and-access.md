@@ -27,7 +27,8 @@ prints at startup grant all three.
 ## Revoke a device
 
 Open **Settings → Devices** and choose **Revoke** next to the device, or **Sign out** for the one
-you are using. A revoked device is disconnected right away and shows the pairing screen.
+you are using, then confirm. A revoked device is disconnected right away and shows the pairing
+screen.
 
 ## If a link does not work
 

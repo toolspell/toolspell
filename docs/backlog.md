@@ -109,6 +109,12 @@ entry moves into an issue (labels from `.github/labels.json`) and the file is de
   color. A theme whose background is neither light's nor dark's also needs the desktop window to
   take its color, since `setTheme` sends only the appearance. T3 Code: `themePalette.ts`,
   `themeCss.ts`, `vscodeThemeImport.ts`, `openVsxThemes.ts`.
+- **Web feedback, later** (each in T3 Code): pause spinners that are off screen or in a hidden tab
+  (`lib/visibleAnimation.ts`) once a spinner can stay mounted outside the viewport, such as in a
+  long list; a copy-able error report on the error view (`routes/__root.tsx`) at the first user bug
+  report; buffer toasts raised before the host mounts (`components/ui/toast.tsx`) once startup code
+  raises one; a mechanical check for `styles.css` if a looping animation or `transition: all`
+  slips in there.
 - **Agents testing the desktop app in isolation**: explore micro-VMs or similar, so agents can run
   and drive the desktop app in a real, separate machine instead of on the maintainer's screen.
 
