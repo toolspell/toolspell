@@ -4,6 +4,8 @@ import { EpochMillis, JobId, TrimmedNonEmptyString, WorkspaceId } from "./baseSc
 
 // Placeholder domain: a workspace owns jobs, and a runner executes each job.
 // Rename these to the product's real entities; the mechanics stay the same.
+// Projections store these whole as JSON. Add fields only as optional, or ship a migration that
+// rewrites the rows; apps/server/src/core/StoredFormats.test.ts keeps a stored row of each.
 
 export const Workspace = Schema.Struct({
   id: WorkspaceId,

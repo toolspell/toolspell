@@ -56,7 +56,9 @@ Before calling work done, say which of these applied:
 - **Clients.** Web and desktop (which wraps web and adds a small preload bridge). Shared client
   logic lives in `packages/client-runtime`.
 - **Contracts.** Anything crossing the wire is typed in `packages/contracts`. Change the schema and
-  the server and every client follow. Responses must stay decodable by older clients.
+  the server and every client follow. Responses must stay decodable by older clients. A stored
+  record, event, or outbox effect gains fields only as optional, or ships a migration that
+  rewrites its rows.
 - **Scopes.** Every RPC declares `read`, `operate`, or `admin` in `RPC_REQUIRED_SCOPES`. The server
   stays authoritative; a client check only hides UI.
 - **Reverse states.** If you added a way in, add the way out and the way to see it. Pairing needs

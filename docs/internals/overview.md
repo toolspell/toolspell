@@ -34,6 +34,8 @@ The [effect worker](../../apps/server/src/core/EffectWorker.ts) performs side ef
 has been recorded, then feeds results back into the orchestrator as commands. A command
 acknowledgement therefore means the intent committed, not that its follow-up work finished. Keep
 external I/O out of command decisions and the database transaction.
+An effect whose handler fails stays pending and retries with a capped backoff, so handlers must be
+idempotent. Only a row this build cannot decode is dropped, so it cannot stall the queue.
 
 Effects tied to a lost runner cannot simply replay. When the server starts, jobs left `running`
 fail before new work starts; queued jobs still run. Runner reports that arrive after a cancel are
@@ -43,9 +45,13 @@ dropped by the decider, not treated as errors.
 and every client apply events with the same code. Projections store each record whole, as JSON,
 next to the columns queries filter on.
 
-Stored events must remain decodable on replay. Changing an event schema affects old environments
-at startup as well as live traffic. Add optional fields or new event types; never repurpose an
-existing one.
+Stored rows have no schema in SQL. Events, outbox effects, and projection records are JSON decoded
+against today's contracts: startup and snapshots read the persisted projections, and subscription
+resume reads stored events. A projection row that no longer decodes fails every snapshot; an event
+or effect that no longer decodes is skipped. So a stored record, event, or outbox effect gains
+fields only as optional, or ships a migration that rewrites its rows. Add new event types instead
+of repurposing one. [Stored formats](../../apps/server/src/core/StoredFormats.test.ts) keeps a
+literal row of each.
 
 ## Wire compatibility
 
