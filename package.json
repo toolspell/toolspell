@@ -12,7 +12,6 @@
     "dev:desktop": "node scripts/dev-runner.ts dev:desktop",
     "build": "vp run --filter './apps/*' build",
     "start": "vp run --filter toolspell start",
-    "start:desktop": "vp run --filter @toolspell/desktop start",
     "typecheck": "vp run -r --cache typecheck",
     "check:changed": "node scripts/check-changed.ts",
     "report:renders": "node scripts/render-metrics.ts run",

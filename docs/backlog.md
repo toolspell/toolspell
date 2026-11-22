@@ -17,9 +17,9 @@ entry moves into an issue (labels from `.github/labels.json`) and the file is de
   already expects the bundled server at `resources/server/bin.mjs`. Use the release
   [macOS PNG](../assets/prod/macos-1024.png), [Windows ICO](../assets/prod/windows.ico), and
   [universal PNG](../assets/prod/universal-1024.png) as icon inputs. The same files are available
-  in [the nightly set](../assets/nightly). Then give `start:desktop` a
-  real target (the desktop package has no `start` script, and a plain `electron .` outside the dev
-  runner would point the server at the live `~/.toolspell`).
+  in [the nightly set](../assets/nightly). Then add a root `start:desktop` that runs the built app
+  against a non-live home (a plain `electron .` outside the dev runner would point the server at
+  the live `~/.toolspell`).
 - **A packaged app launched with `--background`** still registers as a regular macOS app for a
   moment before `main.ts` makes it background only (the dev supervisor avoids that with an
   `LSBackgroundOnly` copy). Trigger: agents testing packaged builds.
