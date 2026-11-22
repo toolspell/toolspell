@@ -1,98 +1,280 @@
 import * as NodePath from "node:path";
 
 import { AUTH_SESSION_PATH } from "@toolspell/contracts/desktop";
-import { app, BrowserWindow, dialog, ipcMain, net, shell } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, nativeTheme, net, session, shell } from "electron";
 
-import { startBackend, waitUntilReachable, type Backend } from "./backend.ts";
-import { DESKTOP_IPC } from "./ipc.ts";
+import { ServerSupervisor, waitForHttp } from "./backend.ts";
+import { DESKTOP_IPC, isTrustedSender, parseExternalUrl } from "./ipc.ts";
+import { setApplicationMenu } from "./menu.ts";
+import { choosePort, LOOPBACK, readRememberedPort, rememberPort } from "./port.ts";
+import { ServerLog } from "./serverLog.ts";
+import { createMainWindow, showRetryPage, showStartupPage, windowBackground } from "./window.ts";
 
-let backend: Backend | undefined;
+const isDevelopment = !app.isPackaged;
+
+// Identity comes before the single-instance lock, which lives in userData like every profile
+// file. A dev profile sits in the checkout's dev home, so checkouts run side by side.
+app.setName(isDevelopment ? "ToolSpell Dev" : "ToolSpell");
+const devHome = isDevelopment ? process.env.TOOLSPELL_HOME : undefined;
+app.setPath(
+  "userData",
+  devHome
+    ? NodePath.join(devHome, "desktop")
+    : NodePath.join(app.getPath("appData"), app.getName()),
+);
+app.setAppLogsPath(devHome ? NodePath.join(app.getPath("userData"), "logs") : undefined);
+app.setAboutPanelOptions({
+  applicationName: app.getName(),
+  applicationVersion: app.getVersion(),
+  version: `Electron ${process.versions.electron}`,
+});
+
+// A closed terminal turns a write into an uncaught EPIPE error; the log file still has the line.
+process.stdout.on("error", () => {});
+process.stderr.on("error", () => {});
+
+// A launcher such as the dev supervisor holds stdin open; when it dies, even by SIGKILL, the app
+// quits and so stops its server.
+if (process.env.TOOLSPELL_DESKTOP_EXIT_WITH_STDIN === "1") {
+  delete process.env.TOOLSPELL_DESKTOP_EXIT_WITH_STDIN;
+  const quit = () => app.quit();
+  process.stdin.once("end", quit).once("close", quit).once("error", quit).resume();
+}
+
 let window: BrowserWindow | undefined;
-let quitting = false;
+let supervisor: ServerSupervisor | undefined;
+let log: ServerLog | undefined;
+let serverOrigin: string | undefined;
+/** Where the window loads the app: the server, or Vite in development. Fixed with the port. */
+let webOrigin: string | undefined;
+/** The current run's one-time pairing token, while the server answers. */
+let serverToken: string | undefined;
+let started = false;
+let quitPhase: "running" | "stopping" | "done" = "running";
+let fatalShown = false;
 
-const isWebUrl = (url: string) => {
+const describe = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
+const note = (message: string) => {
+  const line = `[desktop] ${new Date().toISOString()} ${message}\n`;
+  log?.write(line);
+  if (isDevelopment) process.stdout.write(line);
+};
+
+const isAppUrl = (url: string) => {
   try {
-    const { protocol } = new URL(url);
-    return protocol === "http:" || protocol === "https:";
+    return webOrigin !== undefined && new URL(url).origin === webOrigin;
   } catch {
     return false;
   }
 };
 
+const withLogPath = (detail: string) =>
+  log === undefined ? detail : `${detail}\n\nThe full log is in ${log.path}.`;
+
+const fatal = (message: string, detail: string) => {
+  if (fatalShown || quitPhase !== "running") return;
+  fatalShown = true;
+  note(message);
+  dialog.showErrorBox(message, withLogPath(detail));
+  app.quit();
+};
+
+const keepTrying = async (detail: string) => {
+  if (quitPhase !== "running") return false;
+  const options = {
+    type: "error" as const,
+    message: "ToolSpell's server keeps stopping.",
+    detail: withLogPath(detail),
+    buttons: ["Keep Trying", "Quit"],
+    defaultId: 0,
+    cancelId: 1,
+  };
+  const { response } =
+    window === undefined || window.isDestroyed()
+      ? await dialog.showMessageBox(options)
+      : await dialog.showMessageBox(window, options);
+  if (response === 0) return true;
+  app.quit();
+  return false;
+};
+
+const openExternal = async (url: string) => {
+  try {
+    await shell.openExternal(url);
+  } catch (error) {
+    note(`Could not open ${url}: ${describe(error)}`);
+    throw new Error(`The system could not open ${url}.`, { cause: error });
+  }
+};
+
+const openLink = (url: string) => {
+  openExternal(url).catch(() => {
+    if (window === undefined || window.isDestroyed()) return;
+    void dialog.showMessageBox(window, {
+      type: "warning",
+      message: "ToolSpell could not open the link.",
+      detail: url,
+    });
+  });
+};
+
 /** Pair only when this profile has no live session, so restarts do not pile up sessions. */
 const entryPath = async (origin: string, token: string) => {
-  const response = await net.fetch(`${origin}${AUTH_SESSION_PATH}`, {
-    credentials: "include",
-  });
+  const response = await net.fetch(`${origin}${AUTH_SESSION_PATH}`, { credentials: "include" });
   const status = (await response.json()) as { readonly authenticated?: boolean };
   return status.authenticated ? "/" : `/pair#token=${token}`;
 };
 
-const createWindow = async (origin: string, token: string) => {
-  window = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    title: "ToolSpell",
-    webPreferences: {
-      preload: NodePath.join(import.meta.dirname, "preload.cjs"),
-      contextIsolation: true,
-      sandbox: true,
-      nodeIntegration: false,
-      additionalArguments: [`--toolspell-version=${app.getVersion()}`],
+const loadApp = async () => {
+  const target = window;
+  if (target === undefined || target.isDestroyed()) return;
+  if (webOrigin === undefined || serverToken === undefined) return showStartupPage(target);
+  const origin = webOrigin;
+  try {
+    const url = `${origin}${await entryPath(origin, serverToken)}`;
+    // did-fail-load reports a failed load with the retry page.
+    if (!target.isDestroyed()) await target.loadURL(url).catch(() => {});
+  } catch (error) {
+    if (!target.isDestroyed()) showRetryPage(target, describe(error), origin);
+  }
+};
+
+/** A restarted server keeps the window: its session cookie stays valid and the client reconnects. */
+const onServerReady = async (token: string) => {
+  serverToken = token;
+  if (webOrigin === undefined) return;
+  // In development Vite serves the client and proxies to the server.
+  if (webOrigin !== serverOrigin && (await waitForHttp(webOrigin)) !== "ready") {
+    if (window !== undefined && !window.isDestroyed()) {
+      showRetryPage(window, `${webOrigin} did not answer.`, webOrigin);
+    }
+    return;
+  }
+  if (window !== undefined && !window.isDestroyed() && !isAppUrl(window.webContents.getURL())) {
+    await loadApp();
+  }
+};
+
+const ensureWindow = () => {
+  if (!started || quitPhase !== "running") return;
+  if (window !== undefined && !window.isDestroyed()) {
+    if (window.isMinimized()) window.restore();
+    window.show();
+    window.focus();
+    return;
+  }
+  const created = createMainWindow({
+    loadApp: () => void loadApp(),
+    isAppUrl,
+    openExternal: openLink,
+  });
+  window = created;
+  created.on("closed", () => {
+    if (window === created) window = undefined;
+  });
+  if (serverToken !== undefined) void loadApp();
+};
+
+const resolvePort = async () => {
+  // The dev runner fixes the port, because Vite proxies to it.
+  const fixed = Number(process.env.TOOLSPELL_PORT);
+  if (Number.isInteger(fixed) && fixed > 0) return fixed;
+  const file = NodePath.join(app.getPath("userData"), "server-port.json");
+  const remembered = readRememberedPort(file);
+  const port = await choosePort(remembered);
+  if (port !== remembered) {
+    try {
+      rememberPort(file, port);
+    } catch (error) {
+      note(`Could not remember port ${port}: ${describe(error)}`);
+    }
+  }
+  return port;
+};
+
+const start = async () => {
+  // The app uses no browser permission yet; each one a feature needs gets allowed by name.
+  session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) =>
+    callback(false),
+  );
+  session.defaultSession.setPermissionCheckHandler(() => false);
+  setApplicationMenu();
+  nativeTheme.on("updated", () => {
+    if (window !== undefined && !window.isDestroyed())
+      window.setBackgroundColor(windowBackground());
+  });
+  log = new ServerLog(NodePath.join(app.getPath("logs"), "server.log"));
+  started = true;
+  ensureWindow();
+
+  const port = await resolvePort();
+  if (quitPhase !== "running") return;
+  serverOrigin = `http://${LOOPBACK}:${port}`;
+  webOrigin = (isDevelopment && process.env.TOOLSPELL_WEB_URL) || serverOrigin;
+  supervisor = new ServerSupervisor({
+    port,
+    log,
+    echo: isDevelopment,
+    note,
+    onReady: (token) => void onServerReady(token),
+    onExit: () => {
+      serverToken = undefined;
     },
+    onFatal: fatal,
+    keepTrying,
   });
-  // Links leave the app for the system browser; the window only shows ToolSpell.
-  window.webContents.setWindowOpenHandler(({ url }) => {
-    if (isWebUrl(url)) void shell.openExternal(url);
-    return { action: "deny" };
-  });
-  window.webContents.on("will-navigate", (event, url) => {
-    if (new URL(url).origin === origin) return;
-    event.preventDefault();
-    if (isWebUrl(url)) void shell.openExternal(url);
-  });
-  await window.loadURL(`${origin}${await entryPath(origin, token)}`);
+  supervisor.start();
 };
 
-const fail = (error: unknown) => {
-  dialog.showErrorBox("ToolSpell could not start", String(error));
-  app.quit();
-};
+const trustedFrame = () =>
+  window === undefined || window.isDestroyed() || webOrigin === undefined
+    ? undefined
+    : {
+        webContents: window.webContents,
+        mainFrame: window.webContents.mainFrame,
+        origin: webOrigin,
+      };
 
-ipcMain.handle(DESKTOP_IPC.openExternal, (_event, url: unknown) =>
-  typeof url === "string" && isWebUrl(url) ? shell.openExternal(url) : undefined,
-);
+ipcMain.handle(DESKTOP_IPC.openExternal, async (event, raw: unknown) => {
+  if (!isTrustedSender(event, trustedFrame())) {
+    throw new Error("Only the ToolSpell window may use the desktop bridge.");
+  }
+  const url = parseExternalUrl(raw);
+  if (url === undefined) throw new Error("Only http and https links open in the browser.");
+  await openExternal(url);
+});
 
 // One app instance per profile: a second would start a second server on the same data.
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
-  app.on("second-instance", () => {
-    if (window?.isMinimized()) window.restore();
-    window?.focus();
+  app.on("second-instance", ensureWindow);
+  // On macOS the app and its server outlive the window; the Dock icon brings one back.
+  app.on("activate", ensureWindow);
+  app.on("window-all-closed", () => {
+    if (process.platform !== "darwin") app.quit();
   });
 
-  app.on("before-quit", () => {
-    quitting = true;
-    backend?.child.kill("SIGTERM");
-  });
-
-  app.on("window-all-closed", () => app.quit());
-
-  void app.whenReady().then(async () => {
-    try {
-      backend = await startBackend();
-      backend.child.on("exit", (code) => {
-        if (!quitting) fail(new Error(`The server stopped unexpectedly (exit code ${code}).`));
+  // Quit waits for the server to stop, so its finalizers run and the home lock is released.
+  app.on("before-quit", (event) => {
+    if (quitPhase === "done") return;
+    event.preventDefault();
+    if (quitPhase === "stopping") return;
+    quitPhase = "stopping";
+    // Closing the windows first makes quitting feel immediate while the server stops.
+    for (const open of BrowserWindow.getAllWindows()) open.destroy();
+    void Promise.resolve(supervisor?.stop())
+      .catch((error: unknown) => note(`Stopping the server failed: ${describe(error)}`))
+      .finally(() => {
+        quitPhase = "done";
+        log?.close();
+        app.quit();
       });
-      const serverOrigin = `http://127.0.0.1:${backend.port}`;
-      await waitUntilReachable(`${serverOrigin}/health`, backend.child);
-      // In development Vite serves the client and proxies to the server.
-      const origin = (!app.isPackaged && process.env.TOOLSPELL_WEB_URL) || serverOrigin;
-      if (origin !== serverOrigin) await waitUntilReachable(origin, backend.child);
-      await createWindow(origin, backend.bootstrapToken);
-    } catch (error) {
-      fail(error);
-    }
   });
+
+  void app
+    .whenReady()
+    .then(start)
+    .catch((error: unknown) => fatal("ToolSpell could not start", describe(error)));
 }

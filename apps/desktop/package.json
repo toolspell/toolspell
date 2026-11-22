@@ -6,7 +6,7 @@
   "type": "module",
   "main": "dist-electron/main.cjs",
   "scripts": {
-    "dev": "vp pack && electron .",
+    "dev": "node scripts/dev-electron.ts",
     "build": "vp pack",
     "typecheck": "effect-tsgo tsrs --noEmit",
     "test": "vp test run --passWithNoTests",

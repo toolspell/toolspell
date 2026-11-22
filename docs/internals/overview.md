@@ -77,3 +77,9 @@ The Electron main process stays small. It starts the bundled server with Electro
 hands it a one-time token over an inherited pipe, and opens a sandboxed window on the server's
 origin. New native capability goes behind the typed preload bridge, and anything the server can do
 belongs in the RPC contract instead, so remote clients get it too.
+
+The server's stdin is the app's lifeline: closing it is how quit asks the server to stop, and it
+closes by itself when the app dies, even by SIGKILL, so finalizers run and the home lock is
+released. A server that dies on its own is restarted on the same port, so the window keeps its
+origin and session and the client reconnects. Exit code 78 (`SERVER_EXIT_CODE_HOME_IN_USE`) means
+another server holds the home; the app reports it instead of retrying.

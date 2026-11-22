@@ -43,7 +43,8 @@ node apps/server/src/bin.ts pair --home-dir .toolspell --web-origin http://local
 ```
 
 Keep using the same tab. Desktop checks run `vp run dev:desktop`, which opens a real Electron
-window; read the server log to confirm it paired and connected.
+window; read the server log (in the terminal and `.toolspell/desktop/logs/server.log`) to confirm
+it paired and connected.
 
 ## Verify and retain
 

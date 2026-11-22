@@ -1,7 +1,9 @@
 // @effect-diagnostics nodeBuiltinImport:off - the lock is a native SQLite handle held for the server's lifetime.
 // Adapted from T3 Code's apps/server/src/serverOwnership.ts (MIT).
+import { SERVER_EXIT_CODE_HOME_IN_USE } from "@toolspell/contracts/desktop";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as Runtime from "effect/Runtime";
 import * as Schema from "effect/Schema";
 import * as NodeFS from "node:fs";
 import * as NodePath from "node:path";
@@ -12,6 +14,8 @@ import { ServerConfig } from "../config.ts";
 class HomeInUseError extends Schema.TaggedError<HomeInUseError>()("HomeInUseError", {
   stateDir: Schema.String,
 }) {
+  override readonly [Runtime.errorExitCode] = SERVER_EXIT_CODE_HOME_IN_USE;
+
   override get message() {
     return `Another ToolSpell server is using ${this.stateDir}. Stop it or pass another --home-dir.`;
   }

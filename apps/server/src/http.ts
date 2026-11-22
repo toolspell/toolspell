@@ -8,7 +8,13 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as Redacted from "effect/Redacted";
-import { HttpRouter, HttpServerRequest, HttpServerResponse, HttpStaticServer } from "effect/http";
+import {
+  HttpRouter,
+  HttpServerRequest,
+  HttpServerRespondable,
+  HttpServerResponse,
+  HttpStaticServer,
+} from "effect/http";
 
 import { AuthStore } from "./auth/AuthStore.ts";
 import { isAllowedOrigin } from "./auth/origin.ts";
@@ -110,14 +116,44 @@ const sessionRoute = HttpRouter.add(
   }),
 );
 
-/** The built web client, when this server serves one. In dev, Vite serves it instead. */
-const staticRoutes = Layer.unwrap(
+// Inline style attributes come from React and Base UI, so styles allow them; scripts never do.
+// 'self' covers same-origin WebSockets in current browsers; the explicit sources cover older ones.
+const contentSecurityPolicy = (host: string | undefined) =>
+  [
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data:",
+    "font-src 'self' data:",
+    host !== undefined && /^[\w.:[\]-]+$/.test(host)
+      ? `connect-src 'self' ws://${host} wss://${host}`
+      : "connect-src 'self'",
+    "frame-ancestors 'none'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join("; ");
+
+/** The built web client, when this server serves one. In dev, Vite serves it with its own headers. */
+export const staticRoutes = Layer.unwrap(
   Effect.gen(function* () {
     const config = yield* ServerConfig;
-    return Option.match(config.staticDir, {
-      onNone: () => Layer.empty,
-      onSome: (root) => HttpStaticServer.layer({ root, spa: true }),
-    });
+    if (Option.isNone(config.staticDir)) return Layer.empty;
+    const serve = yield* HttpStaticServer.make({ root: config.staticDir.value, spa: true });
+    return HttpRouter.add("GET", "/*", (request) =>
+      serve.pipe(
+        Effect.map((response) =>
+          response.headers["content-type"]?.startsWith("text/html")
+            ? HttpServerResponse.setHeader(
+                response,
+                "Content-Security-Policy",
+                contentSecurityPolicy(request.headers.host),
+              )
+            : response,
+        ),
+        Effect.catch(HttpServerRespondable.toResponse),
+      ),
+    );
   }),
 );
 

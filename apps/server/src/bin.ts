@@ -147,6 +147,9 @@ const serverCommand = Command.make(
 process.stdout.on("error", () => {});
 process.stderr.on("error", () => {});
 
+// Exit codes: 0 when the launcher closed stdin, 130 after a signal, 1 on a failure, and
+// SERVER_EXIT_CODE_HOME_IN_USE (78, in @toolspell/contracts/desktop) when another server holds the
+// home. Restarting cannot fix 78, so launchers such as the desktop app report it instead.
 Command.run(serverCommand, { version: packageJson.version }).pipe(
   Effect.provide(NodeServices.layer),
   NodeRuntime.runMain,

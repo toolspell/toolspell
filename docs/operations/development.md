@@ -25,7 +25,9 @@ setup runs, do not run `vp i` yourself.
 | `vp run dev:desktop` | Vite and the Electron shell, which starts its own server on the dev port. |
 
 Web changes reload in place. Server changes restart the server, which fails jobs that were running
-(restart recovery). Desktop main-process changes need a restart of `dev:desktop`.
+(restart recovery). Desktop main-process and preload changes rebuild and restart Electron, which
+restarts its server. The desktop app's dev profile and its `logs/server.log` live in
+`.toolspell/desktop`.
 
 ## State and ports
 
