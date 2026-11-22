@@ -38,7 +38,10 @@ restarts its server. The desktop app's dev profile and its `logs/server.log` liv
 ```
 
 - Dev state always lives in the checkout's gitignored `.toolspell`, so dev never touches the live
-  `~/.toolspell`. `--home-dir <dir>` picks another directory.
+  `~/.toolspell`. `--home-dir <dir>` picks another directory. The server CLI follows the same
+  rule: run from a checkout (`node apps/server/src/bin.ts`, or a local build in
+  `apps/server/dist`), its default home is the checkout's `.toolspell`; an installed or packaged
+  server defaults to `~/.toolspell`. An explicit `--home-dir` or `TOOLSPELL_HOME` always wins.
 - Ports derive from the checkout path, so each worktree keeps the same ports across restarts and
   parallel worktrees do not collide. A busy pair shifts to the next free one, so read the real
   ports from the line above. `TOOLSPELL_PORT_OFFSET` sets an exact offset;

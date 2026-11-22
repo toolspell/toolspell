@@ -21,7 +21,7 @@ const DEFAULT_PORT = 3883;
 
 const homeDirFlag = Flag.String("home-dir").pipe(
   Flag.withDescription(
-    "Data directory (default ~/.toolspell). Runtime state lives in its userdata.",
+    "Data directory (default ~/.toolspell, or the checkout's .toolspell when run from source). Runtime state lives in its userdata.",
   ),
   Flag.withFallbackConfig(Config.String("TOOLSPELL_HOME")),
   Flag.optional,
