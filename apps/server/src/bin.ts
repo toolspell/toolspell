@@ -12,7 +12,7 @@ import { Command, Flag } from "effect/cli";
 
 import packageJson from "../package.json" with { type: "json" };
 import { AuthStore } from "./auth/AuthStore.ts";
-import { readBootstrapToken } from "./bootstrap.ts";
+import { announceReady, readBootstrapToken } from "./bootstrap.ts";
 import * as ServerConfig from "./config.ts";
 import * as RuntimeState from "./persistence/RuntimeState.ts";
 import * as FakeRunner from "./runners/FakeRunner.ts";
@@ -119,6 +119,7 @@ const pairCommand = Command.make(
 const LAUNCHER_ENV = [
   "ELECTRON_RUN_AS_NODE",
   "TOOLSPELL_BOOTSTRAP_FD",
+  "TOOLSPELL_READY_FD",
   "TOOLSPELL_EXIT_WITH_STDIN",
 ];
 
@@ -141,9 +142,12 @@ const serverCommand = Command.make(
       const exitWithStdin = yield* Config.Boolean("TOOLSPELL_EXIT_WITH_STDIN").pipe(
         Config.withDefault(false),
       );
+      const readyFd = yield* Config.Int("TOOLSPELL_READY_FD").pipe(Config.option);
       const config = yield* configLayer(flags);
       yield* Effect.sync(() => LAUNCHER_ENV.forEach((name) => delete process.env[name]));
-      const server = Layer.launch(Server.layer(FakeRunner.layer()).pipe(Layer.provide(config)));
+      const server = Layer.launch(
+        Server.layer(FakeRunner.layer(), announceReady(readyFd)).pipe(Layer.provide(config)),
+      );
       return yield* exitWithStdin ? Effect.raceFirst(server, launcherGone) : server;
     }),
 ).pipe(

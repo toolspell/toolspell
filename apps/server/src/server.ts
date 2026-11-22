@@ -5,7 +5,7 @@ import * as Console from "effect/Console";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
-import { HttpRouter } from "effect/http";
+import { HttpRouter, HttpServer } from "effect/http";
 
 import { AuthStore } from "./auth/AuthStore.ts";
 import * as AuthStoreLayer from "./auth/AuthStore.ts";
@@ -77,9 +77,21 @@ export const layerAuth = AuthStoreLayer.layer.pipe(
   Layer.provideMerge(Sqlite.layer),
 );
 
-export const layer = <E, R>(runner: Layer.Layer<Runner, E, R>) =>
-  Layer.mergeAll(layerStartupAccess, RuntimeState.layer).pipe(
-    Layer.merge(layerHttpServer),
+/**
+ * Tells a launcher which origin to load, once the listener serves requests and the launcher's
+ * token is registered. Before that, a load could reach another process that took the port.
+ */
+export const layerServing = (announceReady: (origin: string) => Effect.Effect<void>) =>
+  Layer.effectDiscard(HttpServer.addressFormattedWith(announceReady)).pipe(
+    Layer.provideMerge(Layer.mergeAll(layerStartupAccess, layerHttpServer)),
+  );
+
+export const layer = <E, R>(
+  runner: Layer.Layer<Runner, E, R>,
+  announceReady: (origin: string) => Effect.Effect<void> = () => Effect.void,
+) =>
+  layerServing(announceReady).pipe(
+    Layer.merge(RuntimeState.layer),
     Layer.provideMerge(layerServices(runner)),
     Layer.provide(TraceFile.layer),
     // Taken before storage opens, so a second server fails before touching shared state.

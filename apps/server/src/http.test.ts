@@ -12,6 +12,7 @@ import {
   WS_PATH,
   type AuthScope,
 } from "@toolspell/contracts";
+import * as Deferred from "effect/Deferred";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
@@ -36,7 +37,7 @@ import { AuthStore } from "./auth/AuthStore.ts";
 import * as ServerConfig from "./config.ts";
 import { MAX_REQUEST_BYTES, routes, staticRoutes } from "./http.ts";
 import * as FakeRunner from "./runners/FakeRunner.ts";
-import { layerHttpServer } from "./server.ts";
+import { layerHttpServer, layerServing } from "./server.ts";
 import { layerServicesTest } from "./testkit.ts";
 
 describe("static client routes", () => {
@@ -314,4 +315,33 @@ describe("transport guards", () => {
       }),
     );
   });
+});
+
+describe("ready signal", () => {
+  it.live("is sent once the origin serves requests and accepts the launcher's token", () =>
+    Effect.gen(function* () {
+      const client = yield* HttpClient.HttpClient.pipe(Effect.provide(FetchHttpClient.layer));
+      const announced = yield* Deferred.make<{ origin: string; pairStatus: number }>();
+      const announce = (origin: string) =>
+        HttpClientRequest.post(`${origin}${AUTH_HTTP_PATHS.pair}`).pipe(
+          HttpClientRequest.bodyJsonUnsafe({ token: "launcher-token" }),
+          client.execute,
+          Effect.orDie,
+          Effect.flatMap((response) =>
+            Deferred.succeed(announced, { origin, pairStatus: response.status }),
+          ),
+        );
+      const server = layerServing(announce).pipe(
+        Layer.provideMerge(
+          layerServicesTest(FakeRunner.layer(), {
+            bootstrapToken: Option.some(Redacted.make("launcher-token")),
+          }),
+        ),
+      );
+      const context = yield* Layer.build(server);
+      const { origin, pairStatus } = yield* Deferred.await(announced);
+      assert.strictEqual(pairStatus, 200);
+      assert.strictEqual(origin, yield* serverOrigin.pipe(Effect.provide(context)));
+    }).pipe(Effect.scoped),
+  );
 });

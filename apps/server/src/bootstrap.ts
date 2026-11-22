@@ -43,3 +43,37 @@ export const readBootstrapToken = Effect.fn("bootstrap.readToken")(function* (
   });
   return token.length > 0 ? Option.some(Redacted.make(token)) : Option.none();
 });
+
+class ReadySignalError extends Schema.TaggedError<ReadySignalError>()("ReadySignalError", {
+  fd: Schema.Number,
+  cause: Schema.Defect(),
+}) {
+  override get message() {
+    return `Could not tell the launcher on fd ${this.fd} that the server is ready.`;
+  }
+}
+
+const encodeReadySignal = Schema.encodeEffect(
+  Schema.fromJsonString(Schema.Struct({ origin: Schema.String })),
+);
+
+/**
+ * Tells the launcher that started this server the origin it serves, as one JSON line on an
+ * inherited pipe, then closes the pipe. Only that launcher holds the other end, so unlike an HTTP
+ * answer on the port, the line cannot come from another process.
+ */
+export const announceReady = (fd: Option.Option<number>) => (origin: string) =>
+  Option.isNone(fd)
+    ? Effect.void
+    : encodeReadySignal({ origin }).pipe(
+        Effect.flatMap((line) =>
+          Effect.try({
+            try: () => {
+              NodeFS.writeSync(fd.value, `${line}\n`);
+              NodeFS.closeSync(fd.value);
+            },
+            catch: (cause) => new ReadySignalError({ fd: fd.value, cause }),
+          }),
+        ),
+        Effect.catch((error) => Effect.logWarning(error.message, error)),
+      );
