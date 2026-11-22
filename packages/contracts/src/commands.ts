@@ -5,18 +5,26 @@ import { CommandId, JobId, TrimmedNonEmptyString, WorkspaceId } from "./baseSche
 // Clients generate entity ids, so they can navigate to a new record before the
 // server confirms it, and a retried command targets the same record.
 
+// Limits live on commands only: events and projections must keep decoding what older servers
+// stored. At 6 bytes per character (JSON escapes), the longest input stays under the server's
+// 64 KiB message cap.
+const NAME_MAX_LENGTH = 200;
+const INPUT_MAX_LENGTH = 10_000;
+const CommandName = TrimmedNonEmptyString.check(Schema.isMaxLength(NAME_MAX_LENGTH));
+const CommandInput = TrimmedNonEmptyString.check(Schema.isMaxLength(INPUT_MAX_LENGTH));
+
 const WorkspaceCreateCommand = Schema.Struct({
   type: Schema.tag("workspace.create"),
   commandId: CommandId,
   workspaceId: WorkspaceId,
-  name: TrimmedNonEmptyString,
+  name: CommandName,
 });
 
 const WorkspaceRenameCommand = Schema.Struct({
   type: Schema.tag("workspace.rename"),
   commandId: CommandId,
   workspaceId: WorkspaceId,
-  name: TrimmedNonEmptyString,
+  name: CommandName,
 });
 
 const JobStartCommand = Schema.Struct({
@@ -24,7 +32,7 @@ const JobStartCommand = Schema.Struct({
   commandId: CommandId,
   jobId: JobId,
   workspaceId: WorkspaceId,
-  input: TrimmedNonEmptyString,
+  input: CommandInput,
 });
 
 const JobCancelCommand = Schema.Struct({

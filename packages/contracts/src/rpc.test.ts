@@ -4,9 +4,11 @@ import * as Exit from "effect/Exit";
 import * as Schema from "effect/Schema";
 import * as Rpc from "effect/rpc/Rpc";
 
+import { ClientCommand } from "./commands.ts";
 import { JobsStreamItem, ToolSpellRpcs } from "./rpc.ts";
 
 const decodeJobsItem = Schema.decodeUnknownSync(JobsStreamItem);
+const decodeCommand = Schema.decodeUnknownSync(ClientCommand);
 
 const job = (id: string, status: string) => ({
   id,
@@ -75,4 +77,28 @@ describe("defects", () => {
       assert.include(defect.message, "unexpected error");
     },
   );
+});
+
+describe("command fields", () => {
+  const workspace = { type: "workspace.create", commandId: "c1", workspaceId: "w1" };
+  const job = { type: "job.start", commandId: "c1", jobId: "j1", workspaceId: "w1" };
+
+  // Only commands are capped: events and projections keep decoding what older servers stored.
+  it.each([
+    { name: "a name at its limit", command: { ...workspace, name: "n".repeat(200) }, valid: true },
+    {
+      name: "a name over its limit",
+      command: { ...workspace, name: "n".repeat(201) },
+      valid: false,
+    },
+    { name: "an input at its limit", command: { ...job, input: "i".repeat(10_000) }, valid: true },
+    {
+      name: "an input over its limit",
+      command: { ...job, input: "i".repeat(10_001) },
+      valid: false,
+    },
+  ])("$name", ({ command, valid }) => {
+    if (valid) decodeCommand(command);
+    else assert.throws(() => decodeCommand(command));
+  });
 });
