@@ -14,11 +14,12 @@ import {
   type IpcMainInvokeEvent,
 } from "electron";
 
-import { ServerSupervisor, waitForHttp } from "./backend.ts";
+import { READY_TIMEOUT_MS, ServerSupervisor } from "./backend.ts";
 import { DESKTOP_IPC, isTrustedSender, parseExternalUrl, parseThemeSource } from "./ipc.ts";
 import { resolveLaunchMode } from "./launchMode.ts";
 import { setApplicationMenu } from "./menu.ts";
 import { choosePort, LOOPBACK, readRememberedPort, rememberPort } from "./port.ts";
+import { waitForDevWeb } from "./readiness.ts";
 import { readRemembered, remember } from "./remembered.ts";
 import { ServerLog } from "./serverLog.ts";
 import { createMainWindow, showRetryPage, showStartupPage, windowBackground } from "./window.ts";
@@ -72,8 +73,11 @@ let log: ServerLog | undefined;
 let serverOrigin: string | undefined;
 /** Where the window loads the app: the server, or Vite in development. Fixed with the port. */
 let webOrigin: string | undefined;
-/** The current run's one-time pairing token, while the server answers. */
+/** The one-time pairing token of the run that signalled readiness, until it exits. */
 let serverToken: string | undefined;
+/** dev:desktop's shared secret; Vite answers challenges with it. */
+const devWebSecret = process.env.TOOLSPELL_DEV_WEB_SECRET;
+delete process.env.TOOLSPELL_DEV_WEB_SECRET;
 let started = false;
 let quitPhase: "running" | "stopping" | "done" = "running";
 let fatalShown = false;
@@ -155,9 +159,22 @@ const openLink = (url: string) => {
   });
 };
 
+/** In development the window loads Vite, so Vite must prove it is the dev runner's. */
+const proveDevWeb = async (origin: string) => {
+  if (devWebSecret === undefined) {
+    throw new Error("TOOLSPELL_DEV_WEB_SECRET is missing; start the app with vp run dev:desktop.");
+  }
+  const result = await waitForDevWeb(origin, devWebSecret, READY_TIMEOUT_MS);
+  if (result === "foreign") throw new Error(`${origin} is not this checkout's Vite.`);
+  if (result !== "ready") throw new Error(`${origin} did not answer.`);
+};
+
 /** Pair only when this profile has no live session, so restarts do not pile up sessions. */
 const entryPath = async (origin: string, token: string) => {
-  const response = await net.fetch(`${origin}${AUTH_SESSION_PATH}`, { credentials: "include" });
+  const response = await net.fetch(`${origin}${AUTH_SESSION_PATH}`, {
+    credentials: "include",
+    redirect: "error",
+  });
   const status = (await response.json()) as { readonly authenticated?: boolean };
   return status.authenticated ? "/" : `/pair#token=${token}`;
 };
@@ -167,8 +184,12 @@ const loadApp = async () => {
   if (target === undefined || target.isDestroyed()) return;
   if (webOrigin === undefined || serverToken === undefined) return showStartupPage(target);
   const origin = webOrigin;
+  const token = serverToken;
   try {
-    const url = `${origin}${await entryPath(origin, serverToken)}`;
+    if (origin !== serverOrigin) await proveDevWeb(origin);
+    // The run that issued the token may have exited while Vite was proving itself.
+    if (serverToken !== token) return;
+    const url = `${origin}${await entryPath(origin, token)}`;
     // did-fail-load reports a failed load with the retry page.
     if (!target.isDestroyed()) await target.loadURL(url).catch(() => {});
   } catch (error) {
@@ -177,18 +198,10 @@ const loadApp = async () => {
 };
 
 /** A restarted server keeps the window: its session cookie stays valid and the client reconnects. */
-const onServerReady = async (token: string) => {
+const onServerReady = (token: string) => {
   serverToken = token;
-  if (webOrigin === undefined) return;
-  // In development Vite serves the client and proxies to the server.
-  if (webOrigin !== serverOrigin && (await waitForHttp(webOrigin)) !== "ready") {
-    if (window !== undefined && !window.isDestroyed()) {
-      showRetryPage(window, `${webOrigin} did not answer.`, webOrigin);
-    }
-    return;
-  }
   if (window !== undefined && !window.isDestroyed() && !isAppUrl(window.webContents.getURL())) {
-    await loadApp();
+    void loadApp();
   }
 };
 
@@ -266,12 +279,18 @@ const start = async () => {
   if (quitPhase !== "running") return;
   serverOrigin = `http://${LOOPBACK}:${port}`;
   webOrigin = (isDevelopment && process.env.TOOLSPELL_WEB_URL) || serverOrigin;
+  // Between runs another process may hold the port; the open app's reconnects and reloads must
+  // not hand it the session cookie.
+  const appUrls = [`${webOrigin}/*`, `${webOrigin.replace(/^http/, "ws")}/*`];
+  session.defaultSession.webRequest.onBeforeRequest({ urls: appUrls }, (_details, done) =>
+    done({ cancel: serverToken === undefined }),
+  );
   supervisor = new ServerSupervisor({
     port,
     log,
     echo: isDevelopment,
     note,
-    onReady: (token) => void onServerReady(token),
+    onReady: onServerReady,
     onExit: () => {
       serverToken = undefined;
     },

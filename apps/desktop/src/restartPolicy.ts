@@ -14,7 +14,7 @@ const RENDERER_RELOAD_WINDOW_MS = 60_000;
 
 export interface ServerExit {
   readonly code: number | null;
-  /** How long the run answered health checks before it exited; undefined when it never did. */
+  /** How long the run was ready before it exited; undefined when it never signalled ready. */
   readonly answeredForMs: number | undefined;
 }
 

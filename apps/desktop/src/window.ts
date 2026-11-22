@@ -171,6 +171,15 @@ export const createMainWindow = ({
     if (external !== undefined) openExternal(external);
   });
 
+  // A redirect is a navigation will-navigate never sees; it must not leave the app's origin either.
+  contents.on("will-redirect", (details) => {
+    if (isAppUrl(details.url)) return;
+    details.preventDefault();
+    note(`Blocked a redirect to ${originOf(details.url)}.`);
+    if (details.isMainFrame)
+      showRetryPage(window, "It redirected to another origin.", originOf(details.url));
+  });
+
   contents.on("did-fail-load", (_event, code, description, url, isMainFrame) => {
     // A load another load replaced reports ERR_ABORTED; that is not a failure.
     if (!isMainFrame || code === ERR_ABORTED || isLocalPage(url)) return;

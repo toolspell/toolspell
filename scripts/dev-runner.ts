@@ -229,15 +229,24 @@ const main = async () => {
     );
   }
 
+  // The desktop window loads Vite where only Vite can listen: `localhost` binds one family, so
+  // another process could hold the other one.
+  const webHost = args.host ?? (isDesktop ? "127.0.0.1" : undefined);
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     TOOLSPELL_HOME: homeDir,
     TOOLSPELL_PORT: String(serverPort),
-    TOOLSPELL_WEB_URL: `http://${args.host && args.host !== "0.0.0.0" ? args.host : "localhost"}:${webPort}`,
+    TOOLSPELL_WEB_URL: `http://${webHost && webHost !== "0.0.0.0" ? webHost : "localhost"}:${webPort}`,
     PORT: String(webPort),
     // Browsers only talk to Vite, which proxies to the server, so only Vite is exposed.
-    ...(args.host ? { TOOLSPELL_WEB_HOST: args.host } : {}),
-    ...(isDesktop ? { TOOLSPELL_DESKTOP_CDP_PORT: String(cdpPort) } : {}),
+    ...(webHost ? { TOOLSPELL_WEB_HOST: webHost } : {}),
+    ...(isDesktop
+      ? {
+          TOOLSPELL_DESKTOP_CDP_PORT: String(cdpPort),
+          // Vite answers the desktop's challenges with it (apps/desktop/src/readiness.ts).
+          TOOLSPELL_DEV_WEB_SECRET: NodeCrypto.randomBytes(32).toString("base64url"),
+        }
+      : {}),
     // The desktop supervisor resolves the mode itself when no flag picked one.
     ...(args.desktop ? { TOOLSPELL_DESKTOP_MODE: args.desktop } : {}),
   };

@@ -1,9 +1,11 @@
 // @effect-diagnostics nodeBuiltinImport:off -- Vite config runs before any Effect runtime.
+import * as NodeCrypto from "node:crypto";
 import * as NodeFSP from "node:fs/promises";
 import * as NodeURL from "node:url";
 
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
+import { DEV_WEB_PROOF_PATH } from "@toolspell/contracts/desktop";
 import react from "@vitejs/plugin-react";
 import * as Hash from "effect/Hash";
 import { defineConfig, mergeConfig, type Plugin } from "vite-plus";
@@ -128,6 +130,28 @@ const renderScenariosProject = {
   },
 } satisfies TestProjectInlineConfiguration;
 
+// dev:desktop's window loads this server only after it answers a fresh challenge with the dev
+// runner's secret, the proof apps/desktop/src/readiness.ts checks.
+function devProofPlugin(): Plugin {
+  return {
+    name: "toolspell:dev-proof",
+    apply: "serve",
+    configureServer(server) {
+      const secret = process.env.TOOLSPELL_DEV_WEB_SECRET;
+      if (!secret) return;
+      server.middlewares.use(DEV_WEB_PROOF_PATH, (request, response) => {
+        const query = new URL(request.url ?? "/", "http://vite").searchParams;
+        response.setHeader("cache-control", "no-store");
+        response.end(
+          NodeCrypto.createHmac("sha256", secret)
+            .update(query.get("challenge") ?? "")
+            .digest("base64url"),
+        );
+      });
+    },
+  };
+}
+
 // Adapted from T3 Code (MIT). A static import cycle between chunks can run a chunk before the
 // values it imports exist, which blanks the app at boot. Fail the build instead of shipping it.
 function chunkCycleGuardPlugin(): Plugin {
@@ -160,6 +184,7 @@ const appConfig = mergeConfig(
       react({ compiler: true }),
       tailwindcss(),
       chunkCycleGuardPlugin(),
+      devProofPlugin(),
     ],
     resolve: {
       alias: { "~": new URL("./src", import.meta.url).pathname },

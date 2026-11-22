@@ -19,5 +19,8 @@ export const DESKTOP_BRIDGE_KEY = "toolspellDesktop";
 /** Kept here, free of Effect imports, so the Electron bundles stay small. */
 export const AUTH_SESSION_PATH = "/api/auth/session";
 
+/** Where dev:desktop's Vite proves it is the dev runner's, so the window never loads another. */
+export const DEV_WEB_PROOF_PATH = "/__toolspell/dev-proof";
+
 /** The server's exit code when another server holds its home. A launcher must not retry it. */
 export const SERVER_EXIT_CODE_HOME_IN_USE = 78;

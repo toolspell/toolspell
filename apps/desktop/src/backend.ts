@@ -3,20 +3,19 @@
 import * as NodeChildProcess from "node:child_process";
 import * as NodeCrypto from "node:crypto";
 import * as NodePath from "node:path";
+import * as NodeStream from "node:stream";
 
 import { app } from "electron";
 
 import { LOOPBACK } from "./port.ts";
+import { checkReadySignal, readFirstLine } from "./readiness.ts";
 import { decideRestart } from "./restartPolicy.ts";
 import type { ServerLog } from "./serverLog.ts";
 
 /** Large databases can migrate for minutes; the wait ends at once if the process exits. */
-const READY_TIMEOUT_MS = 3 * 60_000;
-const READY_POLL_MS = 100;
+export const READY_TIMEOUT_MS = 3 * 60_000;
 const STOP_GRACE_MS = 5_000;
 const KILL_WAIT_MS = 1_000;
-
-const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 const settlesWithin = async (promise: Promise<unknown>, ms: number) => {
   let timer: NodeJS.Timeout | undefined;
@@ -28,31 +27,6 @@ const settlesWithin = async (promise: Promise<unknown>, ms: number) => {
   } finally {
     clearTimeout(timer);
   }
-};
-
-/** Polls until the URL answers. Startup has no event to wait on across processes. */
-export const waitForHttp = async (
-  url: string,
-  stopped: Promise<unknown> = new Promise(() => {}),
-  timeoutMs = READY_TIMEOUT_MS,
-) => {
-  const done = new AbortController();
-  const poll = async () => {
-    const deadline = Date.now() + timeoutMs;
-    while (!done.signal.aborted && Date.now() < deadline) {
-      try {
-        const signal = AbortSignal.any([done.signal, AbortSignal.timeout(1_000)]);
-        if ((await fetch(url, { signal })).ok) return "ready" as const;
-      } catch {
-        // Not listening yet.
-      }
-      await sleep(READY_POLL_MS);
-    }
-    return "timeout" as const;
-  };
-  const result = await Promise.race([poll(), stopped.then(() => "stopped" as const)]);
-  done.abort();
-  return result;
 };
 
 /** Packaged builds ship the bundled server; in development it runs from source. */
@@ -83,6 +57,8 @@ const forceKill = (child: NodeChildProcess.ChildProcess) => {
 interface ServerRun {
   readonly child: NodeChildProcess.ChildProcess;
   readonly token: string;
+  /** The first line on the run's ready pipe, which only this child holds. */
+  readonly readyLine: Promise<string | undefined>;
   readonly exited: Promise<{ readonly code: number | null; readonly signal: string | null }>;
 }
 
@@ -93,7 +69,7 @@ export interface SupervisorOptions {
   readonly echo: boolean;
   /** Records a desktop event beside the server's output. */
   readonly note: (message: string) => void;
-  /** Each run that answers gets a fresh one-time pairing token. */
+  /** Each run that signals readiness gets a fresh one-time pairing token. */
   readonly onReady: (token: string) => void;
   readonly onExit: () => void;
   readonly onFatal: (message: string, detail: string) => void;
@@ -136,17 +112,28 @@ export class ServerSupervisor {
     if (this.#stopping) return;
     const run = this.#spawn();
     this.#run = run;
-    const result = await waitForHttp(`http://${LOOPBACK}:${this.#options.port}/health`, run.exited);
+    const result = await this.#awaitReady(run);
     if (this.#stopping) return;
     if (result === "timeout") {
       this.#options.onFatal(
         "ToolSpell's server did not start",
-        `It did not answer within ${READY_TIMEOUT_MS / 60_000} minutes.\n\n${this.#options.log.tail()}`,
+        `It was not ready within ${READY_TIMEOUT_MS / 60_000} minutes.\n\n${this.#options.log.tail()}`,
       );
       return;
     }
-    const readyAt = result === "ready" ? Date.now() : undefined;
-    if (readyAt !== undefined) this.#options.onReady(run.token);
+    if (result !== "stopped" && !result.ok) {
+      this.#options.onFatal(
+        "ToolSpell's server did not start",
+        `${result.problem}\n\n${this.#options.log.tail()}`,
+      );
+      return;
+    }
+    let readyAt: number | undefined;
+    if (result !== "stopped") {
+      readyAt = Date.now();
+      this.#options.note(`The server signalled ready on ${result.origin}.`);
+      this.#options.onReady(run.token);
+    }
 
     const { code, signal } = await run.exited;
     if (this.#stopping) return;
@@ -172,6 +159,24 @@ export class ServerSupervisor {
     this.#restartTimer = setTimeout(() => this.start(), decision.delayMs);
   }
 
+  /** Ready only on the run's own signal; an answer on the port could be another process. */
+  async #awaitReady(run: ServerRun) {
+    let timer: NodeJS.Timeout | undefined;
+    const timeout = new Promise<"timeout">((resolve) => {
+      timer = setTimeout(() => resolve("timeout"), READY_TIMEOUT_MS);
+    });
+    const origin = `http://${LOOPBACK}:${this.#options.port}`;
+    // A pipe that ends without a line means the run is exiting; its exit settles the race.
+    const signal = run.readyLine.then((line) =>
+      line === undefined ? new Promise<never>(() => {}) : checkReadySignal(line, origin),
+    );
+    try {
+      return await Promise.race([signal, run.exited.then(() => "stopped" as const), timeout]);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   #spawn(): ServerRun {
     const token = NodeCrypto.randomBytes(32).toString("base64url");
     const child = NodeChildProcess.spawn(process.execPath, [serverEntry()], {
@@ -181,12 +186,13 @@ export class ServerSupervisor {
         TOOLSPELL_HOST: LOOPBACK,
         TOOLSPELL_PORT: String(this.#options.port),
         TOOLSPELL_BOOTSTRAP_FD: "3",
+        TOOLSPELL_READY_FD: "4",
         TOOLSPELL_EXIT_WITH_STDIN: "1",
       },
       // stdin stays open as a lifeline: if this app dies, the server sees it close and exits.
       // fd 3 carries the token: unlike an env var, a pipe is not inherited by every child
-      // process or visible in process listings.
-      stdio: ["pipe", "pipe", "pipe", "pipe"],
+      // process or visible in process listings. fd 4 carries the server's ready signal back.
+      stdio: ["pipe", "pipe", "pipe", "pipe", "pipe"],
       // Its own process group, so a forced stop also reaches whatever the server started.
       detached: process.platform !== "win32",
       windowsHide: true,
@@ -216,6 +222,11 @@ export class ServerSupervisor {
       bootstrapPipe.on("error", () => {});
       bootstrapPipe.end(token);
     }
-    return { child, token, exited };
+    const readyPipe = child.stdio[4];
+    const readyLine =
+      readyPipe instanceof NodeStream.Readable
+        ? readFirstLine(readyPipe)
+        : Promise.resolve(undefined);
+    return { child, token, readyLine, exited };
   }
 }
