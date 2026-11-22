@@ -10,12 +10,6 @@ where to start, not a plan.
 - **Job list re-renders**: render metrics show every `job.progressed` event re-renders all job rows
   (600 of 780 renders in the 20-job scenario). Keep unchanged rows from re-rendering, then confirm
   with `vp run report:renders`.
-- **Platform fixes (A)**: home dir from `os.homedir()`; graceful stdin-lifeline shutdown instead of
-  a self-kill (Windows); SQLite-based home lock instead of PID files; Windows process handling in
-  the dev runner (no shell, `taskkill /T`, `SIGBREAK`); `check:changed` without a shell and with
-  `core.quotePath=false`; port probing without IPv6; `.gitattributes` with LF; a server dev watcher
-  instead of `node --watch` (NTFS last-access); setup-worktree symlink fallback; strip internal
-  env vars after reading them.
 - **Desktop items (B)**: graceful quit with timeout and tree kill; no white flash (`show: false`,
   `ready-to-show`, `nativeTheme` background); startup feedback; server logs to a file with the tail
   in error dialogs; restart with backoff; separate dev and installed profiles and app name; own
@@ -39,7 +33,8 @@ where to start, not a plan.
   (`safeStorage`, Linux password store); a server "ready" signal instead of polling `/health`;
   killing child processes before exit in an AppImage; clearing the GPU cache after an Electron
   upgrade; live theme switching on Linux; a custom app scheme instead of a loopback origin.
-- **Platform, later**: no copy-on-write for the state directory on btrfs; warn when the pnpm store
+- **Platform, later**: a 1 s read timeout for the bootstrap fd, as T3 Code does (on macOS and
+  Linux a stray `TOOLSPELL_BOOTSTRAP_FD` hits one of Node's own fds); no copy-on-write for the state directory on btrfs; warn when the pnpm store
   is on another filesystem; Windows long paths for `.repos`; a bootstrap-fd read that treats a
   missing fd as "no token"; Cmd versus Ctrl helpers once the web app has shortcuts.
 - **GitHub, once pushed**: Dependabot for `github-actions` only, to keep the SHA pins fresh; a
@@ -60,7 +55,17 @@ where to start, not a plan.
   no `node` processes remain after stopping `vp run dev`; opening files does not restart the
   server; `vp fmt --check` is clean; worktree setup completes; Ctrl+W and the menu behave; no
   console windows flash; a second launch focuses the existing window.
+  Platform fixes: no DEP0190 warning from `vp run dev`, and after Ctrl+C, Ctrl+Break or closing the
+  window `Get-Process node` shows none of ours; `taskkill /F` on a server, then the next start gets
+  the home lock; `--home-dir ~\ts` expands; `check:changed` with a changed file named like
+  `ü & %PATH%.md`; a fresh clone with `autocrlf=true` passes `vp fmt --check`; worktree setup
+  without Developer Mode links or copies `.env`; `TOOLSPELL_BOOTSTRAP_FD=3` without a pipe still
+  starts the server.
 - **Linux** (Ubuntu 24.04, GNOME and KDE): the server starts without `HOME`; the dev runner works
   inside Docker without IPv6; no white flash in dark mode; `ready-to-show` fires on X11 and
   Wayland; `PATH` when started from the launcher. Electron on 24.04 needs
   `chown root` and `chmod 4755` on `node_modules/electron/dist/chrome-sandbox` once.
+  Platform fixes: the server in a container with a random UID and `--home-dir`; the dev runner with
+  `--sysctl net.ipv6.conf.all.disable_ipv6=1` keeps its ports, and shifts when a `0.0.0.0`
+  listener holds one; `kill -9`, then the next start gets the lock; the lock on WSL2 `/mnt/c`
+  (drvfs), where SQLite locking may be unreliable.

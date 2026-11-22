@@ -7,8 +7,19 @@ import * as NodeFS from "node:fs";
 
 class BootstrapReadError extends Schema.TaggedError<BootstrapReadError>()("BootstrapReadError", {
   fd: Schema.Number,
-  message: Schema.String,
-}) {}
+  cause: Schema.Defect(),
+}) {
+  override get message() {
+    return `Could not read the bootstrap token from fd ${this.fd}.`;
+  }
+}
+
+/** A variable inherited without its pipe, or a launcher that never opened one. */
+const isMissingFd = (cause: unknown) =>
+  typeof cause === "object" &&
+  cause !== null &&
+  "code" in cause &&
+  (cause.code === "EBADF" || cause.code === "ENOENT");
 
 /**
  * A launcher such as the desktop app writes a one-time pairing token to an inherited
@@ -20,12 +31,15 @@ export const readBootstrapToken = Effect.fn("bootstrap.readToken")(function* (
 ) {
   if (Option.isNone(fd)) return Option.none<Redacted.Redacted<string>>();
   const token = yield* Effect.try({
-    try: () => NodeFS.readFileSync(fd.value, "utf8").trim(),
-    catch: (cause) =>
-      new BootstrapReadError({
-        fd: fd.value,
-        message: `Could not read the bootstrap fd: ${String(cause)}`,
-      }),
+    try: () => {
+      try {
+        return NodeFS.readFileSync(fd.value, "utf8").trim();
+      } catch (cause) {
+        if (isMissingFd(cause)) return "";
+        throw cause;
+      }
+    },
+    catch: (cause) => new BootstrapReadError({ fd: fd.value, cause }),
   });
   return token.length > 0 ? Option.some(Redacted.make(token)) : Option.none();
 });

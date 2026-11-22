@@ -10,10 +10,11 @@ const MAX_AGENT_FILE_LINES = 300;
 
 const tracked = NodeChildProcess.execFileSync(
   "git",
-  ["ls-files", "--cached", "--others", "--exclude-standard", "*.md"],
+  // -z keeps non-ASCII paths raw instead of quoted.
+  ["ls-files", "--cached", "--others", "--exclude-standard", "-z", "*.md"],
   { cwd: root, encoding: "utf8" },
 )
-  .split("\n")
+  .split("\0")
   .filter((file) => file !== "" && NodeFS.existsSync(NodePath.join(root, file)));
 
 const read = (file: string) => NodeFS.readFileSync(NodePath.join(root, file), "utf8");

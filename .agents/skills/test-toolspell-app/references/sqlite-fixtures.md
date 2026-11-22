@@ -9,7 +9,7 @@ In dev the home is the checkout's `.toolspell` unless `--home-dir` says otherwis
 `~/.toolspell/userdata`, the live install.
 
 Start the server once so all migrations have run, then stop it before any write. A running server
-holds `userdata/server.lock` and owns the database; writing beside it races its projections.
+holds `userdata/server.lock.sqlite` and owns the database; writing beside it races its projections.
 
 ## Inspect
 

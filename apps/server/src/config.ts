@@ -1,3 +1,4 @@
+// @effect-diagnostics nodeBuiltinImport:off - the OS account's home directory has no Effect service.
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Hash from "effect/Hash";
@@ -5,6 +6,8 @@ import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as Path from "effect/Path";
 import * as Redacted from "effect/Redacted";
+import * as NodeOS from "node:os";
+import * as NodePath from "node:path";
 
 export interface ServerConfigShape {
   readonly version: string;
@@ -39,6 +42,27 @@ export interface ServerConfigInput {
   readonly staticDir: Option.Option<string>;
   readonly bootstrapToken: Option.Option<Redacted.Redacted<string>>;
 }
+
+export interface HomeHost {
+  /** Lazy: without HOME and a passwd entry (some containers) it throws, and a flag needs none. */
+  readonly homedir: () => string;
+  readonly platform: NodeJS.Platform;
+}
+
+const nodeHost: HomeHost = { homedir: NodeOS.homedir, platform: process.platform };
+
+/**
+ * The `--home-dir` flag with a leading `~` expanded, or `~/.toolspell`. The OS account's home,
+ * not `HOME`: Windows keeps it in USERPROFILE, and some services run without HOME.
+ */
+export const resolveHomeDir = (flag: string | undefined, host: HomeHost = nodeHost) => {
+  const path = host.platform === "win32" ? NodePath.win32 : NodePath.posix;
+  const raw = flag?.trim() ?? "";
+  if (raw === "") return path.join(host.homedir(), ".toolspell");
+  if (raw === "~") return host.homedir();
+  if (raw.startsWith("~/") || raw.startsWith("~\\")) return path.join(host.homedir(), raw.slice(2));
+  return raw;
+};
 
 const make = Effect.fn("ServerConfig.make")(function* (input: ServerConfigInput) {
   const path = yield* Path.Path;

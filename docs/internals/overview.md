@@ -58,9 +58,11 @@ with HTTP 426, and clients compare the version on `/health` before connecting.
 ## One server per home
 
 Two servers on one home would both run the outbox and start every job twice. The
-[home lock](../../apps/server/src/persistence/HomeLock.ts) admits one server per home and takes
-over a lock whose process died. CLI commands that run beside a live server, such as `pair`, use the
-storage and auth layers only, never the effect worker.
+[home lock](../../apps/server/src/persistence/HomeLock.ts) admits one server per home by holding an
+exclusive SQLite transaction on `userdata/server.lock.sqlite`. The OS releases it when the process
+exits, even by SIGKILL, so a crash never blocks the next start. Never delete that file: a new server
+would lock a fresh one while the old server still holds the deleted one. CLI commands that run
+beside a live server, such as `pair`, use the storage and auth layers only, never the effect worker.
 
 ## Waiting for asynchronous work
 

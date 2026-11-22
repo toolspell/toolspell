@@ -13,13 +13,14 @@ import * as NodeFS from "node:fs";
 import * as NodePath from "node:path";
 
 import { affectedPackages, readWorkspace, type WorkspacePackage } from "./lib/affected.ts";
+import { vpCommand } from "./lib/vp.ts";
 
 const root = NodePath.dirname(import.meta.dirname);
 const CODE = /\.(?:[cm]?[jt]sx?)$/;
 const TEST = /\.test\.tsx?$/;
 
 const git = (args: ReadonlyArray<string>) =>
-  NodeChildProcess.execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
+  NodeChildProcess.execFileSync("git", args, { cwd: root, encoding: "utf8" });
 
 const refExists = (ref: string) => {
   try {
@@ -32,10 +33,11 @@ const refExists = (ref: string) => {
 
 export const changedFiles = (baseRef: string | undefined): ReadonlyArray<string> => {
   const base = baseRef ?? (refExists("origin/main") ? "origin/main" : "main");
-  const mergeBase = git(["merge-base", "HEAD", base]);
-  const tracked = git(["diff", "--name-only", "--no-renames", mergeBase]);
-  const untracked = git(["ls-files", "--others", "--exclude-standard"]);
-  return [...new Set([...tracked.split("\n"), ...untracked.split("\n")])].filter(Boolean).sort();
+  const mergeBase = git(["merge-base", "HEAD", base]).trim();
+  // -z lists paths raw; otherwise git quotes and escapes non-ASCII ones, which then match no file.
+  const tracked = git(["diff", "--name-only", "--no-renames", "-z", mergeBase]);
+  const untracked = git(["ls-files", "--others", "--exclude-standard", "-z"]);
+  return [...new Set([...tracked.split("\0"), ...untracked.split("\0")])].filter(Boolean).sort();
 };
 
 /** The tests a change runs: changed tests, and `x.test.ts` or `x.browser.test.tsx` beside `x.ts`. */
@@ -67,14 +69,16 @@ interface Result {
 const run = (step: Step) =>
   new Promise<Result>((resolve) => {
     const started = performance.now();
-    const child = NodeChildProcess.spawn(step.command[0]!, step.command.slice(1), {
+    const [name, ...args] = step.command;
+    const [command, commandArgs] = name === "vp" ? vpCommand(args) : [name!, args];
+    const child = NodeChildProcess.spawn(command, commandArgs, {
       cwd: step.cwd ?? root,
       env: { ...process.env, FORCE_COLOR: "1" },
-      shell: process.platform === "win32",
     });
     let output = "";
     child.stdout.on("data", (chunk: Buffer) => (output += chunk));
     child.stderr.on("data", (chunk: Buffer) => (output += chunk));
+    child.on("error", (error) => (output += `${error.message}\n`));
     child.on("close", (code) =>
       resolve({
         name: step.name,
@@ -138,7 +142,12 @@ const main = async () => {
       ? [{ name: "knip", command: ["vp", "run", "knip"] }]
       : []),
     ...(files.some((file) => file.startsWith(".github/"))
-      ? [{ name: "actionlint", command: ["node", "scripts/lib/tools.ts", "actionlint"] }]
+      ? [
+          {
+            name: "actionlint",
+            command: [process.execPath, "scripts/lib/tools.ts", "actionlint"],
+          },
+        ]
       : []),
     ...(typecheckFilters.length > 0
       ? [

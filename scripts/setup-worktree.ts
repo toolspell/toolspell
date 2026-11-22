@@ -45,7 +45,8 @@ if (!projectRoot) {
   throw new Error("T3CODE_PROJECT_ROOT is not set. Run this through the t3.json setup action.");
 }
 
-// A stale lockfile must fail, not be rewritten. Closed stdin makes prompts fail.
+// A stale lockfile must fail, not be rewritten. Closed stdin makes prompts fail. A shell finds
+// the Windows vp shim; scripts/lib/vp.ts cannot help, since vite-plus is not installed yet.
 const install = NodeChildProcess.spawn("vp i --frozen-lockfile -- --yes", {
   cwd: worktree,
   shell: true,
@@ -72,6 +73,28 @@ if (installStatus !== 0 || cancelSignal) {
   process.exit(installStatus || 1);
 }
 
+// Windows refuses symlinks without Developer Mode or admin rights. A hard link shares the main
+// checkout's file until an editor replaces it on save; a copy, the last resort across drives,
+// shares nothing.
+const linkEnvFile = (source: string, target: string) => {
+  try {
+    NodeFS.symlinkSync(source, target);
+    return;
+  } catch (error) {
+    if (process.platform !== "win32" || (error as NodeJS.ErrnoException).code !== "EPERM") {
+      throw error;
+    }
+  }
+  try {
+    NodeFS.linkSync(source, target);
+  } catch {
+    NodeFS.copyFileSync(source, target);
+    process.stderr.write(
+      `WARNING: copied ${source}; later edits to it do not reach this worktree.\n`,
+    );
+  }
+};
+
 // Worktrees link the main checkout's env files; only symlinks are replaced, so a real
 // file the worktree owns always survives.
 for (const file of ENV_FILES) {
@@ -81,7 +104,7 @@ for (const file of ENV_FILES) {
   const existing = NodeFS.lstatSync(target, { throwIfNoEntry: false });
   if (existing && !existing.isSymbolicLink()) continue;
   if (existing) NodeFS.rmSync(target);
-  NodeFS.symlinkSync(source, target);
+  linkEnvFile(source, target);
 }
 
 // Reference source is a convenience for agents; a failed sync must not fail setup.

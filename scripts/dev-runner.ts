@@ -17,6 +17,8 @@ import * as NodeCrypto from "node:crypto";
 import * as NodeNet from "node:net";
 import * as NodePath from "node:path";
 
+import { vpCommand } from "./lib/vp.ts";
+
 const BASE_SERVER_PORT = 24100;
 const BASE_WEB_PORT = 28100;
 const MAX_OFFSET = 3000;
@@ -45,18 +47,51 @@ export const offsetFor = (env: NodeJS.ProcessEnv, checkoutPath: string): number 
   return (hash % MAX_OFFSET) + 1;
 };
 
-const isFree = (port: number, host: string) =>
-  new Promise<boolean>((resolve) => {
-    const server = NodeNet.createServer();
-    server.once("error", () => resolve(false));
-    server.listen({ port, host }, () => server.close(() => resolve(true)));
-  });
+export interface PortProbes {
+  /** Resolves to the listen error's code, or `undefined` when the bind succeeded. */
+  readonly listen: (port: number, host: string) => Promise<string | undefined>;
+  readonly connect: (port: number, host: string) => Promise<boolean>;
+}
+
+const LOOPBACK = ["127.0.0.1", "::1"];
+// A host without IPv6 (Docker, WSL2) cannot bind ::1 at all; that says nothing about the port.
+const FAMILY_UNAVAILABLE = new Set(["EADDRNOTAVAIL", "EAFNOSUPPORT"]);
+
+const nodeProbes: PortProbes = {
+  listen: (port, host) =>
+    new Promise((resolve) => {
+      const server = NodeNet.createServer();
+      server.once("error", (error: NodeJS.ErrnoException) => resolve(error.code ?? "UNKNOWN"));
+      server.listen({ port, host }, () => server.close(() => resolve(undefined)));
+    }),
+  connect: (port, host) =>
+    new Promise((resolve) => {
+      const socket = NodeNet.createConnection({ port, host });
+      const settle = (listening: boolean) => {
+        socket.destroy();
+        resolve(listening);
+      };
+      socket.setTimeout(250);
+      socket.once("connect", () => settle(true));
+      socket.once("error", () => settle(false));
+      socket.once("timeout", () => settle(false));
+    }),
+};
+
+/**
+ * Adapted from T3 Code's packages/shared/src/Net.ts (MIT). macOS and Windows let 127.0.0.1 bind
+ * beside a 0.0.0.0 listener, so a port only counts as free when nothing answers a connect either.
+ */
+export const isPortFree = async (port: number, probes: PortProbes = nodeProbes) => {
+  const answered = await Promise.all(LOOPBACK.map((host) => probes.connect(port, host)));
+  if (answered.some(Boolean)) return false;
+  const errors = await Promise.all(LOOPBACK.map((host) => probes.listen(port, host)));
+  return errors.every((code) => code === undefined || FAMILY_UNAVAILABLE.has(code));
+};
 
 const portsFree = async (ports: ReadonlyArray<number>) => {
   for (const port of ports) {
-    for (const host of ["127.0.0.1", "::1"]) {
-      if (!(await isFree(port, host))) return false;
-    }
+    if (!(await isPortFree(port))) return false;
   }
   return true;
 };
@@ -105,25 +140,32 @@ const main = async () => {
     `[dev-runner] mode=${args.mode} serverPort=${serverPort} webPort=${webPort} homeDir=${homeDir}\n`,
   );
 
-  // Its own process group: vp does not forward SIGTERM to Vite and the server, so
-  // teardown signals the whole group.
-  const child = NodeChildProcess.spawn("vp", ["run", ...MODES[args.mode], "--parallel", "dev"], {
+  // vp does not forward signals to Vite and the server, so teardown stops the whole tree: a
+  // process group on POSIX, taskkill /T on Windows, where a detached child gets its own console.
+  const [command, commandArgs] = vpCommand(["run", ...MODES[args.mode], "--parallel", "dev"]);
+  const child = NodeChildProcess.spawn(command, commandArgs, {
     cwd: checkout,
     env,
     stdio: "inherit",
     detached: process.platform !== "win32",
-    shell: process.platform === "win32",
   });
   const stop = (signal: NodeJS.Signals) => {
-    if (child.pid === undefined) return;
+    // An exited leader's PID may already belong to an unrelated process.
+    if (child.pid === undefined || child.exitCode !== null || child.signalCode !== null) return;
+    if (process.platform === "win32") {
+      NodeChildProcess.spawnSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], {
+        windowsHide: true,
+      });
+      return;
+    }
     try {
-      if (process.platform === "win32") child.kill(signal);
-      else process.kill(-child.pid, signal);
+      process.kill(-child.pid, signal);
     } catch {
       // The group already exited.
     }
   };
-  for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
+  // SIGBREAK is Ctrl+Break on Windows; elsewhere it never arrives.
+  for (const signal of ["SIGINT", "SIGTERM", "SIGHUP", "SIGBREAK"] as const) {
     process.on(signal, () => stop(signal));
   }
   child.on("exit", (code, signal) => {

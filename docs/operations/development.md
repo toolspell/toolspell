@@ -20,7 +20,7 @@ setup runs, do not run `vp i` yourself.
 | Command              | Starts                                                                    |
 | -------------------- | ------------------------------------------------------------------------- |
 | `vp run dev`         | Server and web. Vite proxies `/api`, `/ws`, and `/health` to the server.  |
-| `vp run dev:server`  | The server only, restarted by `node --watch` when its sources change.     |
+| `vp run dev:server`  | The server only, restarted when server or package sources change.         |
 | `vp run dev:web`     | Vite only, against a server you started separately.                       |
 | `vp run dev:desktop` | Vite and the Electron shell, which starts its own server on the dev port. |
 

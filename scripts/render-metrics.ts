@@ -5,6 +5,8 @@ import * as NodeFS from "node:fs";
 import * as NodeOS from "node:os";
 import * as NodePath from "node:path";
 
+import { vpCommand } from "./lib/vp.ts";
+
 const HELP = `Usage:
   vp run report:renders [--out <file>] [--runs <n>]
   node scripts/render-metrics.ts compare <before.json> <after.json> [--top <n>]
@@ -41,12 +43,12 @@ const root = NodePath.resolve(import.meta.dirname, "..");
 export function runOnce(): RenderMetrics {
   const directory = NodeFS.mkdtempSync(NodePath.join(NodeOS.tmpdir(), "toolspell-renders-"));
   try {
-    const result = NodeChildProcess.spawnSync("vp", ["test", "run", "--project", "renders"], {
+    const [command, args] = vpCommand(["test", "run", "--project", "renders"]);
+    const result = NodeChildProcess.spawnSync(command, args, {
       cwd: NodePath.join(root, "apps/web"),
       env: { ...process.env, TOOLSPELL_RENDER_REPORT_DIR: directory },
       // Scenario output goes to stderr, so stdout stays the JSON report.
       stdio: ["ignore", process.stderr, "inherit"],
-      shell: process.platform === "win32",
     });
     if (result.status !== 0) throw new Error(`render scenarios failed (exit ${result.status})`);
     const files = NodeFS.readdirSync(directory)

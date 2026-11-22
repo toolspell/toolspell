@@ -1,32 +1,37 @@
-// @effect-diagnostics nodeBuiltinImport:off - the lock is a file on disk.
+// @effect-diagnostics nodeBuiltinImport:off - each test needs its own home directory on disk.
 import { assert, describe, it } from "@effect/vitest";
+import * as Effect from "effect/Effect";
+import * as Exit from "effect/Exit";
+import * as Layer from "effect/Layer";
+import * as Scope from "effect/Scope";
 import * as NodeFS from "node:fs";
 import * as NodeOS from "node:os";
 import * as NodePath from "node:path";
 
-import { acquireHomeLock, releaseHomeLock } from "./HomeLock.ts";
-
-const lockIn = () =>
-  NodePath.join(
-    NodeFS.mkdtempSync(NodePath.join(NodeOS.tmpdir(), "toolspell-lock-")),
-    "server.lock",
-  );
+import * as ServerConfig from "../config.ts";
+import * as HomeLock from "./HomeLock.ts";
 
 describe("home lock", () => {
-  it("takes over a lock no live process holds, including an empty one", () => {
-    for (const stale of ["", "0", "garbled", "2147483646"]) {
-      const lockPath = lockIn();
-      NodeFS.writeFileSync(lockPath, stale);
-      assert.isUndefined(acquireHomeLock(lockPath));
-      assert.strictEqual(NodeFS.readFileSync(lockPath, "utf8"), String(process.pid));
-    }
-  });
+  it.effect("refuses a second server until the first one closes", () =>
+    Effect.gen(function* () {
+      const stateDir = NodeFS.mkdtempSync(NodePath.join(NodeOS.tmpdir(), "toolspell-lock-"));
+      const lock = HomeLock.layer.pipe(
+        Layer.provide(
+          ServerConfig.layerTest({
+            stateDir,
+            databasePath: NodePath.join(stateDir, "state.sqlite"),
+          }),
+        ),
+      );
+      const first = yield* Scope.make();
+      yield* Layer.buildWithScope(lock, first);
 
-  it("refuses a live owner and never releases a lock it does not hold", () => {
-    const lockPath = lockIn();
-    NodeFS.writeFileSync(lockPath, String(process.ppid));
-    assert.strictEqual(acquireHomeLock(lockPath), process.ppid);
-    releaseHomeLock(lockPath);
-    assert.strictEqual(NodeFS.readFileSync(lockPath, "utf8"), String(process.ppid));
-  });
+      const refused = yield* Layer.build(lock).pipe(Effect.scoped, Effect.flip);
+      assert.strictEqual(refused._tag, "HomeInUseError");
+
+      yield* Scope.close(first, Exit.void);
+      yield* Layer.build(lock).pipe(Effect.scoped);
+      assert.isTrue(NodeFS.existsSync(NodePath.join(stateDir, "server.lock.sqlite")));
+    }),
+  );
 });

@@ -1,6 +1,6 @@
 import { assert, describe, it } from "@effect/vitest";
 
-import { offsetFor, parseArgs } from "./dev-runner.ts";
+import { isPortFree, offsetFor, parseArgs, type PortProbes } from "./dev-runner.ts";
 
 describe("offsetFor", () => {
   it("gives each checkout a stable offset and honors explicit overrides", () => {
@@ -23,5 +23,29 @@ describe("offsetFor", () => {
     });
     assert.throws(() => parseArgs(["dev", "--help"]));
     assert.throws(() => parseArgs(["dev", "--home-dir"]));
+  });
+});
+
+describe("isPortFree", () => {
+  const probes = (
+    listen: Record<string, string | undefined>,
+    answers: ReadonlyArray<string> = [],
+  ): PortProbes => ({
+    listen: async (_port, host) => listen[host],
+    connect: async (_port, host) => answers.includes(host),
+  });
+
+  it("ignores an address family the host lacks but not a listener it can reach", async () => {
+    const cases: ReadonlyArray<[string, PortProbes, boolean]> = [
+      ["both families bind", probes({}), true],
+      ["no IPv6 (Docker, WSL2)", probes({ "::1": "EADDRNOTAVAIL" }), true],
+      ["no IPv6 support in the kernel", probes({ "::1": "EAFNOSUPPORT" }), true],
+      ["in use on IPv4", probes({ "127.0.0.1": "EADDRINUSE" }), false],
+      ["in use on IPv6", probes({ "::1": "EADDRINUSE" }), false],
+      ["a 0.0.0.0 listener the bind does not see", probes({}, ["127.0.0.1"]), false],
+    ];
+    for (const [name, caseProbes, free] of cases) {
+      assert.strictEqual(await isPortFree(24100, caseProbes), free, name);
+    }
   });
 });

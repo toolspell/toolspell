@@ -44,12 +44,6 @@ const hostFlag = Flag.String("host").pipe(
   Flag.withDefault("127.0.0.1"),
 );
 
-const resolveHomeDir = Effect.fn("bin.resolveHomeDir")(function* (flag: Option.Option<string>) {
-  const path = yield* Path.Path;
-  const home = yield* Config.String("HOME").pipe(Config.withDefault("."));
-  return Option.getOrElse(flag, () => path.join(home, ".toolspell"));
-});
-
 /** A production build ships the web client beside the server bundle. */
 const bundledClientDir = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
@@ -68,7 +62,7 @@ const configLayer = Effect.fn("bin.configLayer")(function* (flags: {
 }) {
   return ServerConfig.layer({
     version: packageJson.version,
-    homeDir: yield* resolveHomeDir(flags.homeDir),
+    homeDir: ServerConfig.resolveHomeDir(Option.getOrUndefined(flags.homeDir)),
     host: flags.host,
     port: flags.port,
     webOrigin: flags.webOrigin,
@@ -109,28 +103,49 @@ const pairCommand = Command.make(
     ),
 ).pipe(Command.withDescription("Print a one-time link that pairs another browser or device."));
 
+/**
+ * Set by a launcher for this process only. A child that inherited them would read an unrelated
+ * fd 3 as a token, tie its life to its own stdin, or run an Electron app as plain Node.
+ */
+const LAUNCHER_ENV = [
+  "ELECTRON_RUN_AS_NODE",
+  "TOOLSPELL_BOOTSTRAP_FD",
+  "TOOLSPELL_EXIT_WITH_STDIN",
+];
+
+/**
+ * A launcher such as the desktop app holds stdin open as a lifeline; its end closes when the
+ * launcher dies, even by SIGKILL. The server then ends its program so finalizers run, which no
+ * signal does on Windows.
+ */
+const launcherGone = Effect.callback<void>((resume) => {
+  const gone = () => resume(Effect.void);
+  process.stdin.once("end", gone).once("close", gone).once("error", gone).resume();
+  return Effect.sync(() => process.stdin.pause());
+}).pipe(Effect.andThen(Effect.logInfo("The launcher closed stdin; shutting down.")));
+
 const serverCommand = Command.make(
   "toolspell",
   { homeDir: homeDirFlag, webOrigin: webOriginFlag, port: portFlag, host: hostFlag },
   (flags) =>
-    Layer.launch(
-      Layer.unwrap(
-        Effect.map(configLayer(flags), (config) =>
-          Server.layer(FakeRunner.layer()).pipe(Layer.provide(config)),
-        ),
-      ),
-    ),
+    Effect.gen(function* () {
+      const exitWithStdin = yield* Config.Boolean("TOOLSPELL_EXIT_WITH_STDIN").pipe(
+        Config.withDefault(false),
+      );
+      const config = yield* configLayer(flags);
+      yield* Effect.sync(() => LAUNCHER_ENV.forEach((name) => delete process.env[name]));
+      const server = Layer.launch(Server.layer(FakeRunner.layer()).pipe(Layer.provide(config)));
+      return yield* exitWithStdin ? Effect.raceFirst(server, launcherGone) : server;
+    }),
 ).pipe(
   Command.withDescription("Run the ToolSpell server."),
   Command.withSubcommands([pairCommand]),
 );
 
-// A launcher such as the desktop app holds stdin open as a lifeline. When it dies, even by
-// SIGKILL, the pipe closes and the server shuts down instead of holding the home lock.
-if (process.env.TOOLSPELL_EXIT_WITH_STDIN === "1") {
-  process.stdin.on("end", () => process.kill(process.pid, "SIGTERM"));
-  process.stdin.resume();
-}
+// Logs go to stdout and stderr, which may be a closed launcher pipe or a full disk. Node raises a
+// failed write as an unhandled error that kills the server mid-shutdown, so drop the line instead.
+process.stdout.on("error", () => {});
+process.stderr.on("error", () => {});
 
 Command.run(serverCommand, { version: packageJson.version }).pipe(
   Effect.provide(NodeServices.layer),
