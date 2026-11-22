@@ -99,7 +99,8 @@ Before calling work done, say which of these applied:
 An empty database is a bad test. Create meaningful workspaces and jobs through the app, or copy
 data in from another dev home. Copy in, never symlink: data flows one way, into your sandbox,
 never back out. See [SQLite fixtures](.agents/skills/test-toolspell-app/references/sqlite-fixtures.md)
-before writing rows directly.
+before writing rows directly. Never put real user data (names, paths, tokens) in test fixtures or
+screenshots.
 
 ## Verifying
 
@@ -110,6 +111,8 @@ before writing rows directly.
   package's config, web browser tests included. For big files, add `-t "<name>"`.
 - `vp run typecheck` caches per package. Each package runs `effect-tsgo tsrs --noEmit`, the native
   TypeScript checker with Effect's diagnostics built in.
+- Run `node -e` snippets from `apps/server` or the owning package. `effect` does not resolve from
+  the repository root.
 - **Do not run repo-wide checks** (`vp run ready`, `vp run -r test`) unless asked. CI runs them.
 - Test behavior that can break: the decider, the event sink transaction, effect worker recovery,
   subscriptions and resume, auth and scope guards, persistence and migrations, wire compatibility,
