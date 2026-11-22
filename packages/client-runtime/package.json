@@ -4,13 +4,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./client": {
-      "types": "./src/client.ts",
-      "import": "./src/client.ts"
-    },
-    "./store": {
-      "types": "./src/store.ts",
-      "import": "./src/store.ts"
+    "./atoms": {
+      "types": "./src/atoms.ts",
+      "import": "./src/atoms.ts"
     },
     "./views": {
       "types": "./src/views.ts",

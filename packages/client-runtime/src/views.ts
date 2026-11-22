@@ -14,26 +14,22 @@ import {
 // reconnect the stream continues from it instead of reloading everything.
 
 export interface WorkspacesView {
-  readonly loaded: boolean;
   readonly sequence: EventSequence | undefined;
   readonly workspaces: ReadonlyArray<Workspace>;
 }
 
 export interface JobsView {
-  readonly loaded: boolean;
   readonly sequence: EventSequence | undefined;
   readonly workspaceId: WorkspaceId;
   readonly jobs: ReadonlyArray<Job>;
 }
 
 export const emptyWorkspacesView: WorkspacesView = {
-  loaded: false,
   sequence: undefined,
   workspaces: [],
 };
 
 export const emptyJobsView = (workspaceId: WorkspaceId): JobsView => ({
-  loaded: false,
   sequence: undefined,
   workspaceId,
   jobs: [],
@@ -66,7 +62,7 @@ export const applyWorkspacesItem = (
   item: WorkspacesStreamItem,
 ): WorkspacesView => {
   if (item.type === "snapshot") {
-    return { loaded: true, sequence: item.sequence, workspaces: item.workspaces };
+    return { sequence: item.sequence, workspaces: item.workspaces };
   }
   const next = applyEvents(
     view.workspaces,
@@ -80,7 +76,7 @@ export const applyWorkspacesItem = (
 
 export const applyJobsItem = (view: JobsView, item: JobsStreamItem): JobsView => {
   if (item.type === "snapshot") {
-    return { ...view, loaded: true, sequence: item.sequence, jobs: item.jobs };
+    return { ...view, sequence: item.sequence, jobs: item.jobs };
   }
   const next = applyEvents(view.jobs, view.sequence, item.events, applyJobEvent, ({ event }) =>
     "jobId" in event ? event.jobId : undefined,
