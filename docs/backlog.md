@@ -14,7 +14,10 @@ entry moves into an issue (labels from `.github/labels.json`) and the file is de
 - **Move this backlog to GitHub Issues** at the first public push, then delete this file and point
   AGENTS.md at the issues.
 - **Desktop packaging**: electron-builder, signing and notarization, auto-update. `backend.ts`
-  already expects the bundled server at `resources/server/bin.mjs`.
+  already expects the bundled server at `resources/server/bin.mjs`. Use the release
+  [macOS PNG](../assets/prod/macos-1024.png), [Windows ICO](../assets/prod/windows.ico), and
+  [universal PNG](../assets/prod/universal-1024.png) as icon inputs. The same files are available
+  in [the nightly set](../assets/nightly).
 - **A real runner**: first decide what a ToolSpell job does. See [runners](internals/runners.md).
 - **Login-shell `PATH`** for apps launched from Finder or the Start menu; needed before the first
   real runner spawns tools (T3 Code: `apps/desktop/src/shell/DesktopShellEnvironment.ts`).

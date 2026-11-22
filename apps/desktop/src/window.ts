@@ -109,13 +109,15 @@ export interface MainWindowOptions {
   readonly loadApp: () => void;
   readonly isAppUrl: (url: string) => boolean;
   readonly openExternal: (url: string) => void;
+  readonly icon: string | undefined;
 }
 
-export const createMainWindow = ({ loadApp, isAppUrl, openExternal }: MainWindowOptions) => {
+export const createMainWindow = ({ loadApp, isAppUrl, openExternal, icon }: MainWindowOptions) => {
   const window = new BrowserWindow({
     width: 1200,
     height: 800,
     title: "ToolSpell",
+    ...(icon === undefined ? {} : { icon }),
     show: false,
     backgroundColor: windowBackground(),
     autoHideMenuBar: true,

@@ -1,5 +1,6 @@
-// @effect-diagnostics-next-line nodeBuiltinImport:off -- Vite config runs before any Effect runtime.
+// @effect-diagnostics nodeBuiltinImport:off -- Vite config runs before any Effect runtime.
 import * as NodeFSP from "node:fs/promises";
+import * as NodeURL from "node:url";
 
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
@@ -143,7 +144,7 @@ function chunkCycleGuardPlugin(): Plugin {
   };
 }
 
-export default mergeConfig(
+const appConfig = mergeConfig(
   basePackageConfig,
   defineConfig({
     plugins: [
@@ -176,3 +177,10 @@ export default mergeConfig(
     },
   }),
 );
+
+// Adapted from T3 Code (MIT). Each channel serves the same public URLs.
+export default defineConfig(({ command, mode }) => {
+  const channel = command === "serve" ? "dev" : mode === "nightly" ? "nightly" : "prod";
+  const publicDir = NodeURL.fileURLToPath(new URL(`../../assets/${channel}/web`, import.meta.url));
+  return { ...appConfig, publicDir };
+});

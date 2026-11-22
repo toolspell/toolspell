@@ -11,6 +11,9 @@ import { ServerLog } from "./serverLog.ts";
 import { createMainWindow, showRetryPage, showStartupPage, windowBackground } from "./window.ts";
 
 const isDevelopment = !app.isPackaged;
+const devIconDirectory = isDevelopment
+  ? NodePath.resolve(app.getAppPath(), "../../assets/dev")
+  : undefined;
 
 // Identity comes before the single-instance lock, which lives in userData like every profile
 // file. A dev profile sits in the checkout's dev home, so checkouts run side by side.
@@ -168,6 +171,13 @@ const ensureWindow = () => {
     loadApp: () => void loadApp(),
     isAppUrl,
     openExternal: openLink,
+    icon:
+      devIconDirectory === undefined
+        ? undefined
+        : NodePath.join(
+            devIconDirectory,
+            process.platform === "win32" ? "windows.ico" : "universal-1024.png",
+          ),
   });
   window = created;
   created.on("closed", () => {
@@ -200,6 +210,9 @@ const start = async () => {
   );
   session.defaultSession.setPermissionCheckHandler(() => false);
   setApplicationMenu();
+  if (devIconDirectory !== undefined && process.platform === "darwin") {
+    app.dock?.setIcon(NodePath.join(devIconDirectory, "macos-1024.png"));
+  }
   nativeTheme.on("updated", () => {
     if (window !== undefined && !window.isDestroyed())
       window.setBackgroundColor(windowBackground());
