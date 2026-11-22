@@ -23,18 +23,64 @@ const isAlive = (pid: number) => {
   }
 };
 
-const runningPid = NodeFS.existsSync(runningMarker)
-  ? Number(NodeFS.readFileSync(runningMarker, "utf8").trim())
-  : 0;
-if (Number.isInteger(runningPid) && runningPid > 0 && isAlive(runningPid)) {
-  process.stderr.write(`Setup is already running here (PID ${runningPid}); wait for it to end.\n`);
+const readPid = (path: string) => {
+  try {
+    return Number(NodeFS.readFileSync(path, "utf8").trim()) || 0;
+  } catch {
+    return 0;
+  }
+};
+
+/**
+ * Claims `setup-running`, or returns the live PID that holds it. A hard link only succeeds while
+ * no marker exists, and the linked file already holds this PID, so a reader never sees it empty.
+ */
+const claimMarker = () => {
+  const mine = `${runningMarker}.${process.pid}`;
+  const stale = `${mine}.stale`;
+  NodeFS.writeFileSync(mine, `${process.pid}\n`);
+  try {
+    while (true) {
+      try {
+        NodeFS.linkSync(mine, runningMarker);
+        return undefined;
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+      }
+      const holder = readPid(runningMarker);
+      if (holder > 0 && isAlive(holder)) return holder;
+      // A dead owner's marker. Move it aside first, so a claim made meanwhile is put back.
+      try {
+        NodeFS.renameSync(runningMarker, stale);
+      } catch {
+        continue;
+      }
+      const moved = readPid(stale);
+      if (moved !== holder) {
+        try {
+          NodeFS.linkSync(stale, runningMarker);
+        } catch {
+          // A third setup claimed it meanwhile; it owns the marker now.
+        }
+        NodeFS.rmSync(stale, { force: true });
+        return moved;
+      }
+      NodeFS.rmSync(stale, { force: true });
+    }
+  } finally {
+    NodeFS.rmSync(mine, { force: true });
+  }
+};
+
+NodeFS.mkdirSync(markerDir, { recursive: true });
+const holder = claimMarker();
+if (holder !== undefined) {
+  process.stderr.write(`Setup is already running here (PID ${holder}); wait for it to end.\n`);
   process.exit(1);
 }
 
 NodeFS.rmSync(doneMarker, { force: true });
 NodeFS.rmSync(failedMarker, { force: true });
-NodeFS.mkdirSync(markerDir, { recursive: true });
-NodeFS.writeFileSync(runningMarker, `${process.pid}\n`);
 let failureDetail = "";
 process.on("uncaughtExceptionMonitor", (error) => {
   failureDetail = error.stack ?? String(error);
@@ -42,7 +88,7 @@ process.on("uncaughtExceptionMonitor", (error) => {
 process.on("exit", (code) => {
   if (code === 0) NodeFS.writeFileSync(doneMarker, "");
   else NodeFS.writeFileSync(failedMarker, `Setup exited with code ${code}.\n${failureDetail}\n`);
-  NodeFS.rmSync(runningMarker, { force: true });
+  if (readPid(runningMarker) === process.pid) NodeFS.rmSync(runningMarker, { force: true });
 });
 // A cancelled setup must still leave a marker, or agents would wait forever.
 let activeInstall: NodeChildProcess.ChildProcess | undefined;
