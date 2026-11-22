@@ -5,8 +5,18 @@ export type LaunchMode = "background" | "foreground";
 /** Carries a launcher's resolved mode, such as the dev supervisor's, to Electron. */
 export const LAUNCH_MODE_ENV = "TOOLSPELL_DESKTOP_MODE";
 
-/** Agents whose shells may still have a terminal on stdin set these. */
-const AGENT_MARKERS = ["AI_AGENT", "CLAUDECODE"];
+/**
+ * Set in agent shells, which may still have a terminal on stdin (Codex runs commands in a PTY).
+ * T3 Code sets T3CODE_THREAD_ID for every provider and for its own terminal panel; Codex sets
+ * CODEX_THREAD_ID, and CODEX_SANDBOX when sandboxed; OpenCode sets AI_AGENT.
+ */
+const AGENT_MARKERS = [
+  "AI_AGENT",
+  "CLAUDECODE",
+  "CODEX_THREAD_ID",
+  "CODEX_SANDBOX",
+  "T3CODE_THREAD_ID",
+];
 
 export interface LaunchModeInput {
   readonly argv: ReadonlyArray<string>;
