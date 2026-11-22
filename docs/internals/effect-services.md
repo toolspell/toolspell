@@ -3,6 +3,8 @@
 Server features are Effect services. Transports call them: WebSocket RPC handlers in
 [`ws.ts`](../../apps/server/src/ws.ts), HTTP routes in [`http.ts`](../../apps/server/src/http.ts),
 and the CLI in [`bin.ts`](../../apps/server/src/bin.ts). This page holds the rules for writing them.
+The [Effect Service Conventions](../../.macroscope/check-run-agents/effect-service-conventions.md)
+review check holds pull requests to the same rules; keep the two in step.
 
 ## Where a feature lives
 
