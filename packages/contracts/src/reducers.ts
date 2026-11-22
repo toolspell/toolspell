@@ -4,8 +4,14 @@ import type { DomainEvent, EventEnvelope } from "./events.ts";
 // One pure reducer per record type. The server projects events into SQLite with
 // them and clients apply streamed events with them, so the two cannot drift.
 
-export const isWorkspaceEvent = (event: DomainEvent) =>
-  event.type === "workspace.created" || event.type === "workspace.renamed";
+/** The event types that change a workspace record; every other event changes a job. */
+export const WORKSPACE_EVENT_TYPES: ReadonlyArray<DomainEvent["type"]> = [
+  "workspace.created",
+  "workspace.renamed",
+];
+const workspaceEventTypes: ReadonlySet<DomainEvent["type"]> = new Set(WORKSPACE_EVENT_TYPES);
+
+export const isWorkspaceEvent = (event: DomainEvent) => workspaceEventTypes.has(event.type);
 
 export const applyWorkspaceEvent = (
   current: Workspace | undefined,

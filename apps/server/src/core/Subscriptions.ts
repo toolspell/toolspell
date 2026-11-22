@@ -1,5 +1,6 @@
 import {
   isWorkspaceEvent,
+  WORKSPACE_EVENT_TYPES,
   type EventEnvelope,
   type EventsBatch,
   type EventSequence,
@@ -14,7 +15,7 @@ import * as SqlClient from "effect/sql/SqlClient";
 import type * as SqlError from "effect/sql/SqlError";
 import * as Stream from "effect/Stream";
 
-import { EventSink } from "./EventSink.ts";
+import { EventSink, type EventFilter } from "./EventSink.ts";
 import { ProjectionStore } from "./ProjectionStore.ts";
 
 export interface SubscriptionsShape {
@@ -42,31 +43,36 @@ const make = Effect.gen(function* () {
    * no commit falls between the read and the live feed, and drops live events the
    * read already covered.
    */
-  const scoped = <Snapshot extends { readonly sequence: EventSequence }>(options: {
+  const scoped = <Snapshot>(options: {
     readonly afterSequence: EventSequence | undefined;
-    readonly snapshot: Effect.Effect<Snapshot, SqlError.SqlError>;
+    readonly snapshot: (head: EventSequence) => Effect.Effect<Snapshot, SqlError.SqlError>;
+    /** Narrows the resume read in SQL; it must keep every event `matches` accepts. */
+    readonly filter: EventFilter;
     readonly matches: (envelope: EventEnvelope) => boolean;
   }) =>
     Stream.unwrap(
       Effect.gen(function* () {
         const live = yield* sink.subscribe;
-        let first: Snapshot | EventsBatch;
-        let covered: EventSequence;
         const cursor = options.afterSequence;
-        // A cursor past the head means the server's database was replaced; start over.
-        if (cursor === undefined || cursor > (yield* sink.headSequence)) {
-          first = yield* sql.withTransaction(options.snapshot);
-          covered = first.sequence;
-        } else {
-          const missed = yield* sink.readAfter(cursor);
-          first = { type: "events", events: missed.filter(options.matches) };
-          covered = missed.at(-1)?.sequence ?? cursor;
-        }
+        // Head and read share a transaction: every matching event at or below the head is in
+        // the read, so live events at or below it are duplicates and later ones are new.
+        const [first, covered] = yield* sql.withTransaction(
+          Effect.gen(function* () {
+            const head = yield* sink.headSequence;
+            // A cursor past the head means the server's database was replaced; start over.
+            if (cursor === undefined || cursor > head) {
+              return [yield* options.snapshot(head), head] as const;
+            }
+            const missed = yield* sink.readAfter(cursor, options.filter);
+            const batch: EventsBatch = { type: "events", events: missed.filter(options.matches) };
+            return [batch, head] as const;
+          }),
+        );
         return Stream.make(first).pipe(
           Stream.concat(
             Stream.fromSubscription(live).pipe(
               Stream.filter((envelope) => envelope.sequence > covered && options.matches(envelope)),
-              Stream.map((envelope) => ({ type: "events" as const, events: [envelope] })),
+              Stream.map((envelope): EventsBatch => ({ type: "events", events: [envelope] })),
             ),
           ),
         );
@@ -77,22 +83,26 @@ const make = Effect.gen(function* () {
     workspaces: (afterSequence) =>
       scoped({
         afterSequence,
-        snapshot: Effect.all({
-          type: Effect.succeed("snapshot" as const),
-          sequence: sink.headSequence,
-          workspaces: projections.listWorkspaces,
-        }),
+        snapshot: (head) =>
+          Effect.map(projections.listWorkspaces, (workspaces) => ({
+            type: "snapshot" as const,
+            sequence: head,
+            workspaces,
+          })),
+        filter: { types: WORKSPACE_EVENT_TYPES },
         matches: ({ event }) => isWorkspaceEvent(event),
       }),
     jobs: (workspaceId, afterSequence) =>
       scoped({
         afterSequence,
-        snapshot: Effect.all({
-          type: Effect.succeed("snapshot" as const),
-          sequence: sink.headSequence,
-          workspaceId: Effect.succeed(workspaceId),
-          jobs: projections.listJobs(workspaceId),
-        }),
+        snapshot: (head) =>
+          Effect.map(projections.listJobs(workspaceId), (jobs) => ({
+            type: "snapshot" as const,
+            sequence: head,
+            workspaceId,
+            jobs,
+          })),
+        filter: { workspaceId },
         matches: ({ event }) => !isWorkspaceEvent(event) && event.workspaceId === workspaceId,
       }),
   });

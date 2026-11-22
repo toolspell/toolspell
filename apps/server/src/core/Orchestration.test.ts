@@ -5,6 +5,7 @@ import {
   JobId,
   WorkspaceId,
   type ClientCommand,
+  type DomainEvent,
 } from "@toolspell/contracts";
 import * as Deferred from "effect/Deferred";
 import * as Effect from "effect/Effect";
@@ -24,7 +25,7 @@ import {
 import { EventSink } from "./EventSink.ts";
 import { Orchestrator } from "./Orchestrator.ts";
 import { ProjectionStore } from "./ProjectionStore.ts";
-import { Subscriptions } from "./Subscriptions.ts";
+import { layer as subscriptionsLayer, Subscriptions } from "./Subscriptions.ts";
 
 const workspaceId = WorkspaceId.make("w1");
 const jobId = JobId.make("j1");
@@ -243,5 +244,47 @@ describe("subscriptions", () => {
         .pipe(Stream.take(1), Stream.runCollect);
       assert.strictEqual(restarted?.type, "snapshot");
     }).pipe(Effect.provide(layerServicesTest(completingRunner))),
+  );
+
+  it.effect("a resume sends each event once when another workspace's event is the head", () =>
+    Effect.gen(function* () {
+      const orchestrator = yield* Orchestrator;
+      const sink = yield* EventSink;
+      const otherWorkspaceId = WorkspaceId.make("w2");
+      const { sequence: cursor } = yield* orchestrator.dispatch(createWorkspace);
+      const commit = (event: DomainEvent) =>
+        sink.commit({ commandId: Option.none(), events: [event], effects: [] });
+      const queueJob = (id: string) =>
+        commit({ type: "job.queued", jobId: JobId.make(id), workspaceId, input: "go" });
+      yield* queueJob("a1");
+      // Commits between subscribing and reading reach the stream twice, live and in the read.
+      const racingSink = EventSink.of({
+        ...sink,
+        subscribe: Effect.tap(sink.subscribe, () =>
+          Effect.andThen(
+            queueJob("a2"),
+            commit({ type: "workspace.created", workspaceId: otherWorkspaceId, name: "Other" }),
+          ).pipe(Effect.orDie),
+        ),
+      });
+      const subscriptions = yield* Effect.provide(
+        Effect.service(Subscriptions),
+        // Fresh, or the memoized instance on the real sink comes back.
+        Layer.fresh(subscriptionsLayer).pipe(Layer.provide(Layer.succeed(EventSink, racingSink))),
+      );
+      const items = yield* subscriptions
+        .jobs(workspaceId, cursor)
+        .pipe(Stream.toQueue({ capacity: "unbounded" }));
+      const missed = yield* Queue.take(items);
+      yield* commit({ type: "workspace.renamed", workspaceId: otherWorkspaceId, name: "Renamed" });
+      yield* queueJob("a3");
+      const live = yield* Queue.take(items);
+      const jobIds = (item: typeof missed) =>
+        item.type === "events"
+          ? item.events.map(({ event }) => ("jobId" in event ? event.jobId : event.type))
+          : [];
+      assert.deepStrictEqual(jobIds(missed), ["a1", "a2"]);
+      assert.deepStrictEqual(jobIds(live), ["a3"]);
+    }).pipe(Effect.scoped, Effect.provide(layerServicesTest(completingRunner))),
   );
 });

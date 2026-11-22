@@ -3,6 +3,7 @@ import {
   EventSequence,
   type CommandId,
   type EventEnvelope,
+  type WorkspaceId,
 } from "@toolspell/contracts";
 import * as Clock from "effect/Clock";
 import * as Context from "effect/Context";
@@ -30,6 +31,12 @@ export interface CommitInput {
   readonly effects: ReadonlyArray<OutboxEffect>;
 }
 
+/** Narrows a read in SQL, so a stream does not load and decode rows it would drop. */
+export interface EventFilter {
+  readonly workspaceId?: WorkspaceId;
+  readonly types?: ReadonlyArray<DomainEvent["type"]>;
+}
+
 export interface EventSinkShape {
   /**
    * Appends events, applies projections, records the command receipt and queues
@@ -43,6 +50,7 @@ export interface EventSinkShape {
   readonly headSequence: Effect.Effect<EventSequence, SqlError.SqlError>;
   readonly readAfter: (
     sequence: EventSequence,
+    filter?: EventFilter,
   ) => Effect.Effect<ReadonlyArray<EventEnvelope>, SqlError.SqlError>;
   /** Committed events from now on. Subscribe before reading a snapshot so nothing falls in between. */
   readonly subscribe: Effect.Effect<PubSub.Subscription<EventEnvelope>, never, Scope.Scope>;
@@ -131,9 +139,17 @@ const make = Effect.gen(function* () {
     return Option.map(Option.fromNullishOr(rows[0]), (row) => toSequence(row.sequence));
   });
 
-  const readAfter = Effect.fn("EventSink.readAfter")(function* (sequence: EventSequence) {
+  const readAfter = Effect.fn("EventSink.readAfter")(function* (
+    sequence: EventSequence,
+    filter: EventFilter = {},
+  ) {
+    const conditions = [sql`sequence > ${sequence}`];
+    if (filter.workspaceId !== undefined) {
+      conditions.push(sql`workspace_id = ${filter.workspaceId}`);
+    }
+    if (filter.types !== undefined) conditions.push(sql`type IN ${sql.in(filter.types)}`);
     const rows = yield* sql<EventRow>`
-      SELECT sequence, occurred_at, payload FROM events WHERE sequence > ${sequence} ORDER BY sequence
+      SELECT sequence, occurred_at, payload FROM events WHERE ${sql.and(conditions)} ORDER BY sequence
     `;
     return toEnvelopes(rows);
   });
