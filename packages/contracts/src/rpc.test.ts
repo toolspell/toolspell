@@ -97,6 +97,11 @@ describe("command fields", () => {
       command: { ...job, input: "i".repeat(10_001) },
       valid: false,
     },
+    {
+      name: "an id over its limit",
+      command: { ...job, jobId: "j".repeat(129), input: "go" },
+      valid: false,
+    },
   ])("$name", ({ command, valid }) => {
     if (valid) decodeCommand(command);
     else assert.throws(() => decodeCommand(command));
