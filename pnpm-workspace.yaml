@@ -10,6 +10,18 @@ allowBuilds:
   electron: true
   esbuild: true
 
+# Unmet peers fail resolution, so a pin outside a dependency's peer range is
+# caught when the lockfile changes instead of scrolling past as a warning.
+strictPeerDependencies: true
+
+# pnpm 12 links agent skills that dependencies ship into .claude/skills once
+# approved. We curate our own skills, so deny these to keep installs quiet.
+permissions:
+  "@tanstack/react-router":
+    skills: false
+  "@tanstack/router-plugin":
+    skills: false
+
 catalog:
   "@base-ui/react": ^1.9.0
   "@effect/atom-react": 4.1.5
