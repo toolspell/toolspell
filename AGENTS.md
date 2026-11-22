@@ -183,9 +183,10 @@ Most code changes do not need a documentation change. Agents can read the code.
 ## Plans and work artifacts
 
 Do not commit implementation plans, research notes, or agent scratch files. Keep temporary
-material outside the worktree. A merged PR is the implementation record. Until the repository has
-an issue tracker, deferred and queued work lives in [the backlog](docs/backlog.md): add an entry
-when something is deliberately deferred, and remove it in the commit that lands it.
+material outside the worktree. A merged PR is the implementation record. Until the repository is
+public on GitHub, deferred work and verification checklists live in [the backlog](docs/backlog.md)
+(no task status; that belongs in the thread and the worktree's `.plans/`). Add an entry when
+something is deliberately deferred, and remove it in the commit that lands it.
 
 ## How it works
 

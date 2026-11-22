@@ -1,24 +1,21 @@
 # Backlog
 
-Topics we deliberately deferred, so a new session (or a compacted one) can pick them up. This
-repository has no issue tracker yet; once it is on GitHub, move each entry into an issue and delete
-it here. Remove an entry when it lands, in the same commit. Keep entries short: the decision and
-where to start, not a plan.
+Deferred topics and verification checklists, so any session, worktree or compacted context can
+pick them up. This file is a bridge until the repository is public on GitHub: at that push every
+entry moves into an issue (labels from `.github/labels.json`) and the file is deleted.
 
-## Next up
-
-- **Job list re-renders**: render metrics show every `job.progressed` event re-renders all job rows
-  (600 of 780 renders in the 20-job scenario). Keep unchanged rows from re-rendering, then confirm
-  with `vp run report:renders`.
-- **Desktop items (B)**: graceful quit with timeout and tree kill; no white flash (`show: false`,
-  `ready-to-show`, `nativeTheme` background); startup feedback; server logs to a file with the tail
-  in error dialogs; restart with backoff; separate dev and installed profiles and app name; own
-  application menu; context menu; reload a crashed renderer; IPC sender checks, deny-by-default
-  permissions and a CSP; a remembered port for a stable origin; a dev supervisor that restarts
-  Electron on rebuild; on macOS the app keeps running after its window closes (decided).
+- Only deferred work and checklists. No task status: work in progress lives in its thread and in
+  the worktree's `.plans/`.
+- Add an entry when something is deliberately deferred; remove it in the commit that lands it.
+- Keep entries short: the decision and where to start, not a plan.
 
 ## Revisit later
 
+- **Move this backlog to GitHub Issues** at the first public push, then delete this file and point
+  AGENTS.md at the issues.
+- **Job list re-renders**: render metrics show every `job.progressed` event re-renders all job rows
+  (600 of 780 renders in the 20-job scenario). Keep unchanged rows from re-rendering, then confirm
+  with `vp run report:renders`.
 - **Desktop packaging**: electron-builder, signing and notarization, auto-update. `backend.ts`
   already expects the bundled server at `resources/server/bin.mjs`.
 - **A real runner**: first decide what a ToolSpell job does. See [runners](internals/runners.md).
