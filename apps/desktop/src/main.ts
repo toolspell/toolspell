@@ -1,4 +1,5 @@
 import * as NodePath from "node:path";
+import * as NodeTty from "node:tty";
 
 import { AUTH_SESSION_PATH } from "@toolspell/contracts/desktop";
 import {
@@ -15,6 +16,7 @@ import {
 
 import { ServerSupervisor, waitForHttp } from "./backend.ts";
 import { DESKTOP_IPC, isTrustedSender, parseExternalUrl, parseThemeSource } from "./ipc.ts";
+import { resolveLaunchMode } from "./launchMode.ts";
 import { setApplicationMenu } from "./menu.ts";
 import { choosePort, LOOPBACK, readRememberedPort, rememberPort } from "./port.ts";
 import { readRemembered, remember } from "./remembered.ts";
@@ -25,6 +27,15 @@ const isDevelopment = !app.isPackaged;
 const devIconDirectory = isDevelopment
   ? NodePath.resolve(app.getAppPath(), "../../assets/dev")
   : undefined;
+// A packaged app opened from Finder or the Start menu has no terminal, but a person opened it.
+const launch = resolveLaunchMode({
+  argv: process.argv,
+  env: process.env,
+  interactive: app.isPackaged || NodeTty.isatty(0),
+});
+const background = launch.mode === "background";
+// Before Electron finishes launching: no Dock icon or menu bar, and macOS refuses to activate it.
+if (background && process.platform === "darwin") app.setActivationPolicy("prohibited");
 
 // Identity comes before the single-instance lock, which lives in userData like every profile
 // file. A dev profile sits in the checkout's dev home, so checkouts run side by side.
@@ -75,6 +86,11 @@ const note = (message: string) => {
   if (isDevelopment) process.stdout.write(line);
 };
 
+// Electron reports an uncaught exception in a dialog; in the background the log gets it.
+if (background) {
+  process.on("uncaughtException", (error) => note(`Uncaught exception: ${error.stack ?? error}`));
+}
+
 const isAppUrl = (url: string) => {
   try {
     return webOrigin !== undefined && new URL(url).origin === webOrigin;
@@ -89,13 +105,17 @@ const withLogPath = (detail: string) =>
 const fatal = (message: string, detail: string) => {
   if (fatalShown || quitPhase !== "running") return;
   fatalShown = true;
-  note(message);
-  dialog.showErrorBox(message, withLogPath(detail));
+  note(background ? `${message}: ${detail}` : message);
+  if (!background) dialog.showErrorBox(message, withLogPath(detail));
   app.quit();
 };
 
 const keepTrying = async (detail: string) => {
   if (quitPhase !== "running") return false;
+  if (background) {
+    note(`The server keeps stopping; trying again without asking. ${detail}`);
+    return true;
+  }
   const options = {
     type: "error" as const,
     message: "ToolSpell's server keeps stopping.",
@@ -114,6 +134,8 @@ const keepTrying = async (detail: string) => {
 };
 
 const openExternal = async (url: string) => {
+  // The system browser would come to the front.
+  if (background) return note(`Not opening ${url} in the background.`);
   try {
     await shell.openExternal(url);
   } catch (error) {
@@ -173,12 +195,15 @@ const onServerReady = async (token: string) => {
 const ensureWindow = () => {
   if (!started || quitPhase !== "running") return;
   if (window !== undefined && !window.isDestroyed()) {
+    if (background) return;
     if (window.isMinimized()) window.restore();
     window.show();
     window.focus();
     return;
   }
   const created = createMainWindow({
+    background,
+    note,
     loadApp: () => void loadApp(),
     isAppUrl,
     openExternal: openLink,
@@ -223,7 +248,7 @@ const start = async () => {
   );
   session.defaultSession.setPermissionCheckHandler(() => false);
   setApplicationMenu();
-  if (devIconDirectory !== undefined && process.platform === "darwin") {
+  if (!background && devIconDirectory !== undefined && process.platform === "darwin") {
     app.dock?.setIcon(NodePath.join(devIconDirectory, "macos-1024.png"));
   }
   // The theme the web app last chose, so the window opens in it before the app loads.
@@ -233,6 +258,7 @@ const start = async () => {
       window.setBackgroundColor(windowBackground());
   });
   log = new ServerLog(NodePath.join(app.getPath("logs"), "server.log"));
+  note(`Launch mode: ${launch.mode} (${launch.reason}).`);
   started = true;
   ensureWindow();
 

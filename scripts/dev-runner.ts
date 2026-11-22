@@ -6,7 +6,8 @@
 //   node scripts/dev-runner.ts dev:desktop    web + Electron (which starts its own server)
 //
 // Flags: --home-dir <dir> (default <checkout>/.toolspell), --host <host> (Vite bind host, for
-// other devices; the server stays on loopback behind Vite's proxy).
+// other devices; the server stays on loopback behind Vite's proxy), --background or --foreground
+// (dev:desktop; without one, the app runs in the background unless a person launched it).
 // Env: TOOLSPELL_PORT_OFFSET (exact offset) or TOOLSPELL_DEV_INSTANCE (hashed seed).
 //
 // Ports derive from the checkout path, so each worktree keeps the same ports across
@@ -96,21 +97,33 @@ const portsFree = async (ports: ReadonlyArray<number>) => {
   return true;
 };
 
-const USAGE = `Usage: dev-runner <${Object.keys(MODES).join("|")}> [--home-dir <dir>] [--host <host>]`;
+const USAGE = `Usage: dev-runner <${Object.keys(MODES).join("|")}> [--home-dir <dir>] [--host <host>] [--background|--foreground]`;
 const VALUE_FLAGS = new Set(["--home-dir", "--host"]);
+const DESKTOP_FLAGS = new Set(["--background", "--foreground"]);
 
 /** Rejects anything unknown, so a typo or `--help` never starts servers by accident. */
 export const parseArgs = (argv: ReadonlyArray<string>) => {
   const [mode, ...rest] = argv;
   if (!mode || !(mode in MODES)) throw new Error(USAGE);
   const flags = new Map<string, string>();
-  for (let index = 0; index < rest.length; index += 2) {
+  let desktop: "background" | "foreground" | undefined;
+  for (let index = 0; index < rest.length; index += 1) {
     const name = rest[index]!;
+    if (DESKTOP_FLAGS.has(name)) {
+      desktop = name === "--background" ? "background" : "foreground";
+      continue;
+    }
     const value = rest[index + 1];
     if (!VALUE_FLAGS.has(name) || value === undefined) throw new Error(USAGE);
     flags.set(name, value);
+    index += 1;
   }
-  return { mode: mode as Mode, homeDir: flags.get("--home-dir"), host: flags.get("--host") };
+  return {
+    mode: mode as Mode,
+    homeDir: flags.get("--home-dir"),
+    host: flags.get("--host"),
+    desktop,
+  };
 };
 
 const main = async () => {
@@ -132,6 +145,8 @@ const main = async () => {
     PORT: String(webPort),
     // Browsers only talk to Vite, which proxies to the server, so only Vite is exposed.
     ...(args.host ? { TOOLSPELL_WEB_HOST: args.host } : {}),
+    // The desktop supervisor resolves the mode itself when no flag picked one.
+    ...(args.desktop ? { TOOLSPELL_DESKTOP_MODE: args.desktop } : {}),
   };
   // A bootstrap pipe from an outer launcher does not exist in the dev servers.
   delete env.TOOLSPELL_BOOTSTRAP_FD;

@@ -4,7 +4,10 @@ import * as NodeChildProcess from "node:child_process";
 import * as NodeFS from "node:fs";
 import * as NodeModule from "node:module";
 import * as NodePath from "node:path";
+import * as NodeTty from "node:tty";
 import * as NodeURL from "node:url";
+
+import { LAUNCH_MODE_ENV, resolveLaunchMode } from "../src/launchMode.ts";
 
 const desktopDir = NodePath.dirname(import.meta.dirname);
 const outDir = NodePath.join(desktopDir, "dist-electron");
@@ -14,6 +17,12 @@ const RESTART_DEBOUNCE_MS = 200;
 // Longer than the app's own quit, which gives its server 5 s and then forces it.
 const STOP_GRACE_MS = 8_000;
 const startedAt = Date.now();
+// Resolved once here, where an agent's shell is still visible, so every restart keeps the mode.
+const launch = resolveLaunchMode({
+  argv: process.argv.slice(2),
+  env: process.env,
+  interactive: NodeTty.isatty(0),
+});
 
 let electron: NodeChildProcess.ChildProcess | undefined;
 let shuttingDown = false;
@@ -21,6 +30,47 @@ let debounce: NodeJS.Timeout | undefined;
 let queue = Promise.resolve();
 
 const say = (message: string) => process.stdout.write(`[dev-electron] ${message}\n`);
+const override = launch.mode === "background" ? "--foreground" : "--background";
+say(`Launch mode: ${launch.mode} (${launch.reason}; ${override} overrides it).`);
+
+const run = (command: string, args: ReadonlyArray<string>) => {
+  const result = NodeChildProcess.spawnSync(command, args, { encoding: "utf8" });
+  if (result.status !== 0) throw new Error(`${command} failed: ${result.stderr || result.error}`);
+};
+
+/**
+ * The stock Electron.app checks in with macOS as a regular app before main.ts can make it
+ * background only, and that moment can move the front to another app. A copy marked
+ * LSBackgroundOnly never checks in as one. Cached until Electron changes.
+ */
+const backgroundOnlyElectron = (stockBinary: string) => {
+  const stockApp = NodePath.resolve(stockBinary, "../../..");
+  const cacheDir = NodePath.join(desktopDir, "node_modules", ".cache", "background-electron");
+  const copy = NodePath.join(cacheDir, "Electron.app");
+  const stampFile = NodePath.join(cacheDir, "source.json");
+  const source = JSON.stringify({
+    stockApp,
+    mtimeMs: NodeFS.statSync(NodePath.join(stockApp, "Contents", "Info.plist")).mtimeMs,
+  });
+  const stamp = NodeFS.existsSync(stampFile) ? NodeFS.readFileSync(stampFile, "utf8") : undefined;
+  if (stamp !== source) {
+    NodeFS.rmSync(cacheDir, { recursive: true, force: true });
+    NodeFS.mkdirSync(cacheDir, { recursive: true });
+    // -c clones on APFS, so the copy takes no space; -R keeps the frameworks' symlinks.
+    run("cp", ["-Rc", stockApp, copy]);
+    const plist = NodePath.join(copy, "Contents", "Info.plist");
+    run("plutil", ["-insert", "LSBackgroundOnly", "-bool", "true", plist]);
+    run("codesign", ["--force", "--deep", "--sign", "-", "--timestamp=none", copy]);
+    NodeFS.writeFileSync(stampFile, source);
+    say(`Prepared a background-only Electron in ${cacheDir}.`);
+  }
+  return NodePath.join(copy, "Contents", "MacOS", NodePath.basename(stockBinary));
+};
+
+const electronBinary =
+  launch.mode === "background" && process.platform === "darwin"
+    ? backgroundOnlyElectron(electronPath)
+    : electronPath;
 
 const isRunning = (child: NodeChildProcess.ChildProcess) =>
   child.exitCode === null && child.signalCode === null;
@@ -51,9 +101,9 @@ const startElectron = () => {
   const { ELECTRON_RUN_AS_NODE: _, ...env } = process.env;
   // vp kills this process with SIGKILL when another dev task fails; the stdin pipe still closes
   // then, and the app quits on that.
-  const child = NodeChildProcess.spawn(electronPath, ["."], {
+  const child = NodeChildProcess.spawn(electronBinary, ["."], {
     cwd: desktopDir,
-    env: { ...env, TOOLSPELL_DESKTOP_EXIT_WITH_STDIN: "1" },
+    env: { ...env, TOOLSPELL_DESKTOP_EXIT_WITH_STDIN: "1", [LAUNCH_MODE_ENV]: launch.mode },
     stdio: ["pipe", "inherit", "inherit"],
   });
   electron = child;

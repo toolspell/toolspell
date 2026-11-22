@@ -105,6 +105,9 @@ const contextMenu = (contents: WebContents, params: ContextMenuParams) => {
 };
 
 export interface MainWindowOptions {
+  /** Never shown, and nothing native pops up; agents drive and capture it over CDP. */
+  readonly background: boolean;
+  readonly note: (message: string) => void;
   /** Loads the app, or the startup page while the server is not ready. */
   readonly loadApp: () => void;
   readonly isAppUrl: (url: string) => boolean;
@@ -112,7 +115,14 @@ export interface MainWindowOptions {
   readonly icon: string | undefined;
 }
 
-export const createMainWindow = ({ loadApp, isAppUrl, openExternal, icon }: MainWindowOptions) => {
+export const createMainWindow = ({
+  background,
+  note,
+  loadApp,
+  isAppUrl,
+  openExternal,
+  icon,
+}: MainWindowOptions) => {
   const window = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -127,6 +137,8 @@ export const createMainWindow = ({ loadApp, isAppUrl, openExternal, icon }: Main
       sandbox: true,
       nodeIntegration: false,
       additionalArguments: [`--toolspell-version=${app.getVersion()}`],
+      // A hidden window keeps rendering, so screenshots and timers work in the background.
+      backgroundThrottling: !background,
     },
   });
   const contents = window.webContents;
@@ -137,9 +149,11 @@ export const createMainWindow = ({ loadApp, isAppUrl, openExternal, icon }: Main
     shown = true;
     window.show();
   };
-  window.once("ready-to-show", reveal);
-  // Some Linux window managers never send ready-to-show.
-  if (process.platform === "linux") contents.once("did-finish-load", reveal);
+  if (!background) {
+    window.once("ready-to-show", reveal);
+    // Some Linux window managers never send ready-to-show.
+    if (process.platform === "linux") contents.once("did-finish-load", reveal);
+  }
 
   // Links leave the app for the system browser; the window only shows ToolSpell.
   contents.setWindowOpenHandler(({ url }) => {
@@ -176,11 +190,13 @@ export const createMainWindow = ({ loadApp, isAppUrl, openExternal, icon }: Main
       }, RENDERER_RELOAD_DELAY_MS);
       return;
     }
+    const detail = `Its renderer process ended (${details.reason}, exit code ${details.exitCode}).`;
+    if (background) return note(`ToolSpell's window stopped working. ${detail}`);
     void dialog
       .showMessageBox(window, {
         type: "error",
         message: "ToolSpell's window stopped working.",
-        detail: `Its renderer process ended (${details.reason}, exit code ${details.exitCode}).`,
+        detail,
         buttons: ["Reload", "Quit"],
         defaultId: 0,
         cancelId: 0,
@@ -190,7 +206,7 @@ export const createMainWindow = ({ loadApp, isAppUrl, openExternal, icon }: Main
 
   contents.on("context-menu", (_event, params) => {
     const items = contextMenu(contents, params);
-    if (items.length > 0) Menu.buildFromTemplate(items).popup({ window });
+    if (items.length > 0 && !background) Menu.buildFromTemplate(items).popup({ window });
   });
 
   showStartupPage(window);

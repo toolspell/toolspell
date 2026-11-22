@@ -20,7 +20,12 @@ describe("offsetFor", () => {
       mode: "dev",
       homeDir: "/tmp/x",
       host: undefined,
+      desktop: undefined,
     });
+    assert.deepStrictEqual(
+      parseArgs(["dev:desktop", "--foreground", "--host", "h", "--background"]),
+      { mode: "dev:desktop", homeDir: undefined, host: "h", desktop: "background" },
+    );
     assert.throws(() => parseArgs(["dev", "--help"]));
     assert.throws(() => parseArgs(["dev", "--home-dir"]));
   });
