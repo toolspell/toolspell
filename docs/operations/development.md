@@ -2,8 +2,8 @@
 
 ## First checkout
 
-1. Install [Vite+](https://viteplus.dev/guide/), which provides the `vp` command, and Node 24.10 or
-   newer.
+1. Install [Vite+](https://viteplus.dev/guide/), which provides the `vp` command and the Node
+   version pinned in `package.json` (`engines.node`), so no separate Node install is needed.
 2. Run `vp i` from the repository root.
 3. Run `vp run sync:repos` to download reference source into the gitignored `.repos`: Effect at
    the installed version and T3 Code at a pinned commit (about 190 MB together). Rerun it after

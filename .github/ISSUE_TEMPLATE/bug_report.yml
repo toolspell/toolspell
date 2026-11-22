@@ -92,7 +92,7 @@ body:
     attributes:
       label: Environment
       description: OS, browser or desktop app, Node version, and how the server runs.
-      placeholder: macOS 15.3, Chrome 135, Node 24.10, `vp run dev`
+      placeholder: macOS 15.3, Chrome 135, Node 26.13.1, `vp run dev`
 
   - type: textarea
     id: logs
