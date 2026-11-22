@@ -1,8 +1,9 @@
 // Ports derive from the checkout path, so each worktree keeps the same ports across restarts and
-// parallel worktrees do not collide; occupied ports shift to the next free pair. Dev state always
+// parallel worktrees do not collide; occupied ports shift to the next free set. Dev state always
 // lives in the checkout, never in the live ~/.toolspell.
 import * as NodeChildProcess from "node:child_process";
 import * as NodeCrypto from "node:crypto";
+import * as NodeFS from "node:fs";
 import * as NodeNet from "node:net";
 import * as NodePath from "node:path";
 
@@ -80,11 +81,72 @@ export const isPortFree = async (port: number, probes: PortProbes = nodeProbes) 
   return errors.every((code) => code === undefined || FAMILY_UNAVAILABLE.has(code));
 };
 
-const portsFree = async (ports: ReadonlyArray<number>) => {
-  for (const port of ports) {
-    if (!(await isPortFree(port))) return false;
+export interface DevPorts {
+  readonly serverPort: number;
+  readonly webPort: number;
+  readonly cdpPort: number;
+}
+
+/**
+ * Shifts the offset past busy ports, probing only the ports the mode binds. `dev:web` binds only
+ * Vite and proxies to the checkout's running server, or to the default port it would start on.
+ * Compare T3 Code's resolveModePortOffsets in scripts/dev-runner.ts.
+ */
+export const resolvePorts = async (
+  mode: Mode,
+  startOffset: number,
+  isFree: (port: number) => Promise<boolean>,
+  runningServerPort: number | undefined,
+): Promise<DevPorts> => {
+  const bound = {
+    dev: [BASE_SERVER_PORT, BASE_WEB_PORT],
+    "dev:server": [BASE_SERVER_PORT],
+    "dev:web": [BASE_WEB_PORT],
+    "dev:desktop": [BASE_SERVER_PORT, BASE_WEB_PORT, BASE_CDP_PORT],
+  }[mode];
+  let offset = startOffset;
+  const allFree = async () => {
+    for (const base of bound) {
+      if (!(await isFree(base + offset))) return false;
+    }
+    return true;
+  };
+  while (!(await allFree())) {
+    offset += 1;
+    if (offset > MAX_OFFSET * 2) throw new Error("No free set of dev ports found.");
   }
-  return true;
+  return {
+    serverPort:
+      mode === "dev:web"
+        ? (runningServerPort ?? BASE_SERVER_PORT + startOffset)
+        : BASE_SERVER_PORT + offset,
+    // dev:server records the origin dev:web will pick when its default port is free.
+    webPort: BASE_WEB_PORT + (mode === "dev:server" ? startOffset : offset),
+    cdpPort: BASE_CDP_PORT + offset,
+  };
+};
+
+const isProcessAlive = (pid: number) => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === "EPERM";
+  }
+};
+
+/** The port of the server that holds this home, from the file apps/server's RuntimeState writes. */
+const runningServerPort = (homeDir: string) => {
+  try {
+    const record = JSON.parse(
+      NodeFS.readFileSync(NodePath.join(homeDir, "userdata", "server-runtime.json"), "utf8"),
+    ) as { readonly pid?: unknown; readonly origin?: unknown };
+    if (typeof record.pid !== "number" || !isProcessAlive(record.pid)) return undefined;
+    const port = Number(new URL(String(record.origin)).port);
+    return Number.isInteger(port) && port > 0 ? port : undefined;
+  } catch {
+    return undefined;
+  }
 };
 
 const USAGE = `Usage: dev-runner <${Object.keys(MODES).join("|")}> [--home-dir <dir>] [--host <host>] [--background|--foreground]`;
@@ -119,16 +181,19 @@ export const parseArgs = (argv: ReadonlyArray<string>) => {
 const main = async () => {
   const args = parseArgs(process.argv.slice(2));
   const isDesktop = args.mode === "dev:desktop";
-  const bases = [BASE_SERVER_PORT, BASE_WEB_PORT, ...(isDesktop ? [BASE_CDP_PORT] : [])];
-  let offset = offsetFor(process.env, checkout);
-  while (!(await portsFree(bases.map((base) => base + offset)))) {
-    offset += 1;
-    if (offset > MAX_OFFSET * 2) throw new Error("No free set of dev ports found.");
-  }
-  const serverPort = BASE_SERVER_PORT + offset;
-  const webPort = BASE_WEB_PORT + offset;
-  const cdpPort = BASE_CDP_PORT + offset;
   const homeDir = NodePath.resolve(args.homeDir ?? NodePath.join(checkout, ".toolspell"));
+  const running = args.mode === "dev:web" ? runningServerPort(homeDir) : undefined;
+  const { serverPort, webPort, cdpPort } = await resolvePorts(
+    args.mode,
+    offsetFor(process.env, checkout),
+    (port) => isPortFree(port),
+    running,
+  );
+  if (args.mode === "dev:web" && running === undefined) {
+    process.stdout.write(
+      `[dev-runner] no server is running in ${homeDir}; proxying to its default port ${serverPort}\n`,
+    );
+  }
 
   const env: NodeJS.ProcessEnv = {
     ...process.env,
