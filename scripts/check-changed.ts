@@ -1,56 +1,64 @@
-// Runs CI's fast checks for this branch's changes, uncommitted and untracked files included.
+// Runs the fast checks for this branch's changes, uncommitted and untracked files included.
 // `vp run check:changed [ref]` compares against the merge base with <ref>, by default origin/main
-// or main. CI still runs the full suites.
+// or main. On main itself, pass a ref such as HEAD~1 to check commits.
 // Adapted from T3 Code's scripts/check-changed.ts (MIT).
 import * as NodeChildProcess from "node:child_process";
 import * as NodeFS from "node:fs";
 import * as NodePath from "node:path";
 
-import { affectedPackages, readWorkspace } from "./lib/affected.ts";
+import { affectedPackages, readWorkspace, type WorkspacePackage } from "./lib/affected.ts";
 import { vpCommand } from "./lib/vp.ts";
 
 const root = NodePath.dirname(import.meta.dirname);
 const CODE = /\.(?:[cm]?[jt]sx?)$/;
-// Render scenarios (`*.renders.tsx`) are tests too: they assert render budgets.
-const TEST = /\.(test|renders)\.tsx?$/;
+const AGENT_DOCS_TEST = "scripts/agent-docs.test.ts";
 
-const git = (args: ReadonlyArray<string>) =>
-  NodeChildProcess.execFileSync("git", args, { cwd: root, encoding: "utf8" });
+const git = (cwd: string, args: ReadonlyArray<string>) =>
+  NodeChildProcess.execFileSync("git", args, { cwd, encoding: "utf8" });
 
-const refExists = (ref: string) => {
+const refExists = (cwd: string, ref: string) => {
   try {
-    git(["rev-parse", "--verify", "--quiet", ref]);
+    git(cwd, ["rev-parse", "--verify", "--quiet", ref]);
     return true;
   } catch {
     return false;
   }
 };
 
-export const changedFiles = (baseRef: string | undefined): ReadonlyArray<string> => {
-  const base = baseRef ?? (refExists("origin/main") ? "origin/main" : "main");
-  const mergeBase = git(["merge-base", "HEAD", base]).trim();
+export const changedFiles = (baseRef: string | undefined, cwd = root) => {
+  const base = baseRef ?? (refExists(cwd, "origin/main") ? "origin/main" : "main");
+  const mergeBase = git(cwd, ["merge-base", "HEAD", base]).trim();
+  const onBase =
+    baseRef === undefined && mergeBase === git(cwd, ["rev-parse", "HEAD"]).trim()
+      ? git(cwd, ["branch", "--show-current"]).trim()
+      : "";
   // -z lists paths raw; otherwise git quotes and escapes non-ASCII ones, which then match no file.
-  const tracked = git(["diff", "--name-only", "--no-renames", "-z", mergeBase]);
-  const untracked = git(["ls-files", "--others", "--exclude-standard", "-z"]);
-  return [...new Set([...tracked.split("\0"), ...untracked.split("\0")])].filter(Boolean).sort();
+  const tracked = git(cwd, ["diff", "--name-only", "--no-renames", "-z", mergeBase]);
+  const untracked = git(cwd, ["ls-files", "--others", "--exclude-standard", "-z"]);
+  return {
+    files: [...new Set([...tracked.split("\0"), ...untracked.split("\0")])].filter(Boolean).sort(),
+    notice:
+      onBase === "main"
+        ? "on main: checking uncommitted changes only; pass a ref such as HEAD~1 to check commits"
+        : undefined,
+  };
 };
 
-/** The tests a change runs: changed tests, and `x.test.ts` or `x.browser.test.tsx` beside `x.ts`. */
-export const testsFor = (files: ReadonlyArray<string>, exists: (file: string) => boolean) =>
-  [
-    ...new Set(
-      files.flatMap((file) => {
-        if (TEST.test(file)) return exists(file) ? [file] : [];
-        // Workflow helpers run inside actions/github-script; their tests live in the scripts package.
-        if (file.startsWith(".github/scripts/")) {
-          return ["scripts/github-scripts.test.ts"].filter(exists);
-        }
-        if (!CODE.test(file)) return [];
-        const stem = file.replace(/\.[^.]+$/, "");
-        return [`${stem}.test.ts`, `${stem}.test.tsx`, `${stem}.browser.test.tsx`].filter(exists);
-      }),
-    ),
-  ].sort();
+/**
+ * Path filters for one `vp test run` from the root: every test of the affected packages, and the
+ * agent-docs check. No filter runs every test. Until GitHub CI runs the full suites this is the only
+ * gate, so it runs whole packages; T3 Code runs tests beside changes plus a map of cross-file guards.
+ */
+export const testFilters = (
+  workspace: ReadonlyArray<WorkspacePackage>,
+  affected: ReadonlyArray<string> | undefined,
+) => {
+  if (affected === undefined) return [];
+  const dirs = workspace
+    .filter((pkg) => affected.includes(pkg.name) && pkg.scripts.has("test"))
+    .map((pkg) => `${pkg.dir}/`);
+  return dirs.includes("scripts/") ? dirs : [...dirs, AGENT_DOCS_TEST];
+};
 
 interface Step {
   readonly name: string;
@@ -88,7 +96,8 @@ const run = (step: Step) =>
   });
 
 const main = async () => {
-  const files = changedFiles(process.argv[2]);
+  const { files, notice } = changedFiles(process.argv[2]);
+  if (notice !== undefined) process.stdout.write(`check:changed: ${notice}.\n`);
   if (files.length === 0) {
     process.stdout.write("check:changed: no changes.\n");
     return;
@@ -135,10 +144,10 @@ const main = async () => {
       : []),
   ];
   // From the repo root, the root vite.config.ts hands each file to its package's config.
-  const tests = [...new Set([...testsFor(files, exists), "scripts/agent-docs.test.ts"])];
+  const tests = testFilters(workspace, affected);
   const serial: Array<Step> = [
     {
-      name: `test (${tests.length} files)`,
+      name: `test (${tests.length === 0 ? "all" : tests.join(" ")})`,
       command: ["vp", "test", "run", "--passWithNoTests", ...tests],
     },
   ];
