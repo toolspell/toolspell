@@ -2,6 +2,7 @@ import * as Schema from "effect/Schema";
 import * as RpcMiddleware from "effect/rpc/RpcMiddleware";
 
 import { EpochMillis, TrimmedNonEmptyString } from "./baseSchemas.ts";
+import { AUTH_SESSION_PATH } from "./desktop.ts";
 
 /**
  * - `read`: see state and subscribe to it.
@@ -56,7 +57,7 @@ export const AUTH_SESSION_COOKIE = "toolspell_session";
 
 export const AUTH_HTTP_PATHS = {
   pair: "/api/auth/pair",
-  session: "/api/auth/session",
+  session: AUTH_SESSION_PATH,
 } as const;
 
 export const PairRequest = Schema.Struct({

@@ -18,6 +18,7 @@ import * as Orchestrator from "./core/Orchestrator.ts";
 import * as ProjectionStore from "./core/ProjectionStore.ts";
 import * as Subscriptions from "./core/Subscriptions.ts";
 import * as Http from "./http.ts";
+import * as HomeLock from "./persistence/HomeLock.ts";
 import * as Sqlite from "./persistence/Sqlite.ts";
 import type { Runner } from "./runners/Runner.ts";
 import * as Ws from "./ws.ts";
@@ -60,7 +61,15 @@ export const layerHttpServer = Layer.unwrap(
   }),
 );
 
+/** Storage and auth only, for CLI commands that run beside a live server without its worker. */
+export const layerAuth = AuthStoreLayer.layer.pipe(
+  Layer.provide(NodeCrypto.layer),
+  Layer.provideMerge(Sqlite.layer),
+);
+
 export const layer = <E, R>(runner: Layer.Layer<Runner, E, R>) =>
   Layer.mergeAll(layerHttpServer, layerStartupAccess).pipe(
     Layer.provideMerge(layerServices(runner)),
+    // Taken before storage opens, so a second server fails before touching shared state.
+    Layer.provide(HomeLock.layer),
   );

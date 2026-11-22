@@ -93,8 +93,8 @@ const main = async () => {
     PORT: String(webPort),
     ...(args.host ? { TOOLSPELL_HOST: args.host } : {}),
   };
-  // A bootstrap token from an outer launcher must not leak into dev servers.
-  delete env.TOOLSPELL_BOOTSTRAP_TOKEN;
+  // A bootstrap pipe from an outer launcher does not exist in the dev servers.
+  delete env.TOOLSPELL_BOOTSTRAP_FD;
 
   process.stdout.write(
     `[dev-runner] mode=${args.mode} serverPort=${serverPort} webPort=${webPort} homeDir=${homeDir}\n`,

@@ -1,0 +1,21 @@
+{
+  "name": "@toolspell/desktop",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist-electron/main.cjs",
+  "scripts": {
+    "dev": "vp pack && electron .",
+    "build": "vp pack",
+    "typecheck": "effect-tsgo tsrs --noEmit",
+    "test": "vp test run --passWithNoTests"
+  },
+  "dependencies": {
+    "@toolspell/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "electron": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}

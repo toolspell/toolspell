@@ -10,3 +10,6 @@ export interface DesktopBridge {
 }
 
 export const DESKTOP_BRIDGE_KEY = "toolspellDesktop";
+
+/** Kept here, free of Effect imports, so the Electron bundles stay small. */
+export const AUTH_SESSION_PATH = "/api/auth/session";

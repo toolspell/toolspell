@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "lib": ["ESNext", "esnext.disposable", "DOM"],
+    "plugins": [
+      {
+        "name": "@effect/language-service",
+        // The Electron shell is imperative glue around Electron and Node APIs, not Effect code.
+        "diagnosticSeverity": {
+          "nodeBuiltinImport": "off",
+          "globalConsole": "off",
+          "globalDate": "off",
+          "globalTimers": "off",
+          "globalFetch": "off"
+        }
+      }
+    ]
+  },
+  "include": ["src", "vite.config.ts"]
+}

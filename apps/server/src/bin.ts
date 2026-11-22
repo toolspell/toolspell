@@ -12,6 +12,7 @@ import { Command, Flag } from "effect/cli";
 
 import packageJson from "../package.json" with { type: "json" };
 import { AuthStore } from "./auth/AuthStore.ts";
+import { readBootstrapToken } from "./bootstrap.ts";
 import * as ServerConfig from "./config.ts";
 import * as FakeRunner from "./runners/FakeRunner.ts";
 import * as Server from "./server.ts";
@@ -72,7 +73,9 @@ const configLayer = Effect.fn("bin.configLayer")(function* (flags: {
     port: flags.port,
     webOrigin: flags.webOrigin,
     staticDir: yield* bundledClientDir,
-    bootstrapToken: yield* Config.Redacted("TOOLSPELL_BOOTSTRAP_TOKEN").pipe(Config.option),
+    bootstrapToken: yield* readBootstrapToken(
+      yield* Config.Int("TOOLSPELL_BOOTSTRAP_FD").pipe(Config.option),
+    ),
   });
 });
 
@@ -84,6 +87,7 @@ const pairCommand = Command.make(
     port: portFlag,
     admin: Flag.Boolean("admin").pipe(
       Flag.withDescription("Also allow managing access (pairing devices, revoking sessions)."),
+      Flag.withDefault(false),
     ),
   },
   (flags) =>
@@ -98,7 +102,7 @@ const pairCommand = Command.make(
       Effect.provide(
         Layer.unwrap(
           Effect.map(configLayer({ ...flags, host: "127.0.0.1" }), (config) =>
-            Server.layerServices(FakeRunner.layer()).pipe(Layer.provideMerge(config)),
+            Server.layerAuth.pipe(Layer.provideMerge(config)),
           ),
         ),
       ),
