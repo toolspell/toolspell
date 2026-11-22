@@ -28,8 +28,8 @@ entry moves into an issue (labels from `.github/labels.json`) and the file is de
   killing child processes before exit in an AppImage; clearing the GPU cache after an Electron
   upgrade; live theme switching on Linux; a custom app scheme instead of a loopback origin.
 - **Platform, later**: a 1 s read timeout for the bootstrap fd, as T3 Code does (on macOS and
-  Linux a stray `TOOLSPELL_BOOTSTRAP_FD` hits one of Node's own fds); no copy-on-write for the state directory on btrfs; warn when the pnpm store
-  is on another filesystem; Windows long paths for `.repos`; a bootstrap-fd read that treats a
+  Linux a stray `TOOLSPELL_BOOTSTRAP_FD` hits one of Node's own fds); no copy-on-write for the
+  state directory on btrfs; warn when the pnpm store is on another filesystem; Windows long paths for `.repos`; a bootstrap-fd read that treats a
   missing fd as "no token"; Cmd versus Ctrl helpers once the web app has shortcuts.
 - **GitHub, once pushed**: Dependabot for `github-actions` only, to keep the SHA pins fresh; a
   `~/.vite-plus` and pnpm store cache saved only on main (T3 Code `.github/actions/setup-ci-deps`).
@@ -52,9 +52,59 @@ entry moves into an issue (labels from `.github/labels.json`) and the file is de
   snapshot past it; keep large job output off the wire (`WireProjection`); WebSocket compression
   (`perMessageDeflate`) for remote clients; page the job list past about 500 jobs; a startup profile
   for slow-start reports (`scripts/profile-startup.mjs`); a PR comment comparing budgets with main
-  (`thread-transfer-report`); a smoke test that opens an old-version database.
+  (`thread-transfer-report`).
 - **Server**: event-log retention and paged resume (resume currently reads every missed event);
   seeding dev state from the live install; sharing a dev server over the tailnet.
+- **Server SQL** (from the budget tests): `id` in the `jobs_workspace` index removes the snapshot's
+  temporary sort; each job command reads the job twice (decide, then project); an index on the
+  events `type` would make a workspaces resume a direct lookup but costs a write per event.
+- **Before database migration 0002**: guards so a CLI migrates only while it holds the home, and a
+  build refuses history from a newer or different build (T3 Code `persistence/Sqlite.ts`,
+  `Migrations.ts`, `databaseMigrationHead.ts`); a smoke test that opens an old-version database.
+- **When a client talks to several servers, or cursors survive reloads**: a persisted data identity
+  the client checks (T3 Code `environment/ServerEnvironment.ts`); the desktop app confirms it
+  reached its own server, not any 200 from `/health`.
+- **At the first setting**: decide between the event path and a settings file (T3 Code
+  `serverSettings.ts`, `atomicWrite.ts`: lenient decode, invalid file kept and reported, watch,
+  atomic write); the web settings page then splits into sub-pages.
+- **Remote access beyond dev** (tailnet, `--host`): server-side session expiry with renewal,
+  `X-Forwarded-Proto` for the Secure cookie flag, keep-alive tuning for proxies.
+- **With the real runner**: a process runner with timeouts, output caps and typed errors; an
+  outbound HTTP wrapper; a scheduler for time-based work; live checks that are shown to fail
+  (T3 Code `processRunner.ts`, `outboundHttp.ts`, `scheduling/`, `verify-background-live.ts`).
+- **With the real domain, or the first bug that spans server and browser**: a CLI that sends one
+  contract command and reads one view of the running server; scenario proofs that fail on the base
+  commit and pass on the fix in the real app (T3 Code `scripts/prove-scenario.ts`); a guarded
+  SQLite helper for inspecting and seeding state.
+- **First model-facing text**: an evals harness (T3 Code `evals/`). Only if the product talks to
+  LLMs.
+- **At the public push**: the PR babysitting rule in AGENTS.md (wait for wake-ups, verify each bot
+  finding, stop when green), together with the review bots.
+- **Slow or hanging checks**: step timeouts and a cached last passing run in `check:changed`.
+- **More contributors or cloud agents**: a devcontainer; a patch policy and unused-patch check at
+  the first `pnpm patch`; `.env` loading at the first per-developer setting; a dev memory limit at
+  the first leaking dev server.
+- **Desktop packaging, also**: launch the built app in CI under xvfb; server tracing for installed
+  apps beyond the local trace file (OTLP export, browser spans).
+- **Web, later**: keyboard shortcuts (one `mod` key, keyboard layouts, ignored while typing);
+  screen-reader announcements and focus after a row is removed; sidebar, resizable layout and
+  command palette past about three sections; translations once non-English users are decided (keep
+  sentences whole and format with `Intl` until then); offline and visibility handling, state in the
+  URL, a shared `ResizeObserver`; a web manifest if the app should be installable.
+- **Agents testing the desktop app in isolation**: explore micro-VMs or similar, so agents can run
+  and drive the desktop app in a real, separate machine instead of on the maintainer's screen.
+
+## Consider later if then relevant
+
+Deliberately not planned; listed so nobody re-surveys them. Each is in T3 Code if it ever matters.
+
+- Connecting one client to several servers (environment registry and connection supervisor).
+- Product telemetry and runtime monitoring (event-loop stalls, heap attribution, resource monitor).
+- A remote task cache, test sharding and cached test runs.
+- A replay provider for recorded runs (the fake runner covers free test runs today).
+- A shared dev login token across worktrees.
+- CORS (everything is same-origin).
+- Attachments or an upload store.
 
 ## Checks after the first push to GitHub
 
@@ -107,3 +157,14 @@ None of the contribution workflows can run before the repository is on GitHub.
   `--sysctl net.ipv6.conf.all.disable_ipv6=1` keeps its ports, and shifts when a `0.0.0.0`
   listener holds one; `kill -9`, then the next start gets the lock; the lock on WSL2 `/mnt/c`
   (drvfs), where SQLite locking may be unreliable.
+- **Desktop on Windows**: Ctrl+W does nothing and the menu bar shows on Alt; no console window
+  flashes when the server starts or restarts; ending the server in Task Manager brings it back
+  within about a second and the window reconnects; ending ToolSpell ends the server; File, Exit
+  leaves no server process; a server that ignores stdin for over 5 s is taken by `taskkill /T /F`
+  on quit; in dev, editing `apps/desktop/src/main.ts` restarts Electron without a "data in use"
+  dialog.
+- **Desktop on Linux** (X11 and Wayland): the window appears in the right colour (the
+  `did-finish-load` fallback); closing it quits and stops the server; a theme switch updates the
+  window background.
+- **Desktop on macOS, by eye**: no white flash at launch in light and dark mode; the context menu
+  offers spelling suggestions in a text field and Copy Link Address on a link; the About panel.

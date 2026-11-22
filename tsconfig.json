@@ -4,5 +4,5 @@
     "types": ["node"],
     "lib": ["ESNext", "esnext.disposable"]
   },
-  "include": ["vite.config.ts", ".coderabbit.config.ts", "scripts"]
+  "include": ["vite.config.ts", ".coderabbit.config.ts"]
 }
