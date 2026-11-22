@@ -4,8 +4,7 @@ Deferred topics and verification checklists, so any session, worktree or compact
 pick them up. This file is a bridge until the repository is public on GitHub: at that push every
 entry moves into an issue (labels from `.github/labels.json`) and the file is deleted.
 
-- Only deferred work and checklists. No task status: work in progress lives in its thread and in
-  the worktree's `.plans/`.
+- Only deferred work and checklists. No task status: work in progress lives in its thread.
 - Add an entry when something is deliberately deferred; remove it in the commit that lands it.
 - Keep entries short: the decision and where to start, not a plan.
 

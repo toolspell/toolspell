@@ -22,10 +22,13 @@ SQLite. Stop the test server before direct fixture writes.
 ## Drive jobs for free
 
 The dev server uses the fake runner: a job reports four progress steps about 400 ms apart, then
-echoes its input. An input containing `fail` fails at 60 percent. Restarting the server mid-job
-shows restart recovery: start a job, then touch a file under `apps/server/src` right away (the
-watcher restarts about two seconds later, and a job takes about 1.6 seconds). The job fails with
-"The server stopped while this job was running."
+echoes its input. An input containing `fail` fails at 60 percent.
+
+To prove restart recovery, do not race a timer. Start a job and observe it running (a progress
+step shows). Then interrupt the server you own while the job runs: touch a file under
+`apps/server/src` (the watcher restarts it after a 200 ms debounce), or stop the dev server you
+started by its tracked task and start it again. Once the server is back, verify the recovered
+state: the job shows "The server stopped while this job was running."
 
 ## Use the Browser panel
 
@@ -46,12 +49,13 @@ Keep using the same tab.
 
 ## Drive the desktop app
 
-Run `vp run dev:desktop` from your own shell and keep it running. Check its output for
-`[dev-electron] Launch mode: background`; if it says foreground, stop it and do not continue. In
-the background the window is never shown and never takes focus, but it renders, and the app pairs
-itself. Dialogs, context menus, and external links are written to the log
-(`.toolspell/desktop/logs/server.log` and the terminal) instead of appearing. Never pass
-`--foreground` without the maintainer's go-ahead.
+Run `vp run dev:desktop --background` from your own shell and keep it running. Always pass
+`--background`: Codex and some other agents run commands in a terminal, which would otherwise count
+as a person launching it. Check its output for `[dev-electron] Launch mode: background`; if it says
+foreground, stop it and do not continue. In the background the window is never shown and never
+takes focus, but it renders, and the app pairs itself. Dialogs, context menus, and external links
+are written to the log (`.toolspell/desktop/logs/server.log` and the terminal) instead of
+appearing. Never pass `--foreground` without the maintainer's go-ahead.
 
 Drive the window with Playwright over the Chrome DevTools Protocol on `cdpPort` from the
 `[dev-runner]` line (the `CDP for agents:` line repeats it). Save a script outside the repository

@@ -77,9 +77,10 @@ Before calling work done, say which of these applied:
   always lives in the checkout's gitignored `.toolspell`, never in `~/.toolspell`; so does
   `node apps/server/src/bin.ts` run from a checkout. `--home-dir` picks another directory;
   `--host <host>` exposes Vite to other devices (the server stays on loopback behind Vite's proxy).
-- The desktop app (`dev:desktop`) runs in the background when you start it: no window on screen,
-  no Dock icon, and it never takes focus from the maintainer, who works on the same machine. Drive
-  and screenshot it over CDP with the
+- Start the desktop app as `vp run dev:desktop --background`. Always pass the flag: a terminal on
+  stdin (Codex runs commands in one) can otherwise look like a person launching it. In the
+  background it has no window on screen and no Dock icon, and it never takes focus from the
+  maintainer, who works on the same machine. Drive and screenshot it over CDP with the
   [test-toolspell-app](.agents/skills/test-toolspell-app/SKILL.md) skill. Never pass `--foreground`
   on your own; ask the maintainer first, and only when a visible window is needed or clearly
   benefits the task.
@@ -106,16 +107,18 @@ screenshots.
 
 ## Verifying
 
-- Before you push, run `vp run check:changed`. It runs format, lint, knip, typecheck of affected
-  packages and their dependents, the tests beside changed files, and the agent-docs check, for
-  files changed against the merge base with `main` plus uncommitted and untracked files.
+- Before you push, run `vp run check:changed`. It runs format, lint, knip, typecheck, and every
+  test of the packages a change affects and their dependents, plus the agent-docs check, for files
+  changed against the merge base with `main` plus uncommitted and untracked files. On `main` it
+  checks only uncommitted files; pass a ref such as `HEAD~1` to check commits.
 - While you iterate, run `vp test run <files>` from the repository root. Each file runs with its
   package's config, web browser tests included. For big files, add `-t "<name>"`.
 - `vp run typecheck` caches per package. Each package runs `effect-tsgo tsrs --noEmit`, the native
   TypeScript checker with Effect's diagnostics built in.
 - Run `node -e` snippets from `apps/server` or the owning package. `effect` does not resolve from
   the repository root.
-- **Do not run repo-wide checks** (`vp run ready`, `vp run -r test`) unless asked. CI runs them.
+- **Do not run repo-wide checks** (`vp run ready`, `vp run -r test`) unless asked. Until GitHub CI
+  exists, the integrator runs `vp run ready` before landing on `main`.
 - Test behavior that can break: the decider, the event sink transaction, effect worker recovery,
   subscriptions and resume, auth and scope guards, persistence and migrations, wire compatibility,
   and the logic a bug fix changed. Leave out tests for what types already guarantee, trivial logic,
@@ -202,8 +205,8 @@ Most code changes do not need a documentation change. Agents can read the code.
 Do not commit implementation plans, research notes, or agent scratch files. Keep temporary
 material outside the worktree. A merged PR is the implementation record. Until the repository is
 public on GitHub, deferred work and verification checklists live in [the backlog](docs/backlog.md)
-(no task status; that belongs in the thread and the worktree's `.plans/`). Add an entry when
-something is deliberately deferred, and remove it in the commit that lands it.
+(no task status; that belongs in the thread). Add an entry when something is deliberately
+deferred, and remove it in the commit that lands it.
 
 ## How it works
 

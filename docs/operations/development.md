@@ -13,7 +13,9 @@
 In a T3 Code worktree, `t3.json` runs `scripts/setup-worktree.ts` in the background on creation. It
 writes `.toolspell/setup-running` with its PID and ends with `.toolspell/setup-done` or
 `.toolspell/setup-failed` (with the error tail). It also copies the main checkout's `.repos`. While
-setup runs, do not run `vp i` yourself.
+setup runs, do not run `vp i` yourself. In a worktree made by hand, run
+`node scripts/setup-worktree.ts`; it finds the main checkout through git and refuses to start while
+another setup runs in that worktree.
 
 ## Choosing a dev process
 
@@ -21,7 +23,7 @@ setup runs, do not run `vp i` yourself.
 | -------------------- | ------------------------------------------------------------------------- |
 | `vp run dev`         | Server and web. Vite proxies `/api`, `/ws`, and `/health` to the server.  |
 | `vp run dev:server`  | The server only, restarted when server or package sources change.         |
-| `vp run dev:web`     | Vite only, against a server you started separately.                       |
+| `vp run dev:web`     | Vite only, against the checkout's running server (or its default port).   |
 | `vp run dev:desktop` | Vite and the Electron shell, which starts its own server on the dev port. |
 
 Web changes reload in place. Server changes restart the server, which fails jobs that were running
@@ -43,9 +45,10 @@ restarts its server. The desktop app's dev profile and its `logs/server.log` liv
   `apps/server/dist`), its default home is the checkout's `.toolspell`; an installed or packaged
   server defaults to `~/.toolspell`. An explicit `--home-dir` or `TOOLSPELL_HOME` always wins.
 - Ports derive from the checkout path, so each worktree keeps the same ports across restarts and
-  parallel worktrees do not collide. A busy pair shifts to the next free one, so read the real
-  ports from the line above. `TOOLSPELL_PORT_OFFSET` sets an exact offset;
-  `TOOLSPELL_DEV_INSTANCE` hashes a name instead of the path.
+  parallel worktrees do not collide. A busy port shifts the ports that mode binds to the next free
+  set, so read the real ones from the line above. `dev:web` binds only Vite and proxies to the
+  server recorded in its home's `userdata/server-runtime.json`. `TOOLSPELL_PORT_OFFSET` sets an
+  exact offset; `TOOLSPELL_DEV_INSTANCE` hashes a name instead of the path.
 - `--host <host>` exposes Vite on another interface so other devices can open dev; the server
   stays on loopback, because browsers only talk to Vite, which proxies to the server. Leave web
   origins unset.
@@ -56,10 +59,12 @@ restarts its server. The desktop app's dev profile and its `logs/server.log` liv
 ## Desktop in the background
 
 Agents share the maintainer's screen, so `vp run dev:desktop` starts the desktop app in the
-background unless a person launched it: background when stdin is not a terminal or `AI_AGENT` or
-`CLAUDECODE` is set, foreground otherwise. `--background` and `--foreground` override that, as does
-`TOOLSPELL_DESKTOP_MODE=background|foreground`. The `[dev-electron] Launch mode:` line says which
-mode applies and why, and restarts keep it.
+background unless a person launched it: background when stdin is not a terminal or an agent marker
+is set (`AI_AGENT`, `CLAUDECODE`, `CODEX_THREAD_ID`, `CODEX_SANDBOX`, or `T3CODE_THREAD_ID`, which
+T3 Code's terminal panel sets too), foreground otherwise. `--background` and `--foreground`
+override that, as does `TOOLSPELL_DESKTOP_MODE=background|foreground`. Agents pass `--background`
+explicitly. The `[dev-electron] Launch mode:` line says which mode applies and why, and restarts
+keep it.
 
 In the background the window is never shown and never takes focus, yet it keeps rendering for CDP.
 Dialogs, context menus, and external links go to the log instead. On macOS the app has no Dock icon
@@ -84,13 +89,13 @@ without one. Pass the server's `--home-dir` if it uses another home.
 
 ## Checks
 
-| Command                | Runs                                                                    |
-| ---------------------- | ----------------------------------------------------------------------- |
-| `vp run check:changed` | CI's fast checks for changed files (see below). Run it before you push. |
-| `vp test run <files>`  | The given test files, each with its package's config, from the root.    |
-| `vp run typecheck`     | `effect-tsgo` per package, cached.                                      |
-| `vp run knip`          | Unused files, exports, and dependencies.                                |
-| `vp run ready`         | The full local gate, the same as CI. Slow; not needed for every change. |
+| Command                | Runs                                                                     |
+| ---------------------- | ------------------------------------------------------------------------ |
+| `vp run check:changed` | Checks and tests for what a change affects (see below). Run before push. |
+| `vp test run <files>`  | The given test files, each with its package's config, from the root.     |
+| `vp run typecheck`     | `effect-tsgo` per package, cached.                                       |
+| `vp run knip`          | Unused files, exports, and dependencies.                                 |
+| `vp run ready`         | The full gate. The integrator runs it before landing on `main`.          |
 
 ## CI before GitHub
 
@@ -124,9 +129,13 @@ Two more checks drive that Chromium and are not part of `check:changed` or `read
   `node scripts/render-metrics.ts compare <main.json> <branch.json>` for a markdown table.
 
 `check:changed` compares against the merge base with `main`, or a ref you pass, and counts
-uncommitted and untracked files. It runs format and lint on the changed files, knip, typecheck of
-the affected packages and their dependents, the tests beside changed files, and the agent-docs
-check: `AGENTS.md` and skill files stay under 300 lines, and no markdown contains an em dash.
+uncommitted and untracked files. On `main` the merge base is `HEAD`, so it checks only uncommitted
+files and says so; pass a ref such as `HEAD~1` to check commits. It runs format and lint on the
+changed files, knip, and typecheck and every test of the affected packages and their dependents,
+in one `vp test run` from the root. A change to shared config runs every test. The agent-docs
+check always runs: `AGENTS.md` and skill files stay under 300 lines, and no markdown contains an em
+dash. Until GitHub CI exists there is no other gate, so it runs whole packages, not only the tests
+beside changed files.
 
 The pre-commit hook formats and lints staged files.
 

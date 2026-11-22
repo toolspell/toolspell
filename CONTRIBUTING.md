@@ -108,7 +108,7 @@ links the old one.
 
 1. Follow the [first checkout](docs/operations/development.md#first-checkout) steps: `vp i`, then
    `vp run dev`.
-2. Before you push, run `vp run check:changed`. CI runs the full suites.
+2. Before you push, run `vp run check:changed`. Maintainers run the full suites before merging.
 3. Use a conventional commit title in plain language, such as
    `fix(web): job list no longer flickers on reconnect`, and fill in the PR template.
 
