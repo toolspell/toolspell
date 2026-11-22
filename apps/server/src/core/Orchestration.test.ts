@@ -14,6 +14,7 @@ import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as Queue from "effect/Queue";
 import * as Ref from "effect/Ref";
+import * as SqlClient from "effect/sql/SqlClient";
 import * as Stream from "effect/Stream";
 import * as TestClock from "effect/testing/TestClock";
 
@@ -30,7 +31,11 @@ import {
   RUNNER_CRASHED,
 } from "./EffectWorker.ts";
 import { EventSink, layer as eventSinkLayer } from "./EventSink.ts";
-import { layer as orchestratorLayer, Orchestrator } from "./Orchestrator.ts";
+import {
+  layer as orchestratorLayer,
+  Orchestrator,
+  type OrchestratorShape,
+} from "./Orchestrator.ts";
 import { layer as projectionStoreLayer, ProjectionStore } from "./ProjectionStore.ts";
 import { layer as subscriptionsLayer, Subscriptions } from "./Subscriptions.ts";
 
@@ -71,12 +76,31 @@ const getJob = Effect.gen(function* () {
   return Option.getOrThrow(yield* projections.getJob(jobId).pipe(Effect.orDie));
 });
 
-/** The worker and its storage, with the first `job.markStarted` dispatch failing. */
-const layerWithFailingFirstStart = (startFailed: Deferred.Deferred<void>) => {
-  const failingFirstStart = Layer.effect(
+/** The worker and its storage, with every dispatch going through `wrap`. */
+const layerWithWrappedOrchestrator = <E, R>(
+  runner: Layer.Layer<Runner, E, R>,
+  wrap: (real: OrchestratorShape) => Effect.Effect<OrchestratorShape>,
+) => {
+  const wrapped = Layer.effect(
     Orchestrator,
     Effect.gen(function* () {
-      const real = yield* Orchestrator;
+      return yield* wrap(yield* Orchestrator);
+    }),
+  ).pipe(Layer.provide(orchestratorLayer));
+  const storage = Layer.provideMerge(projectionStoreLayer, Sqlite.layer);
+  return effectWorkerLayer.pipe(
+    Layer.provide(runner),
+    Layer.provideMerge(wrapped),
+    Layer.provideMerge(Layer.provideMerge(eventSinkLayer, storage)),
+    Layer.provide(ServerConfig.layerTest()),
+    Layer.provide(NodeServices.layer),
+  );
+};
+
+/** The first `job.markStarted` dispatch fails. */
+const layerWithFailingFirstStart = (startFailed: Deferred.Deferred<void>) =>
+  layerWithWrappedOrchestrator(completingRunner, (real) =>
+    Effect.gen(function* () {
       const failed = yield* Ref.make(false);
       return Orchestrator.of({
         dispatch: (command) =>
@@ -91,16 +115,7 @@ const layerWithFailingFirstStart = (startFailed: Deferred.Deferred<void>) => {
               ),
       });
     }),
-  ).pipe(Layer.provide(orchestratorLayer));
-  const storage = Layer.provideMerge(projectionStoreLayer, Sqlite.layer);
-  return effectWorkerLayer.pipe(
-    Layer.provide(completingRunner),
-    Layer.provideMerge(failingFirstStart),
-    Layer.provideMerge(Layer.provideMerge(eventSinkLayer, storage)),
-    Layer.provide(ServerConfig.layerTest()),
-    Layer.provide(NodeServices.layer),
   );
-};
 
 describe("orchestration", () => {
   it.effect("a started job runs to completion through the effect worker", () =>
@@ -225,6 +240,57 @@ describe("orchestration", () => {
       }).pipe(Effect.scoped, Effect.provide(layerWithFailingFirstStart(startFailed)));
     },
   );
+
+  it.effect("a job settles once storage recovers from a long outage, and runs only once", () => {
+    const runs = Ref.makeUnsafe(0);
+    const finalReports = Ref.makeUnsafe(0);
+    const finalReportFailed = Deferred.makeUnsafe<void>();
+    const completed: RunnerUpdate = { type: "completed", output: "Echo: go" };
+    const countingRunner = Layer.succeed(Runner, {
+      run: () => Stream.fromEffect(Ref.update(runs, (n) => n + 1).pipe(Effect.as(completed))),
+    });
+    const countingFinalReports = (real: OrchestratorShape) =>
+      Effect.succeed(
+        Orchestrator.of({
+          dispatch: (command) =>
+            command.type !== "job.complete"
+              ? real.dispatch(command)
+              : Ref.update(finalReports, (n) => n + 1).pipe(
+                  Effect.andThen(real.dispatch(command)),
+                  Effect.tapCause(() => Deferred.succeed(finalReportFailed, undefined)),
+                ),
+        }),
+      );
+    return Effect.gen(function* () {
+      const sql = yield* SqlClient.SqlClient;
+      const orchestrator = yield* Orchestrator;
+      const worker = yield* EffectWorker;
+      // While `outage` has a row, the job's final event and every outbox done mark fail to store.
+      yield* sql`CREATE TABLE outage (since INTEGER)`;
+      yield* sql`INSERT INTO outage VALUES (0)`;
+      yield* sql`
+        CREATE TRIGGER fail_final_event BEFORE INSERT ON events
+        WHEN NEW.type = 'job.succeeded' AND EXISTS (SELECT 1 FROM outage)
+        BEGIN SELECT RAISE(ABORT, 'disk I/O error'); END
+      `;
+      yield* sql`
+        CREATE TRIGGER fail_done_mark BEFORE UPDATE OF done_at ON outbox
+        WHEN EXISTS (SELECT 1 FROM outage)
+        BEGIN SELECT RAISE(ABORT, 'disk I/O error'); END
+      `;
+      yield* orchestrator.dispatch(createWorkspace);
+      yield* orchestrator.dispatch(startJob);
+      yield* Deferred.await(finalReportFailed);
+      yield* TestClock.adjust("1 minute");
+      assert.isAbove(yield* Ref.get(finalReports), 6);
+      assert.strictEqual((yield* getJob).status, "running");
+      yield* sql`DELETE FROM outage`;
+      yield* TestClock.adjust("10 seconds");
+      yield* worker.drain;
+      assert.strictEqual((yield* getJob).status, "succeeded");
+      assert.strictEqual(yield* Ref.get(runs), 1);
+    }).pipe(Effect.provide(layerWithWrappedOrchestrator(countingRunner, countingFinalReports)));
+  });
 
   it.effect("a job left running by a stopped server fails when the worker starts", () =>
     Effect.gen(function* () {

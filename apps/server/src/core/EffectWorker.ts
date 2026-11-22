@@ -10,7 +10,6 @@ import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as Ref from "effect/Ref";
 import * as Result from "effect/Result";
-import * as Schedule from "effect/Schedule";
 import * as Schema from "effect/Schema";
 import * as Semaphore from "effect/Semaphore";
 import * as SqlClient from "effect/sql/SqlClient";
@@ -27,7 +26,7 @@ const decodeEffect = Schema.decodeUnknownEffect(Schema.fromJsonString(OutboxEffe
 export const INTERRUPTED_BY_RESTART = "The server stopped while this job was running.";
 export const RUNNER_CRASHED = "The runner stopped unexpectedly.";
 
-/** Wait before retrying outbox rows whose handler failed: 100 ms, doubling, at most 10 s. */
+/** Wait before retrying a failed outbox row or final report: 100 ms, doubling, at most 10 s. */
 export const retryDelay = (attempt: number) =>
   Duration.millis(Math.min(10_000, 100 * 2 ** attempt));
 
@@ -61,15 +60,19 @@ export const make = Effect.gen(function* () {
   const report = (command: Command) =>
     orchestrator.dispatch(command).pipe(Effect.asVoid, Effect.orDie);
 
-  // A lost final report would leave the job running until a restart, so it gets a few retries.
-  const settle = (command: Command & { readonly jobId: JobId }) =>
-    orchestrator.dispatch(command).pipe(
-      Effect.retry({ schedule: Schedule.exponential("100 millis"), times: 5 }),
-      Effect.asVoid,
-      Effect.catchCause((cause) =>
-        Effect.logError(`Could not settle job ${command.jobId}; it stays running`, cause),
-      ),
-    );
+  // A lost final report would leave the job running, so it retries until storage recovers.
+  // The runner fiber stays registered meanwhile, which keeps a re-handled row from rerunning it.
+  const settle = Effect.fn("EffectWorker.settle")(function* (
+    command: Command & { readonly jobId: JobId },
+  ) {
+    let attempt = 0;
+    while (true) {
+      const settled = yield* Effect.exit(orchestrator.dispatch(command));
+      if (Exit.isSuccess(settled)) return;
+      yield* Effect.logWarning(`Could not settle job ${command.jobId}; retrying`, settled.cause);
+      yield* Effect.sleep(retryDelay(attempt++));
+    }
+  });
 
   const runJob = Effect.fn("EffectWorker.runJob")(function* (jobId: JobId, input: string) {
     const output = yield* Ref.make<string | undefined>(undefined);
