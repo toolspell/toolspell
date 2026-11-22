@@ -33,7 +33,9 @@ Reviewers: Opus 5.5 and GPT 6.2 Sol (two lenses each), Fable 5.2 and GPT 6.2 Ast
 - **Agent loop leftovers** (Sol, Opus): first-use downloads of `act` and `actionlint` race when
   several worktrees start at once (`scripts/lib/tools.ts` replaces the shared directory); worktree
   setup links a `.env` nothing reads; every worktree setup runs `sync:repos` although most changes
-  never read `.repos`.
+  never read `.repos`; `ci:local`'s overlay aborts when a staged change turns a file into a
+  directory or back (Sol, round 2); the atomic setup-marker claim has no automated test because
+  the script runs at top level (extract the claim if it ever regresses).
 - **AGENTS.md repeats the testing rules** (Sol, Opus): it and `docs/internals/testing.md` carry the
   same rules and have started to drift, and AGENTS.md is near its line cap. Keep the rules that
   protect live data and the test-at-one-layer rule, point to `testing.md` for the rest. T3 Code
@@ -51,12 +53,24 @@ Reviewers: Opus 5.5 and GPT 6.2 Sol (two lenses each), Fable 5.2 and GPT 6.2 Ast
   Alternative: T3 Code's tests beside changes plus a map of cross-file guards (Sol, Opus). A web
   change now takes about 3 s instead of 1,5 s.
 - **The outbox fix landed now** despite a split vote (Astra, Sol: critical; Fable, Opus: with the
-  real runner): lost accepted work in the template every side effect copies. Failed rows retry
-  forever with at most 10 s between tries; T3 Code gives up after 5, which would strand the job.
-- **Also landed now**: plain-HTTP LAN IDs (three reviewers), auth wiring tests and message limits
-  (64 KiB per WebSocket message, 200 characters for names, 10.000 for job input), the stored-format
-  rule with a golden decode test, and the agent-loop fixes (`check:changed` on `main`, `ci:local`
-  with staged files, setup by hand, `dev:web` ports, `--background` in the skill).
+  real runner): lost accepted work in the template every side effect copies. Failed rows and final
+  job reports retry until they succeed, at most 10 s apart. Today only storage errors can fail a
+  handler, so retrying is the right answer. T3 Code instead gives up after 5 tries and settles the
+  effect as failed; adopt that at the first handler that can fail on every try (cap the attempts,
+  dispatch `job.fail`, mark the row done), or a job stays queued forever (Opus, round 2).
+- **Also landed now** (see `git log`): plain-HTTP LAN IDs, auth wiring tests, message and ID caps
+  (64 KiB per WebSocket message; 200, 10.000 and 128 characters), the stored-format rule, and the
+  agent-loop fixes.
+- **Desktop readiness landed now**, reversing the first triage (Sol rated it critical twice;
+  `SECURITY.md` lists a process that merely reaches the port as untrusted, and another OS user's
+  process could take the released port and receive the one-time admin token). The server signals
+  its origin on fd 4 once it serves and holds the token; the shell loads only that, blocks app
+  requests while no run is ready, and guards redirects. In `dev:desktop` Vite binds `127.0.0.1` and
+  answers an HMAC challenge, so the dev window's origin is now `127.0.0.1` (fresh dev localStorage
+  once). Still open: `dev:desktop --host 0.0.0.0` loads `localhost`, leaving one address family
+  unguarded (edge case). Alternative not taken: keep it in the backlog until packaging.
+- **`dev:web` fails on a busy web port** instead of moving to the next one, so pairing links never
+  point at someone else's listener; a stale process on that port now stops it with a message.
 - **Codex and T3 Code shells count as agents** for the desktop launch mode (`CODEX_THREAD_ID`,
   `CODEX_SANDBOX`, `T3CODE_THREAD_ID`), so `dev:desktop` from T3 Code's terminal panel starts in
   the background too; pass `--foreground` there.
