@@ -2,6 +2,7 @@ import {
   AUTH_HTTP_PATHS,
   AUTH_SESSION_COOKIE,
   PairRequest,
+  PROTOCOL_VERSION,
   type SessionStatus,
 } from "@toolspell/contracts";
 import * as Effect from "effect/Effect";
@@ -32,7 +33,11 @@ const healthRoute = HttpRouter.add(
   "/health",
   Effect.gen(function* () {
     const config = yield* ServerConfig;
-    return HttpServerResponse.jsonUnsafe({ ok: true, version: config.version });
+    return HttpServerResponse.jsonUnsafe({
+      ok: true,
+      version: config.version,
+      protocolVersion: PROTOCOL_VERSION,
+    });
   }),
 );
 
