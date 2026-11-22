@@ -14,9 +14,8 @@ export interface ClockStore<A> {
 const MAX_TIMEOUT_MS = 2_147_483_647;
 
 /**
- * Epoch ms floored to the second. One timer for every subscriber, running only while someone
- * listens, so derive a coarser snapshot from it (a label) and React re-renders a reader only
- * when that snapshot changes.
+ * Epoch ms floored to the second, from one timer that runs only while someone listens. Derive a
+ * coarser snapshot from it (a label) so React re-renders a reader only when that changes.
  */
 export const secondTick: ClockStore<number> = (() => {
   const read = () => Math.floor(Date.now() / 1000) * 1000;

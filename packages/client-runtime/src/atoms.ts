@@ -59,9 +59,8 @@ class PairingError extends Schema.TaggedError<PairingError>()("PairingError", {
 const RESUBSCRIBE_DELAY = "1 second";
 
 /**
- * Atoms for one ToolSpell server. A view's subscription runs while something reads
- * it, and resumes from its cursor after a reconnect. The socket opens on first use
- * and closes once nothing reads RPC-backed atoms, such as after the device is unpaired.
+ * A view's subscription runs while something reads it and resumes from its cursor after a
+ * reconnect. The socket opens on first use and closes once nothing reads RPC-backed atoms.
  */
 export const makeToolSpellAtoms = (options: { readonly origin: string }) => {
   const origin = options.origin.replace(/\/$/, "");
