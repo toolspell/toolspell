@@ -75,6 +75,12 @@ Before calling work done, say which of these applied:
   always lives in the checkout's gitignored `.toolspell`, never in `~/.toolspell`. `--home-dir`
   picks another directory; `--host <host>` exposes Vite to other devices (the server stays on
   loopback behind Vite's proxy).
+- The desktop app (`dev:desktop`) runs in the background when you start it: no window on screen,
+  no Dock icon, and it never takes focus from the maintainer, who works on the same machine. Drive
+  and screenshot it over CDP with the
+  [test-toolspell-app](.agents/skills/test-toolspell-app/SKILL.md) skill. Never pass `--foreground`
+  on your own; ask the maintainer first, and only when a visible window is needed or clearly
+  benefits the task.
 - Ports derive from the checkout path and stay stable across restarts. Read the real ones from the
   `[dev-runner]` line, since occupied ports shift.
 - The server prints a `pairingUrl:` line with admin scopes at startup. Open the full URL once in an

@@ -42,9 +42,37 @@ interaction tools. If the token was used or expired (after 10 minutes), mint a f
 node apps/server/src/bin.ts pair --home-dir .toolspell --web-origin http://localhost:<webPort> --admin
 ```
 
-Keep using the same tab. Desktop checks run `vp run dev:desktop`, which opens a real Electron
-window; read the server log (in the terminal and `.toolspell/desktop/logs/server.log`) to confirm
-it paired and connected.
+Keep using the same tab.
+
+## Drive the desktop app
+
+Run `vp run dev:desktop` from your own shell and keep it running. Check its output for
+`[dev-electron] Launch mode: background`; if it says foreground, stop it and do not continue. In
+the background the window is never shown and never takes focus, but it renders, and the app pairs
+itself. Dialogs, context menus, and external links are written to the log
+(`.toolspell/desktop/logs/server.log` and the terminal) instead of appearing. Never pass
+`--foreground` without the maintainer's go-ahead.
+
+Drive the window with Playwright over the Chrome DevTools Protocol on `cdpPort` from the
+`[dev-runner]` line (the `CDP for agents:` line repeats it). Save a script outside the repository
+and run it from `apps/web`, where Playwright is installed:
+
+```js
+// node /tmp/drive.mjs <cdpPort>, from apps/web
+import { createRequire } from "node:module";
+const { chromium } = createRequire(`${process.cwd()}/package.json`)("playwright");
+const browser = await chromium.connectOverCDP(`http://127.0.0.1:${process.argv[2]}`);
+const page = browser
+  .contexts()[0]
+  .pages()
+  .find((candidate) => candidate.url().startsWith("http"));
+await page.getByRole("link", { name: "Settings" }).click();
+await page.screenshot({ path: "/tmp/toolspell-settings.png" });
+await browser.close(); // Disconnects; the app keeps running.
+```
+
+Do not call `page.bringToFront()` or anything else that raises a window. Save screenshots outside
+the repository.
 
 ## Verify and retain
 

@@ -17,7 +17,12 @@ entry moves into an issue (labels from `.github/labels.json`) and the file is de
   already expects the bundled server at `resources/server/bin.mjs`. Use the release
   [macOS PNG](../assets/prod/macos-1024.png), [Windows ICO](../assets/prod/windows.ico), and
   [universal PNG](../assets/prod/universal-1024.png) as icon inputs. The same files are available
-  in [the nightly set](../assets/nightly).
+  in [the nightly set](../assets/nightly). Then give `start:desktop` a
+  real target (the desktop package has no `start` script, and a plain `electron .` outside the dev
+  runner would point the server at the live `~/.toolspell`).
+- **A packaged app launched with `--background`** still registers as a regular macOS app for a
+  moment before `main.ts` makes it background only (the dev supervisor avoids that with an
+  `LSBackgroundOnly` copy). Trigger: agents testing packaged builds.
 - **A real runner**: first decide what a ToolSpell job does. See [runners](internals/runners.md).
 - **Login-shell `PATH`** for apps launched from Finder or the Start menu; needed before the first
   real runner spawns tools (T3 Code: `apps/desktop/src/shell/DesktopShellEnvironment.ts`).
@@ -173,11 +178,15 @@ None of the contribution workflows can run before the repository is on GitHub.
   within about a second and the window reconnects; ending ToolSpell ends the server; File, Exit
   leaves no server process; a server that ignores stdin for over 5 s is taken by `taskkill /T /F`
   on quit; in dev, editing `apps/desktop/src/main.ts` restarts Electron without a "data in use"
-  dialog.
+  dialog. Background mode (`vp run dev:desktop --background`): no window or taskbar button appears
+  and focus stays put at start, after ending the server, and after a rebuild restart; a Playwright
+  screenshot over `cdpPort` shows the app, not a blank page (Chromium may stop painting a window
+  that was never shown).
 - **Desktop on Linux** (X11 and Wayland): the window appears in the right colour (the
   `did-finish-load` fallback); closing it quits and stops the server; a theme switch updates the
-  window background.
+  window background. Background mode: the same checks as on Windows, on both X11 and Wayland.
 - **Desktop on macOS, by eye**: no white flash at launch in light and dark mode; with Dark chosen
   in Settings on a light system (and the reverse), the startup page and window open in the chosen
   theme after a relaunch; the context menu offers spelling suggestions in a text field and Copy
-  Link Address on a link; the About panel.
+  Link Address on a link; the About panel; `vp run dev:desktop` from a terminal still opens the
+  window in front with a Dock icon (agents only run the background mode).

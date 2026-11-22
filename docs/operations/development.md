@@ -46,6 +46,23 @@ restarts its server. The desktop app's dev profile and its `logs/server.log` liv
 - `--host <host>` exposes Vite on another interface so other devices can open dev; the server
   stays on loopback, because browsers only talk to Vite, which proxies to the server. Leave web
   origins unset.
+- `dev:desktop` adds a third port, `cdpPort`: Electron serves the Chrome DevTools Protocol on
+  `127.0.0.1` there, so agents can drive and screenshot the window with Playwright. Only the dev
+  supervisor turns it on; packaged builds never listen.
+
+## Desktop in the background
+
+Agents share the maintainer's screen, so `vp run dev:desktop` starts the desktop app in the
+background unless a person launched it: background when stdin is not a terminal or `AI_AGENT` or
+`CLAUDECODE` is set, foreground otherwise. `--background` and `--foreground` override that, as does
+`TOOLSPELL_DESKTOP_MODE=background|foreground`. The `[dev-electron] Launch mode:` line says which
+mode applies and why, and restarts keep it.
+
+In the background the window is never shown and never takes focus, yet it keeps rendering for CDP.
+Dialogs, context menus, and external links go to the log instead. On macOS the app has no Dock icon
+and cannot be activated: the dev supervisor runs a copy of Electron.app marked `LSBackgroundOnly`,
+cached in `apps/desktop/node_modules/.cache/background-electron`, because the stock app registers
+as a regular app before any of our code runs.
 
 ## Pairing in dev
 
