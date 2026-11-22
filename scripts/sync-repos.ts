@@ -24,8 +24,23 @@ type ReferenceRepo =
     };
 
 const REFERENCE_BINARY_EXTENSIONS = [
-  ...["png", "jpg", "jpeg", "gif", "webp", "mp4", "mov", "ttf", "woff", "woff2", "icns", "ico"],
-  ...["a", "so", "glb", "tgz", "ndjson"],
+  "png",
+  "jpg",
+  "jpeg",
+  "gif",
+  "webp",
+  "mp4",
+  "mov",
+  "ttf",
+  "woff",
+  "woff2",
+  "icns",
+  "ico",
+  "a",
+  "so",
+  "glb",
+  "tgz",
+  "ndjson",
 ];
 
 const REPOS: ReadonlyArray<ReferenceRepo> = [

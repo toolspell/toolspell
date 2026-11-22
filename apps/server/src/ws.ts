@@ -36,7 +36,7 @@ const handlersFor = (session: AuthenticatedSession) =>
             scopes: session.scopes,
           }),
         "commands.dispatch": (command) =>
-          orchestrator.dispatch(command).pipe(Effect.catchTag("SqlError", Effect.die)),
+          orchestrator.dispatch(command).pipe(Effect.catchTags({ SqlError: Effect.die })),
         "workspaces.subscribe": ({ afterSequence }) =>
           subscriptions.workspaces(afterSequence).pipe(Stream.orDie),
         "jobs.subscribe": ({ workspaceId, afterSequence }) =>
