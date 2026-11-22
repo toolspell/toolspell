@@ -2,12 +2,12 @@
 // React commits and component renders while it drives them, asserts the render budgets that
 // matter, and writes the counts for scripts/render-metrics.ts through writeRenderReport.
 import { applyJobsItem, applyWorkspacesItem } from "@toolspell/client-runtime/views";
-import { createMemoryHistory, createRouter, RouterProvider } from "@tanstack/react-router";
+import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { expect, it, vi } from "vite-plus/test";
 import { commands } from "vite-plus/test/browser";
 
-import { routeTree } from "~/routeTree.gen";
+import { createAppRouter } from "~/router";
 import {
   initialJobs,
   initialWorkspaces,
@@ -38,10 +38,9 @@ const RENAMES = 10;
 
 // Routes load their components lazily; loading before the mount keeps that out of the count.
 async function workspacePage() {
-  const router = createRouter({
-    routeTree,
-    history: createMemoryHistory({ initialEntries: [`/workspaces/${WORKSPACE_ID}`] }),
-  });
+  const router = createAppRouter(
+    createMemoryHistory({ initialEntries: [`/workspaces/${WORKSPACE_ID}`] }),
+  );
   await act(() => router.load());
   return <RouterProvider router={router} />;
 }

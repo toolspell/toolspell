@@ -1,5 +1,5 @@
 import { RegistryContext } from "@effect/atom-react";
-import { createRouter, RouterProvider } from "@tanstack/react-router";
+import { RouterProvider } from "@tanstack/react-router";
 import * as Effect from "effect/Effect";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import { StrictMode } from "react";
@@ -7,7 +7,8 @@ import { createRoot } from "react-dom/client";
 
 import { showBootError } from "./bootError.ts";
 import { atoms, errorMessage, pairingErrorAtom, preferences } from "./client.ts";
-import { routeTree } from "./routeTree.gen.ts";
+import { reloadOnceForChunkLoadError } from "./lib/chunkReloadGuard.ts";
+import { createAppRouter } from "./router.ts";
 import { syncTheme } from "./theme.ts";
 import "./styles.css";
 
@@ -29,13 +30,12 @@ const consumePairingToken = async () => {
 
 syncTheme(registry, preferences.themeAtom);
 
-const router = createRouter({ routeTree });
+const router = createAppRouter();
 
-declare module "@tanstack/react-router" {
-  interface Register {
-    router: typeof router;
-  }
-}
+// Vite raises this when a lazy chunk fails to load, such as after a deploy replaced it.
+window.addEventListener("vite:preloadError", (event) => {
+  if (reloadOnceForChunkLoadError()) event.preventDefault();
+});
 
 const startup = async () => {
   await consumePairingToken();

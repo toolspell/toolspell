@@ -53,6 +53,7 @@ const browserTestProject = {
       "@base-ui/react/use-render",
       "class-variance-authority",
       "cn",
+      "lucide-react",
       "effect/Context",
       "effect/Effect",
       "effect/Layer",
