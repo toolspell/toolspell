@@ -10,6 +10,7 @@
 ## Working on ToolSpell
 
 Start with the [development runbook](./operations/development.md) and [AGENTS.md](../AGENTS.md).
+To see what a server did, read its [trace file](./operations/observability.md).
 Outside contributions follow [CONTRIBUTING.md](../CONTRIBUTING.md). Deferred topics live in the
 [backlog](./backlog.md) until the repository has an issue tracker.
 

@@ -18,6 +18,7 @@ import * as Orchestrator from "./core/Orchestrator.ts";
 import * as ProjectionStore from "./core/ProjectionStore.ts";
 import * as Subscriptions from "./core/Subscriptions.ts";
 import * as Http from "./http.ts";
+import * as TraceFile from "./observability/TraceFile.ts";
 import * as HomeLock from "./persistence/HomeLock.ts";
 import * as RuntimeState from "./persistence/RuntimeState.ts";
 import * as Sqlite from "./persistence/Sqlite.ts";
@@ -71,6 +72,7 @@ export const layerAuth = AuthStoreLayer.layer.pipe(
 export const layer = <E, R>(runner: Layer.Layer<Runner, E, R>) =>
   Layer.mergeAll(layerHttpServer, layerStartupAccess, RuntimeState.layer).pipe(
     Layer.provideMerge(layerServices(runner)),
+    Layer.provide(TraceFile.layer),
     // Taken before storage opens, so a second server fails before touching shared state.
     Layer.provide(HomeLock.layer),
   );
