@@ -110,6 +110,9 @@ before writing rows directly.
   copy text, smoke runs, mock-call mirrors, callback wiring, and props rendered to static markup.
 - Extend before you add. When an existing test or table covers the behavior, add a row or an
   assertion there. Write a new `it` only when no case fits.
+- A table is `it.each` or `it.effect.each`, never `it` inside a `for` loop. Effect tests run
+  through `@effect/vitest` and test layers, never `Effect.runPromise` or `ManagedRuntime.make`.
+  Lint enforces both: `toolspell/no-test-in-loop`, `toolspell/no-manual-effect-runtime-in-tests`.
 - Test at one layer: the lowest one that fails on `main`. Do not repeat the case in a wrapper test
   or at each call site.
 - Write a browser test only for behavior that needs a real browser: layout and scrolling, focus

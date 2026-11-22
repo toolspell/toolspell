@@ -75,8 +75,9 @@ layer; don't create a runtime per feature to hand it out.
 - **Translation.** Construct the error where the failure happens, and map it to a transport error
   only in the transport. Storage failures become defects at the RPC boundary; the client sees a
   generic error and the log keeps the cause.
-- **Catching.** Catch known tags with `Effect.catchTags({ ... })`, even for one tag. `Effect.catch`
-  is for handling the whole channel.
+- **Catching.** Catch known tags with `Effect.catchTags({ ... })`, even for one tag; lint
+  (`toolspell/prefer-catch-tags`) rejects `catchTag`. `Effect.catch` is for handling the whole
+  channel.
 
 ## Before you push
 

@@ -12,6 +12,9 @@ rules under Verifying; change both together.
   static markup.
 - Extend before you add. When an existing test or table covers the behavior, add a row or an
   assertion there. Write a new `it` only when no case fits.
+- A table is `it.each` or `it.effect.each`, never `it` inside a `for` loop. Effect tests run
+  through `@effect/vitest` and test layers, never `Effect.runPromise` or `ManagedRuntime.make`.
+  Lint enforces both: `toolspell/no-test-in-loop`, `toolspell/no-manual-effect-runtime-in-tests`.
 - Test at one layer: the lowest one that fails on `main`. Do not repeat the case in a wrapper test,
   at each call site, or in client copies of the same logic.
 - Write a browser test only for behavior that needs a real browser: layout and scrolling, focus and

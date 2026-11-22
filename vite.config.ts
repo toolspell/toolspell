@@ -12,6 +12,15 @@ const TEST_EXCLUDE = [
 
 const GENERATED = ["**/routeTree.gen.ts"];
 
+const RESTRICTED_UI_VARIANT_PATTERNS = [
+  {
+    group: ["**/components/ui/*", "**/ui/*", "./ui/*"],
+    importNames: ["buttonVariants", "toggleVariants", "badgeVariants", "selectTriggerVariants"],
+    message:
+      "Render the components/ui component instead of borrowing its class recipe, such as render={<Button />}.",
+  },
+];
+
 export default defineConfig({
   run: {
     // Scripts opt in with `vp run --cache`; cached tasks only see allow-listed env vars,
@@ -75,6 +84,7 @@ export default defineConfig({
       "react/no-array-index-key": "error",
       "react/no-unstable-nested-components": "error",
       "react/static-components": "error",
+      "react/capitalized-calls": "error",
       "react-in-jsx-scope": "off",
       "react-hooks/exhaustive-deps": "off",
       "react/jsx-no-constructed-context-values": "off",
@@ -82,18 +92,28 @@ export default defineConfig({
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
       ],
+      "eslint/no-empty-pattern": "error",
       "eslint/no-new": "error",
+      "eslint/no-unsafe-optional-chaining": "error",
+      "eslint/no-unneeded-ternary": "error",
       "eslint/no-shadow": "off",
       "eslint/no-await-in-loop": "off",
       "eslint/no-underscore-dangle": "off",
       "unicorn/consistent-function-scoping": "off",
       "unicorn/no-array-sort": "off",
+      "unicorn/no-useless-spread": "error",
+      "unicorn/no-useless-fallback-in-spread": "error",
+      "unicorn/require-module-specifiers": "error",
       "typescript/no-extraneous-class": "error",
       "toolspell/namespace-node-imports": "error",
+      "toolspell/no-inline-schema-compile": "error",
+      "toolspell/no-manual-effect-runtime-in-tests": "error",
       "toolspell/no-polling-loop-in-tests": "error",
       "toolspell/no-real-time-wait-in-tests": "error",
+      "toolspell/no-test-in-loop": "error",
       "toolspell/no-test-timeout-or-unreasoned-skip": "error",
       "toolspell/no-wall-clock-in-tests": "error",
+      "toolspell/prefer-catch-tags": "error",
       "toolspell/prefer-effect-fn": "error",
       "toolspell/require-suppression-reason": "error",
     },
@@ -149,7 +169,13 @@ export default defineConfig({
           "shadcn/require-static-classes": "error",
           "shadcn/no-arbitrary-values": "error",
           "shadcn/no-restyle": ["error", { allow: ["layout"] }],
+          "eslint/no-restricted-imports": ["error", { patterns: RESTRICTED_UI_VARIANT_PATTERNS }],
         },
+      },
+      {
+        files: ["apps/*/src/**", "packages/*/src/**"],
+        excludeFiles: ["**/*.{test,spec}.{ts,tsx,js,jsx,mts,cts,mjs,cjs}", "**/testkit.ts"],
+        rules: { "toolspell/no-em-dash-copy": "error" },
       },
       {
         // Lint rules and dev scripts are plain Node programs, not Effect services.
