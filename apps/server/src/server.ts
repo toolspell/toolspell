@@ -51,17 +51,20 @@ const layerStartupAccess = Layer.effectDiscard(
   }),
 );
 
-const layerHttpServer = Layer.unwrap(
+// Exposes `HttpServer`, so a test can read the address of a server on port 0.
+export const layerHttpServer = Layer.unwrap(
   Effect.gen(function* () {
     const config = yield* ServerConfig;
     return HttpRouter.serve(Layer.mergeAll(Http.routes, Ws.route)).pipe(
-      Layer.provide(
+      Layer.provideMerge(
         NodeHttpServer.layer(createGuardedServer, {
           port: config.port,
           host: config.host,
           // Shutdown sends each WebSocket a close frame at once. Waiting for peers to answer, and
           // for keep-alive connections, takes up to 20 s; the desktop app kills the server at 5 s.
           gracefulShutdownTimeout: 0,
+          // `ws` allows 100 MiB per message by default; clients only send small JSON requests.
+          websocket: { maxPayload: Http.MAX_REQUEST_BYTES },
         }),
       ),
     );
@@ -75,7 +78,8 @@ export const layerAuth = AuthStoreLayer.layer.pipe(
 );
 
 export const layer = <E, R>(runner: Layer.Layer<Runner, E, R>) =>
-  Layer.mergeAll(layerHttpServer, layerStartupAccess, RuntimeState.layer).pipe(
+  Layer.mergeAll(layerStartupAccess, RuntimeState.layer).pipe(
+    Layer.merge(layerHttpServer),
     Layer.provideMerge(layerServices(runner)),
     Layer.provide(TraceFile.layer),
     // Taken before storage opens, so a second server fails before touching shared state.

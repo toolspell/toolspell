@@ -34,8 +34,8 @@ const invalidRequest = HttpServerResponse.jsonUnsafe(
 
 const unauthenticated: SessionStatus = { authenticated: false, scopes: [] };
 
-// Every body this server reads is a small JSON request; nothing uploads.
-const MAX_BODY_BYTES = 64 * 1024;
+// Every body and socket message this server reads is a small JSON request; nothing uploads.
+export const MAX_REQUEST_BYTES = 64 * 1024;
 
 const bodyTooLarge = HttpServerResponse.jsonUnsafe(
   { message: "Request body is too large." },
@@ -43,16 +43,19 @@ const bodyTooLarge = HttpServerResponse.jsonUnsafe(
 );
 
 /**
- * Caps every request body, on every route. A declared length over the cap gets 413 before any
- * byte is read; a chunked body gets it as soon as the bytes read pass the cap.
+ * Caps every HTTP request body, on every route. A declared length over the cap gets 413 before
+ * any byte is read; a chunked body gets it as soon as the bytes read pass the cap. WebSocket
+ * messages are capped by the server's `websocket.maxPayload`, not here.
  */
 const bodySizeLimit = HttpRouter.middleware(
   (httpEffect) =>
     Effect.gen(function* () {
       const request = yield* HttpServerRequest.HttpServerRequest;
-      if (Number(request.headers["content-length"] ?? 0) > MAX_BODY_BYTES) return bodyTooLarge;
+      if (Number(request.headers["content-length"] ?? 0) > MAX_REQUEST_BYTES) return bodyTooLarge;
       return yield* httpEffect;
-    }).pipe(Effect.provideService(HttpServerRequest.MaxBodySize, ByteSize.bytes(MAX_BODY_BYTES))),
+    }).pipe(
+      Effect.provideService(HttpServerRequest.MaxBodySize, ByteSize.bytes(MAX_REQUEST_BYTES)),
+    ),
   { global: true },
 );
 
