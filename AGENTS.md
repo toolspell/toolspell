@@ -100,7 +100,8 @@ before writing rows directly.
 - Before you push, run `vp run check:changed`. It runs format, lint, knip, typecheck of affected
   packages and their dependents, the tests beside changed files, and the agent-docs check, for
   files changed against the merge base with `main` plus uncommitted and untracked files.
-- While you iterate, run `vp test run <files>`. For big files, add `-t "<name>"`.
+- While you iterate, run `vp test run <files>` from the repository root. Each file runs with its
+  package's config, web browser tests included. For big files, add `-t "<name>"`.
 - `vp run typecheck` caches per package. Each package runs `effect-tsgo tsrs --noEmit`, the native
   TypeScript checker with Effect's diagnostics built in.
 - **Do not run repo-wide checks** (`vp run ready`, `vp run -r test`) unless asked. CI runs them.

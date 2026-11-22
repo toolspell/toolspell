@@ -12,7 +12,7 @@ import * as NodeChildProcess from "node:child_process";
 import * as NodeFS from "node:fs";
 import * as NodePath from "node:path";
 
-import { affectedPackages, readWorkspace, type WorkspacePackage } from "./lib/affected.ts";
+import { affectedPackages, readWorkspace } from "./lib/affected.ts";
 import { vpCommand } from "./lib/vp.ts";
 
 const root = NodePath.dirname(import.meta.dirname);
@@ -61,7 +61,6 @@ export const testsFor = (files: ReadonlyArray<string>, exists: (file: string) =>
 interface Step {
   readonly name: string;
   readonly command: ReadonlyArray<string>;
-  readonly cwd?: string;
 }
 
 interface Result {
@@ -77,7 +76,7 @@ const run = (step: Step) =>
     const [name, ...args] = step.command;
     const [command, commandArgs] = name === "vp" ? vpCommand(args) : [name!, args];
     const child = NodeChildProcess.spawn(command, commandArgs, {
-      cwd: step.cwd ?? root,
+      cwd: root,
       env: { ...process.env, FORCE_COLOR: "1" },
     });
     let output = "";
@@ -92,28 +91,6 @@ const run = (step: Step) =>
         output,
       }),
     );
-  });
-
-const testSteps = (workspace: ReadonlyArray<WorkspacePackage>, tests: ReadonlyArray<string>) =>
-  workspace.flatMap((pkg) => {
-    const own = tests.filter((file) => file.startsWith(`${pkg.dir}/`));
-    if (own.length === 0) return [];
-    const ownConfig = NodeFS.existsSync(NodePath.join(root, pkg.dir, "vite.config.ts"));
-    const depth = pkg.dir.split("/").length;
-    return [
-      {
-        name: `test ${pkg.name} (${own.length} files)`,
-        cwd: NodePath.join(root, pkg.dir),
-        command: [
-          "vp",
-          "test",
-          "run",
-          "--passWithNoTests",
-          ...(ownConfig ? [] : ["--config", `${"../".repeat(depth)}vite.config.ts`]),
-          ...own.map((file) => file.slice(pkg.dir.length + 1)),
-        ],
-      },
-    ];
   });
 
 const main = async () => {
@@ -163,13 +140,12 @@ const main = async () => {
         ]
       : []),
   ];
-  // Vitest runs started together race on their caches, so tests run one package at a time.
-  const serial = [
-    ...testSteps(workspace, testsFor(files, exists)),
+  // From the repo root, the root vite.config.ts hands each file to its package's config.
+  const tests = [...new Set([...testsFor(files, exists), "scripts/agent-docs.test.ts"])];
+  const serial: Array<Step> = [
     {
-      name: "agent docs",
-      cwd: NodePath.join(root, "scripts"),
-      command: ["vp", "test", "run", "--config", "../vite.config.ts", "agent-docs.test.ts"],
+      name: `test (${tests.length} files)`,
+      command: ["vp", "test", "run", "--passWithNoTests", ...tests],
     },
   ];
 

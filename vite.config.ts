@@ -10,6 +10,14 @@ const TEST_EXCLUDE = [
   "**/.{idea,git,cache,output,temp}/**",
 ];
 
+// Directories whose tests belong to the package's own vite.config.ts.
+const TEST_CONFIG_PACKAGES = ["apps/desktop", "apps/server", "apps/web"];
+
+// `vp test run <file>` from the repo root hands each file to its package's config. Packages
+// that borrow this config (`--config ../../vite.config.ts`) run from their own directory, as
+// CI does, so they keep one plain project. Adapted from T3 Code (MIT).
+const isRepoRootTestRun = process.cwd() === import.meta.dirname;
+
 const GENERATED = ["**/routeTree.gen.ts"];
 
 const RESTRICTED_UI_VARIANT_PATTERNS = [
@@ -33,6 +41,20 @@ export default defineConfig({
     allowOnly: !process.env.CI,
     // Flaky tests are fixed, not retried.
     retry: 0,
+    ...(isRepoRootTestRun
+      ? {
+          projects: [
+            ...TEST_CONFIG_PACKAGES,
+            {
+              extends: true,
+              test: {
+                name: "root",
+                exclude: [...TEST_EXCLUDE, ...TEST_CONFIG_PACKAGES.map((dir) => `${dir}/**`)],
+              },
+            },
+          ],
+        }
+      : {}),
   },
   staged: {
     // In order, so lint reads the formatted file.

@@ -12,8 +12,10 @@ import { defineProject, type TestProjectInlineConfiguration } from "vite-plus/te
 
 import baseConfig from "../../vite.config.ts";
 
-// Workspace cache configuration is invalid on a package config.
-const { run: _rootRunConfig, ...basePackageConfig } = baseConfig;
+// Workspace cache configuration is invalid on a package config. The root's test projects route
+// repo-root runs to package configs, this one included; inheriting them would nest projects.
+const { run: _rootRunConfig, test: rootTestConfig, ...basePackageConfig } = baseConfig;
+const { projects: _rootTestProjects, ...baseTestConfig } = rootTestConfig ?? {};
 
 // Dev is single-origin: the browser only talks to Vite, which proxies these to the
 // server. Never bake a server URL into the bundle; remote browsers would break.
@@ -145,7 +147,7 @@ function chunkCycleGuardPlugin(): Plugin {
 }
 
 const appConfig = mergeConfig(
-  basePackageConfig,
+  { ...basePackageConfig, test: baseTestConfig },
   defineConfig({
     plugins: [
       tanstackRouter({ target: "react", autoCodeSplitting: true }),

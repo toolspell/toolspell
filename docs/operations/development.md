@@ -63,7 +63,7 @@ Without `--admin` the link grants `read` and `operate` only.
 | Command                | Runs                                                                    |
 | ---------------------- | ----------------------------------------------------------------------- |
 | `vp run check:changed` | CI's fast checks for changed files (see below). Run it before you push. |
-| `vp test run <files>`  | The given test files.                                                   |
+| `vp test run <files>`  | The given test files, each with its package's config, from the root.    |
 | `vp run typecheck`     | `effect-tsgo` per package, cached.                                      |
 | `vp run knip`          | Unused files, exports, and dependencies.                                |
 | `vp run ready`         | The full local gate, the same as CI. Slow; not needed for every change. |

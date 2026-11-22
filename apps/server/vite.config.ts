@@ -2,11 +2,13 @@ import { defineConfig, mergeConfig } from "vite-plus";
 
 import baseConfig from "../../vite.config.ts";
 
-// Workspace cache configuration is invalid on a package config.
-const { run: _rootRunConfig, ...basePackageConfig } = baseConfig;
+// Workspace cache configuration is invalid on a package config. The root's test projects route
+// repo-root runs to package configs, this one included; inheriting them would nest projects.
+const { run: _rootRunConfig, test: rootTestConfig, ...basePackageConfig } = baseConfig;
+const { projects: _rootTestProjects, ...baseTestConfig } = rootTestConfig ?? {};
 
 export default mergeConfig(
-  basePackageConfig,
+  { ...basePackageConfig, test: baseTestConfig },
   defineConfig({
     run: {
       tasks: {
