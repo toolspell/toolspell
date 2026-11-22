@@ -60,18 +60,21 @@ const portsFree = async (ports: ReadonlyArray<number>) => {
   return true;
 };
 
-const parseArgs = (argv: ReadonlyArray<string>) => {
+const USAGE = `Usage: dev-runner <${Object.keys(MODES).join("|")}> [--home-dir <dir>] [--host <host>]`;
+const VALUE_FLAGS = ["--home-dir", "--host"];
+
+/** Rejects anything unknown, so a typo or `--help` never starts servers by accident. */
+export const parseArgs = (argv: ReadonlyArray<string>) => {
   const [mode, ...rest] = argv;
-  if (!mode || !(mode in MODES)) {
-    throw new Error(
-      `Usage: dev-runner <${Object.keys(MODES).join("|")}> [--home-dir <dir>] [--host <host>]`,
-    );
+  if (!mode || !(mode in MODES)) throw new Error(USAGE);
+  const flags = new Map<string, string>();
+  for (let index = 0; index < rest.length; index += 2) {
+    const name = rest[index]!;
+    const value = rest[index + 1];
+    if (!VALUE_FLAGS.includes(name) || value === undefined) throw new Error(USAGE);
+    flags.set(name, value);
   }
-  const flag = (name: string) => {
-    const index = rest.indexOf(name);
-    return index === -1 ? undefined : rest[index + 1];
-  };
-  return { mode: mode as Mode, homeDir: flag("--home-dir"), host: flag("--host") };
+  return { mode: mode as Mode, homeDir: flags.get("--home-dir"), host: flags.get("--host") };
 };
 
 const main = async () => {

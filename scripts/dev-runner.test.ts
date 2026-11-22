@@ -1,6 +1,6 @@
 import { assert, describe, it } from "@effect/vitest";
 
-import { offsetFor } from "./dev-runner.ts";
+import { offsetFor, parseArgs } from "./dev-runner.ts";
 
 describe("offsetFor", () => {
   it("gives each checkout a stable offset and honors explicit overrides", () => {
@@ -13,5 +13,15 @@ describe("offsetFor", () => {
       offsetFor({ TOOLSPELL_DEV_INSTANCE: "a" }, "/two"),
     );
     assert.throws(() => offsetFor({ TOOLSPELL_PORT_OFFSET: "-1" }, "/any"));
+  });
+
+  it("starts nothing for unknown flags such as --help", () => {
+    assert.deepStrictEqual(parseArgs(["dev", "--home-dir", "/tmp/x"]), {
+      mode: "dev",
+      homeDir: "/tmp/x",
+      host: undefined,
+    });
+    assert.throws(() => parseArgs(["dev", "--help"]));
+    assert.throws(() => parseArgs(["dev", "--home-dir"]));
   });
 });
