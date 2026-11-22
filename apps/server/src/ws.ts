@@ -18,9 +18,11 @@ import { ServerConfig } from "./config.ts";
 import { Orchestrator } from "./core/Orchestrator.ts";
 import { Subscriptions } from "./core/Subscriptions.ts";
 import { authenticateRequest, isSameOriginRequest } from "./http.ts";
+import * as DefectReporter from "./observability/DefectReporter.ts";
 
 // Handlers stay thin: decode (done by the RPC layer), call one service method, map errors.
-// Storage failures are defects here; the client sees a generic error, the log has the cause.
+// Storage failures are defects here. The reporter logs each once with its cause in the request's
+// span; the contracts' defect schema sends the client a generic error.
 const handlersFor = (session: AuthenticatedSession) =>
   ToolSpellRpcs.toLayer(
     Effect.gen(function* () {
@@ -50,7 +52,13 @@ const handlersFor = (session: AuthenticatedSession) =>
         "auth.revokeSession": ({ sessionId }) => auth.revoke(sessionId).pipe(Effect.orDie),
       });
     }),
+  ).pipe(
+    // Reporters in the handlers' context see the defects of requests, not the whole server's.
+    Layer.provide(DefectReporter.layer),
   );
+
+// By default a defect also goes out as a socket-level frame that ends every pending request.
+export const RPC_SERVER_OPTIONS = { disableFatalDefects: true } as const;
 
 const incompatibleProtocol = HttpServerResponse.jsonUnsafe(
   {
@@ -82,7 +90,7 @@ export const route = HttpRouter.add(
       return HttpServerResponse.jsonUnsafe({ message: "Pair this device first." }, { status: 401 });
     }
     const { protocol, httpEffect } = yield* RpcServer.makeProtocolWithHttpEffectWebsocket;
-    yield* RpcServer.make(ToolSpellRpcs, { disableFatalDefects: true }).pipe(
+    yield* RpcServer.make(ToolSpellRpcs, RPC_SERVER_OPTIONS).pipe(
       Effect.provideService(RpcServer.Protocol, protocol),
       Effect.provide(
         Layer.merge(handlersFor(session.value), RpcAuthorization.layer(session.value.scopes)),

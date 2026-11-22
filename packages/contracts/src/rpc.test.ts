@@ -1,7 +1,10 @@
 import { assert, describe, it } from "@effect/vitest";
+import * as Cause from "effect/Cause";
+import * as Exit from "effect/Exit";
 import * as Schema from "effect/Schema";
+import * as Rpc from "effect/rpc/Rpc";
 
-import { JobsStreamItem } from "./rpc.ts";
+import { JobsStreamItem, ToolSpellRpcs } from "./rpc.ts";
 
 const decodeJobsItem = Schema.decodeUnknownSync(JobsStreamItem);
 
@@ -53,4 +56,23 @@ describe("forward-compatible responses", () => {
       decodeJobsItem({ type: "snapshot", sequence: -1, workspaceId: "w1", jobs: [] }),
     );
   });
+});
+
+describe("defects", () => {
+  // Iterates the group, so a new RPC without the defect schema fails here.
+  it.each([...ToolSpellRpcs.requests.values()])(
+    "$_tag tells a client that the server failed, not why",
+    (rpc) => {
+      const codec = Schema.toCodecJson(Rpc.exitSchema(rpc));
+      const encoded = Schema.encodeSync(codec)(
+        Exit.die(new Error("SqlError: UNIQUE constraint failed: jobs.id")),
+      );
+      assert.notInclude(JSON.stringify(encoded), "UNIQUE");
+      const decoded = Schema.decodeSync(codec)(encoded);
+      assert.isTrue(Exit.isFailure(decoded));
+      const defect = Exit.isFailure(decoded) ? Cause.squash(decoded.cause) : undefined;
+      assert.instanceOf(defect, Error);
+      assert.include(defect.message, "unexpected error");
+    },
+  );
 });

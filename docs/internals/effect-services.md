@@ -75,8 +75,12 @@ layer; don't create a runtime per feature to hand it out.
 - **Safe values.** Attributes and log annotations stay bounded: no raw payloads, tokens, or
   arbitrary defect text.
 - **Translation.** Construct the error where the failure happens, and map it to a transport error
-  only in the transport. Storage failures become defects at the RPC boundary; the client sees a
-  generic error and the log keeps the cause.
+  only in the transport. Storage failures become defects at the RPC boundary. A defect's message
+  can carry SQL or paths, so the client never sees it: every RPC's defect schema in
+  [`rpc.ts`](../../packages/contracts/src/rpc.ts) sends a generic error instead, and
+  [`DefectReporter`](../../apps/server/src/observability/DefectReporter.ts) logs the cause once in
+  the request's span. A defect in an HTTP route, the WebSocket upgrade included, becomes an empty
+  500, and the request log line carries its cause.
 - **Catching.** Catch known tags with `Effect.catchTags({ ... })`, even for one tag; lint
   (`toolspell/prefer-catch-tags`) rejects `catchTag`. `Effect.catch` is for handling the whole
   channel.

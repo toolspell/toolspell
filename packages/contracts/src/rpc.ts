@@ -1,4 +1,5 @@
 import * as Schema from "effect/Schema";
+import * as SchemaTransformation from "effect/SchemaTransformation";
 import * as Rpc from "effect/rpc/Rpc";
 import * as RpcGroup from "effect/rpc/RpcGroup";
 
@@ -69,6 +70,20 @@ export type JobsSnapshot = typeof JobsSnapshot.Type;
 export const JobsStreamItem = Schema.Union([JobsSnapshot, EventsBatch]);
 export type JobsStreamItem = typeof JobsStreamItem.Type;
 
+/**
+ * A defect is a server bug, and its message can carry SQL, file paths, or other internals. A
+ * client learns only that one happened; the server log keeps the cause. Every RPC uses this.
+ */
+const ServerDefect = Schema.Defect().pipe(
+  Schema.decodeTo(
+    Schema.Unknown,
+    SchemaTransformation.transform<unknown, unknown>({
+      decode: (defect) => defect,
+      encode: () => new Error("The server hit an unexpected error. Its log has the details."),
+    }),
+  ),
+);
+
 export const RPC_METHODS = {
   serverGetInfo: "server.getInfo",
   commandsDispatch: "commands.dispatch",
@@ -80,37 +95,44 @@ export const RPC_METHODS = {
 } as const;
 
 const ServerGetInfoRpc = Rpc.make(RPC_METHODS.serverGetInfo, {
+  defect: ServerDefect,
   success: ServerInfo,
 });
 
 const CommandsDispatchRpc = Rpc.make(RPC_METHODS.commandsDispatch, {
+  defect: ServerDefect,
   payload: ClientCommand,
   success: DispatchResult,
   error: CommandRejectedError,
 });
 
 const WorkspacesSubscribeRpc = Rpc.make(RPC_METHODS.workspacesSubscribe, {
+  defect: ServerDefect,
   payload: Schema.Struct(StreamResume),
   success: WorkspacesStreamItem,
   stream: true,
 });
 
 const JobsSubscribeRpc = Rpc.make(RPC_METHODS.jobsSubscribe, {
+  defect: ServerDefect,
   payload: Schema.Struct({ workspaceId: WorkspaceId, ...StreamResume }),
   success: JobsStreamItem,
   stream: true,
 });
 
 const AuthCreatePairingGrantRpc = Rpc.make(RPC_METHODS.authCreatePairingGrant, {
+  defect: ServerDefect,
   payload: Schema.Struct({ scopes: Schema.Array(AuthScope) }),
   success: PairingGrant,
 });
 
 const AuthListSessionsRpc = Rpc.make(RPC_METHODS.authListSessions, {
+  defect: ServerDefect,
   success: Schema.Array(AuthSession),
 });
 
 const AuthRevokeSessionRpc = Rpc.make(RPC_METHODS.authRevokeSession, {
+  defect: ServerDefect,
   payload: Schema.Struct({ sessionId: AuthSessionId }),
 });
 
