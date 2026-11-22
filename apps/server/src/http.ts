@@ -180,6 +180,35 @@ const contentSecurityPolicy = (host: string | undefined, scripts: ReadonlyArray<
     "form-action 'self'",
   ].join("; ");
 
+// Vite names each file it emits under assets/ by its content, so a new build means new URLs.
+// A file copied from the web app's public/ keeps its name; never put one in public/assets/.
+const HASHED_ASSET_PATH = /^\/assets\/.+-[\w-]{8}\.[^/]+$/;
+
+const withClientHeaders = (
+  request: HttpServerRequest.HttpServerRequest,
+  response: HttpServerResponse.HttpServerResponse,
+  scripts: ReadonlyArray<string>,
+) => {
+  if (response.headers["content-type"]?.startsWith("text/html")) {
+    // Pages name the current bundle, so they are always fetched again. Size and mtime can stay
+    // the same across builds, so they are not offered as validators either.
+    return response.pipe(
+      HttpServerResponse.removeHeader("etag"),
+      HttpServerResponse.removeHeader("last-modified"),
+      HttpServerResponse.setHeaders({
+        "Cache-Control": "no-cache",
+        "Content-Security-Policy": contentSecurityPolicy(request.headers.host, scripts),
+      }),
+    );
+  }
+  const hashed = HASHED_ASSET_PATH.test(new URL(request.url, "http://localhost").pathname);
+  return HttpServerResponse.setHeader(
+    response,
+    "Cache-Control",
+    hashed ? "public, max-age=31536000, immutable" : "no-cache",
+  );
+};
+
 /** The built web client, when this server serves one. In dev, Vite serves it with its own headers. */
 export const staticRoutes = Layer.unwrap(
   Effect.gen(function* () {
@@ -194,15 +223,7 @@ export const staticRoutes = Layer.unwrap(
     const serve = yield* HttpStaticServer.make({ root: config.staticDir.value, spa: true });
     return HttpRouter.add("GET", "/*", (request) =>
       serve.pipe(
-        Effect.map((response) =>
-          response.headers["content-type"]?.startsWith("text/html")
-            ? HttpServerResponse.setHeader(
-                response,
-                "Content-Security-Policy",
-                contentSecurityPolicy(request.headers.host, scripts),
-              )
-            : response,
-        ),
+        Effect.map((response) => withClientHeaders(request, response, scripts)),
         Effect.catch(HttpServerRespondable.toResponse),
       ),
     );

@@ -16,15 +16,16 @@ import * as FakeRunner from "./runners/FakeRunner.ts";
 import { layerServicesTest } from "./testkit.ts";
 
 describe("static client routes", () => {
-  it("send a Content-Security-Policy with pages but not with assets", async () => {
+  it("send a security policy with pages, and cache only hashed assets", async () => {
     // CRLF, as a Windows checkout has it; the browser hashes the script with LF.
     const root = NodeFS.mkdtempSync(NodePath.join(NodeOS.tmpdir(), "toolspell-client-"));
     NodeFS.writeFileSync(
       NodePath.join(root, "index.html"),
       '<!doctype html><script>\r\n  boot();\r\n</script><script type="module" src="/a.js"></script>',
     );
+    NodeFS.writeFileSync(NodePath.join(root, "favicon.svg"), "<svg/>");
     NodeFS.mkdirSync(NodePath.join(root, "assets"));
-    NodeFS.writeFileSync(NodePath.join(root, "assets", "app.js"), "export {};");
+    NodeFS.writeFileSync(NodePath.join(root, "assets", "index-Bx3_k9-Q.js"), "export {};");
     const { handler, dispose } = HttpRouter.toWebHandler(
       staticRoutes.pipe(
         Layer.provide(ServerConfig.layerTest({ staticDir: Option.some(root) })),
@@ -33,24 +34,30 @@ describe("static client routes", () => {
       { disableLogger: true },
     );
     try {
-      const policy = async (path: string) => {
+      const get = async (path: string) => {
         const response = await handler(
           new Request(`http://localhost${path}`, { headers: { accept: "text/html" } }),
         );
         assert.strictEqual(response.status, 200, path);
-        return response.headers.get("content-security-policy");
+        return response.headers;
       };
       // The SPA fallback serves index.html for client routes, which needs the policy as much.
       for (const path of ["/", "/workspaces/abc"]) {
-        const header = await policy(path);
+        const headers = await get(path);
         assert.include(
-          header,
+          headers.get("content-security-policy"),
           "script-src 'self' 'sha256-HWJmK22GE8bxWlhwDDLrv+tra1MCoS4w8uHujufVXjs=';",
           path,
         );
-        assert.include(header, "frame-ancestors 'none'", path);
+        assert.include(headers.get("content-security-policy"), "frame-ancestors 'none'", path);
+        // Revalidated every time, so an update's new bundle names reach the client at once.
+        assert.strictEqual(headers.get("cache-control"), "no-cache", path);
+        assert.isNull(headers.get("etag"), path);
       }
-      assert.isNull(await policy("/assets/app.js"));
+      const asset = await get("/assets/index-Bx3_k9-Q.js");
+      assert.isNull(asset.get("content-security-policy"));
+      assert.strictEqual(asset.get("cache-control"), "public, max-age=31536000, immutable");
+      assert.strictEqual((await get("/favicon.svg")).get("cache-control"), "no-cache");
     } finally {
       await dispose();
       NodeFS.rmSync(root, { recursive: true, force: true });
