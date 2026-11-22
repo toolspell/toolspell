@@ -256,7 +256,8 @@ Architecture and its constraints: [overview](docs/internals/overview.md).
 - React Compiler memoizes `apps/web`. No `useMemo` or `useCallback`; no `try` with `finally` in
   components. The coverage test fails on any skipped function.
 - Users notice a dropped frame, a lying spinner, and a stale label. No continuously repainting
-  animations.
+  animations or `transition-all`, and reduced motion holds
+  ([Motion](docs/internals/web-ui.md#motion)).
 - If a rule here fights the task in front of you, say so loudly and get a human sign-off before
   breaking it.
 
