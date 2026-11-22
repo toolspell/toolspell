@@ -58,6 +58,7 @@ const browserTestProject = {
       "lucide-react",
       "effect/Context",
       "effect/Effect",
+      "effect/encoding/Hex",
       "effect/Layer",
       "effect/Option",
       "effect/persistence/KeyValueStore",
