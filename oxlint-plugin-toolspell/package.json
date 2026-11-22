@@ -1,0 +1,19 @@
+{
+  "name": "@toolspell/oxlint-plugin-toolspell",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "effect-tsgo tsrs --noEmit",
+    "test": "vp test run --config ../vite.config.ts --dir ."
+  },
+  "dependencies": {
+    "@oxlint/plugins": "catalog:",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/platform-node": "catalog:",
+    "@effect/vitest": "catalog:",
+    "@types/node": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}

@@ -1,14 +1,27 @@
 {
-  "name": "toolspell",
+  "name": "@toolspell/monorepo",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "ready": "vp check && vp run -r test && vp run -r build",
-    "dev": "vp run website#dev",
-    "prepare": "vp config"
+    "prepare": "vp config",
+    "dev": "node scripts/dev-runner.ts dev",
+    "dev:server": "node scripts/dev-runner.ts dev:server",
+    "dev:web": "node scripts/dev-runner.ts dev:web",
+    "dev:desktop": "node scripts/dev-runner.ts dev:desktop",
+    "build": "vp run --filter './apps/*' build",
+    "start": "vp run --filter toolspell start",
+    "start:desktop": "vp run --filter @toolspell/desktop start",
+    "typecheck": "vp run -r --cache typecheck",
+    "check:changed": "node scripts/check-changed.ts",
+    "ready": "vp fmt --check && vp lint && vp run -r --cache typecheck && vp run -r test",
+    "lint": "vp lint --report-unused-disable-directives",
+    "fmt": "vp fmt",
+    "test": "vp run -r test"
   },
   "devDependencies": {
+    "@effect/tsgo": "0.73.2",
+    "@types/node": "catalog:",
     "vite-plus": "catalog:"
   },
   "devEngines": {
@@ -19,6 +32,6 @@
     }
   },
   "engines": {
-    "node": ">=22.18.0"
+    "node": ">=24.10"
   }
 }

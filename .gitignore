@@ -37,3 +37,14 @@ dist-ssr
 !.vscode/
 !.vscode/settings.json
 !.vscode/extensions.json
+
+# Build output
+dist-electron
+*.tsbuildinfo
+
+# ToolSpell dev state (per worktree) and T3 Code worktree setup markers
+.toolspell/
+.t3/
+
+# Agent scratch work; never commit plans or research notes
+.plans/
