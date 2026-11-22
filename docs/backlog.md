@@ -93,7 +93,9 @@ entry moves into an issue (labels from `.github/labels.json`) and the file is de
   screen-reader announcements and focus after a row is removed; sidebar, resizable layout and
   command palette past about three sections; translations once non-English users are decided (keep
   sentences whole and format with `Intl` until then); offline and visibility handling, state in the
-  URL, a shared `ResizeObserver`; a web manifest if the app should be installable.
+  URL, a shared `ResizeObserver`; a web manifest if the app should be installable; device
+  preferences (the theme) that follow a change made in another tab, through a `storage` listener,
+  since refreshing an `Atom.kvs` atom does not read storage again.
 - **User-defined themes and VS Code theme import**: when users ask for their own colors. A
   user theme is stored as a device preference, its tokens go in an adopted stylesheet as a
   `:root[data-theme]` block (no `url()`), and the boot script needs its appearance and chrome
