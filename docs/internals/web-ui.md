@@ -22,6 +22,27 @@ Style with Tailwind classes and the theme tokens (`bg-muted`, `text-muted-foregr
 variables, generated markup, and browser or Electron integration. No `style={{ ... }}` for static
 values a class covers; values computed at runtime are fine.
 
+## Themes
+
+Themes are registered in [`theme.ts`](../../apps/web/src/theme.ts) with an id, label,
+appearance, and chrome color, and a new one shows up in Settings without touching components.
+Their tokens live in `styles.css`: light's in `:root`, dark's in `.dark`, and any other theme's in
+a `:root[data-theme="<id>"]` block that overrides its appearance's base. A new token goes in both
+`:root` and `.dark`, as the status tokens (`success`, `warning`, `info`, `destructive`) do.
+Components use tokens and the `dark:` variant only, never a theme id.
+
+The inline script in [`index.html`](../../apps/web/index.html) applies the stored theme before the
+first paint. It keeps its own copy of each theme's appearance and chrome color, and
+[`theme.test.ts`](../../apps/web/src/theme.test.ts) fails when that copy and the registry disagree.
+The server's Content-Security-Policy allows inline scripts only by the hash of what `index.html`
+ships, and it hashes only `<script>` tags without attributes, so an inline script there must have
+none.
+
+The theme preference is a device preference: per browser, not per server. Device preferences are
+entries in [`preferences.ts`](../../packages/client-runtime/src/preferences.ts), each its own
+storage key with a schema and a default, so a value that no longer decodes resets only itself.
+Read them through their atoms, never from `localStorage` directly.
+
 ## State
 
 Views read atoms from [`client-runtime`](../../packages/client-runtime/src/atoms.ts) with

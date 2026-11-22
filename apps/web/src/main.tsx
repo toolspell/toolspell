@@ -6,8 +6,9 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import { showBootError } from "./bootError.ts";
-import { atoms, errorMessage, pairingErrorAtom } from "./client.ts";
+import { atoms, errorMessage, pairingErrorAtom, preferences } from "./client.ts";
 import { routeTree } from "./routeTree.gen.ts";
+import { syncTheme } from "./theme.ts";
 import "./styles.css";
 
 const registry = AtomRegistry.make();
@@ -26,11 +27,7 @@ const consumePairingToken = async () => {
   }
 };
 
-// Follow the system theme; shadcn's tokens switch on the `dark` class.
-const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
-const applyTheme = () => document.documentElement.classList.toggle("dark", darkQuery.matches);
-darkQuery.addEventListener("change", applyTheme);
-applyTheme();
+syncTheme(registry, preferences.themeAtom);
 
 const router = createRouter({ routeTree });
 

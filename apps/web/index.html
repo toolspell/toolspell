@@ -3,6 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#ffffff" />
+    <!-- Applies the stored theme before the first paint, as syncTheme in src/theme.ts does after.
+         Keep it one attribute-less inline script: the server allows it by its hash. -->
+    <script>
+      (() => {
+        const themes = { light: ["light", "#ffffff"], dark: ["dark", "#0a0a0a"] };
+        let preference = "system";
+        try {
+          preference = JSON.parse(localStorage.getItem("toolspell:theme") ?? '"system"');
+        } catch {}
+        const id =
+          typeof preference === "string" && Object.hasOwn(themes, preference)
+            ? preference
+            : matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light";
+        const [appearance, chrome] = themes[id];
+        const root = document.documentElement;
+        root.dataset.theme = id;
+        root.classList.toggle("dark", appearance === "dark");
+        root.style.colorScheme = appearance;
+        document.querySelector('meta[name="theme-color"]')?.setAttribute("content", chrome);
+      })();
+    </script>
     <title>ToolSpell</title>
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16" />

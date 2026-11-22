@@ -5,6 +5,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Theme tokens (see src/theme.ts): light here, dark in `.dark`. A new token goes in both. */
 :root {
   color-scheme: light dark;
   --background: oklch(1 0 0);

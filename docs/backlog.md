@@ -94,6 +94,12 @@ entry moves into an issue (labels from `.github/labels.json`) and the file is de
   command palette past about three sections; translations once non-English users are decided (keep
   sentences whole and format with `Intl` until then); offline and visibility handling, state in the
   URL, a shared `ResizeObserver`; a web manifest if the app should be installable.
+- **User-defined themes and VS Code theme import**: when users ask for their own colors. A
+  user theme is stored as a device preference, its tokens go in an adopted stylesheet as a
+  `:root[data-theme]` block (no `url()`), and the boot script needs its appearance and chrome
+  color. A theme whose background is neither light's nor dark's also needs the desktop window to
+  take its color, since `setTheme` sends only the appearance. T3 Code: `themePalette.ts`,
+  `themeCss.ts`, `vscodeThemeImport.ts`, `openVsxThemes.ts`.
 - **Agents testing the desktop app in isolation**: explore micro-VMs or similar, so agents can run
   and drive the desktop app in a real, separate machine instead of on the maintainer's screen.
 
