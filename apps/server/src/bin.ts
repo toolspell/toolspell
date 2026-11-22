@@ -16,7 +16,7 @@ import * as ServerConfig from "./config.ts";
 import * as FakeRunner from "./runners/FakeRunner.ts";
 import * as Server from "./server.ts";
 
-const DEFAULT_PORT = 3773;
+const DEFAULT_PORT = 3883;
 
 const homeDirFlag = Flag.String("home-dir").pipe(
   Flag.withDescription(

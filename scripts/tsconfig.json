@@ -1,0 +1,22 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "lib": ["ESNext", "esnext.disposable"],
+    "plugins": [
+      {
+        "name": "@effect/language-service",
+        // Dev scripts are plain Node programs that run before or beside the app.
+        "diagnosticSeverity": {
+          "nodeBuiltinImport": "off",
+          "globalConsole": "off",
+          "globalDate": "off",
+          "globalTimers": "off",
+          "processEnvInEffect": "off"
+        }
+      }
+    ]
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules"]
+}
