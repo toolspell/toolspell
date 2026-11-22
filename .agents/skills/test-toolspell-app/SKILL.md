@@ -30,6 +30,11 @@ step shows). Then interrupt the server you own while the job runs: touch a file 
 started by its tracked task and start it again. Once the server is back, verify the recovered
 state: the job shows "The server stopped while this job was running."
 
+This live proof stays timing-sensitive: a job that finishes before the restart lands shows
+"succeeded" instead, so start a fresh job and retry. The deterministic proof is the test "a job left
+running by a stopped server fails when the worker starts" in
+[Orchestration.test.ts](../../../apps/server/src/core/Orchestration.test.ts).
+
 ## Use the Browser panel
 
 Call `preview_status`. If no tab can be automated, call `preview_open` with the dev runner's web
