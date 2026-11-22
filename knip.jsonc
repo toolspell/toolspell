@@ -6,8 +6,9 @@
   "ignoreBinaries": ["vp", "vpx", "electron", "effect-tsgo"],
   "workspaces": {
     ".": {
-      // Workflows load the .github/scripts helpers through actions/github-script.
-      "entry": ["vite.config.ts", ".github/scripts/*.cjs"],
+      // Workflows load the .github/scripts helpers through actions/github-script, and
+      // CodeRabbit loads its configuration by filename.
+      "entry": ["vite.config.ts", ".github/scripts/*.cjs", ".coderabbit.config.ts"],
     },
     "apps/server": {
       "entry": ["src/bin.ts", "src/**/*.test.ts"],

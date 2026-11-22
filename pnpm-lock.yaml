@@ -265,6 +265,9 @@ importers:
 
   .:
     devDependencies:
+      '@coderabbitai/config':
+        specifier: 1.2.0
+        version: 1.2.0
       '@effect/tsgo':
         specifier: 0.73.2
         version: 0.73.2
@@ -631,6 +634,9 @@ packages:
 
   '@blazediff/core@1.10.0':
     resolution: {integrity: sha512-AOQff0zgR7cGsZL+4E7hVkmujoPUpm0J9xzWGWZj5wCjd3gmxESXAPfKyuzs93VdpQNFhHlBhfOjrcZ+XTERtQ==}
+
+  '@coderabbitai/config@1.2.0':
+    resolution: {integrity: sha512-o9CzGIJcXj8JZtJ167xFZ0CQgxXzaWHiO7aP5m4STKTFXHU3l6/RMxjJRmz87ufncu2KMBLY1hOraAnCeXDBHQ==}
 
   '@dotenvx/dotenvx@1.75.1':
     resolution: {integrity: sha512-/BITOC9dmS/edY2zQwZNicQ059O6RKabtQfyEafV0nGtfYRNHYy1DIPiYVcov40+tob9hfmBnbR963dS+EQ1DQ==}
@@ -3690,6 +3696,10 @@ snapshots:
       '@types/react': 19.3.0
 
   '@blazediff/core@1.10.0': {}
+
+  '@coderabbitai/config@1.2.0':
+    dependencies:
+      zod: 4.6.7
 
   '@dotenvx/dotenvx@1.75.1':
     dependencies:

@@ -26,6 +26,7 @@
     "actionlint": "node scripts/lib/tools.ts actionlint"
   },
   "devDependencies": {
+    "@coderabbitai/config": "1.2.0",
     "@effect/tsgo": "0.73.2",
     "@shadcn/lint": "0.2.5",
     "@types/node": "catalog:",
