@@ -169,5 +169,7 @@ None of the contribution workflows can run before the repository is on GitHub.
 - **Desktop on Linux** (X11 and Wayland): the window appears in the right colour (the
   `did-finish-load` fallback); closing it quits and stops the server; a theme switch updates the
   window background.
-- **Desktop on macOS, by eye**: no white flash at launch in light and dark mode; the context menu
-  offers spelling suggestions in a text field and Copy Link Address on a link; the About panel.
+- **Desktop on macOS, by eye**: no white flash at launch in light and dark mode; with Dark chosen
+  in Settings on a light system (and the reverse), the startup page and window open in the chosen
+  theme after a relaunch; the context menu offers spelling suggestions in a text field and Copy
+  Link Address on a link; the About panel.

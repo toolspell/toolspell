@@ -1,7 +1,10 @@
 // IPC channels and the checks every handler runs. Adapted from T3 Code's
 // apps/desktop/src/ipc/DesktopIpc.ts and apps/desktop/src/electron/ElectronShell.ts (MIT).
+import type { DesktopThemeSource } from "@toolspell/contracts/desktop";
+
 export const DESKTOP_IPC = {
   openExternal: "toolspell:open-external",
+  setTheme: "toolspell:set-theme",
 } as const;
 
 const MAX_URL_LENGTH = 8_192;
@@ -16,6 +19,9 @@ export const parseExternalUrl = (raw: unknown) => {
     return undefined;
   }
 };
+
+export const parseThemeSource = (raw: unknown): DesktopThemeSource | undefined =>
+  raw === "system" || raw === "light" || raw === "dark" ? raw : undefined;
 
 const originOf = (url: string) => {
   try {

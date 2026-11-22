@@ -1,12 +1,23 @@
 import * as NodePath from "node:path";
 
 import { AUTH_SESSION_PATH } from "@toolspell/contracts/desktop";
-import { app, BrowserWindow, dialog, ipcMain, nativeTheme, net, session, shell } from "electron";
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  nativeTheme,
+  net,
+  session,
+  shell,
+  type IpcMainInvokeEvent,
+} from "electron";
 
 import { ServerSupervisor, waitForHttp } from "./backend.ts";
-import { DESKTOP_IPC, isTrustedSender, parseExternalUrl } from "./ipc.ts";
+import { DESKTOP_IPC, isTrustedSender, parseExternalUrl, parseThemeSource } from "./ipc.ts";
 import { setApplicationMenu } from "./menu.ts";
 import { choosePort, LOOPBACK, readRememberedPort, rememberPort } from "./port.ts";
+import { readRemembered, remember } from "./remembered.ts";
 import { ServerLog } from "./serverLog.ts";
 import { createMainWindow, showRetryPage, showStartupPage, windowBackground } from "./window.ts";
 
@@ -186,6 +197,8 @@ const ensureWindow = () => {
   if (serverToken !== undefined) void loadApp();
 };
 
+const themeFile = () => NodePath.join(app.getPath("userData"), "theme.json");
+
 const resolvePort = async () => {
   // The dev runner fixes the port, because Vite proxies to it.
   const fixed = Number(process.env.TOOLSPELL_PORT);
@@ -213,6 +226,8 @@ const start = async () => {
   if (devIconDirectory !== undefined && process.platform === "darwin") {
     app.dock?.setIcon(NodePath.join(devIconDirectory, "macos-1024.png"));
   }
+  // The theme the web app last chose, so the window opens in it before the app loads.
+  nativeTheme.themeSource = parseThemeSource(readRemembered(themeFile())) ?? "system";
   nativeTheme.on("updated", () => {
     if (window !== undefined && !window.isDestroyed())
       window.setBackgroundColor(windowBackground());
@@ -249,13 +264,30 @@ const trustedFrame = () =>
         origin: webOrigin,
       };
 
-ipcMain.handle(DESKTOP_IPC.openExternal, async (event, raw: unknown) => {
+const assertTrusted = (event: IpcMainInvokeEvent) => {
   if (!isTrustedSender(event, trustedFrame())) {
     throw new Error("Only the ToolSpell window may use the desktop bridge.");
   }
+};
+
+ipcMain.handle(DESKTOP_IPC.openExternal, async (event, raw: unknown) => {
+  assertTrusted(event);
   const url = parseExternalUrl(raw);
   if (url === undefined) throw new Error("Only http and https links open in the browser.");
   await openExternal(url);
+});
+
+ipcMain.handle(DESKTOP_IPC.setTheme, (event, raw: unknown) => {
+  assertTrusted(event);
+  const source = parseThemeSource(raw);
+  if (source === undefined) throw new Error("The theme must be system, light, or dark.");
+  if (source === nativeTheme.themeSource) return;
+  nativeTheme.themeSource = source;
+  try {
+    remember(themeFile(), source);
+  } catch (error) {
+    note(`Could not remember the theme: ${describe(error)}`);
+  }
 });
 
 // One app instance per profile: a second would start a second server on the same data.

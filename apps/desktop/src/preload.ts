@@ -14,6 +14,7 @@ const bridge: DesktopBridge = {
       .find((argument) => argument.startsWith(VERSION_ARGUMENT))
       ?.slice(VERSION_ARGUMENT.length) ?? "unknown",
   openExternal: (url) => ipcRenderer.invoke(DESKTOP_IPC.openExternal, url),
+  setTheme: (source) => ipcRenderer.invoke(DESKTOP_IPC.setTheme, source),
 };
 
 contextBridge.exposeInMainWorld(DESKTOP_BRIDGE_KEY, bridge);

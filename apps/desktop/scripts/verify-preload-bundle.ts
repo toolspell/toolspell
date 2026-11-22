@@ -14,6 +14,7 @@ const EXPECTED_BRIDGE: ReadonlyArray<keyof DesktopBridge> = [
   "platform",
   "appVersion",
   "openExternal",
+  "setTheme",
 ];
 const EXECUTION_TIMEOUT_MS = 1_000;
 

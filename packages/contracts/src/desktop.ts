@@ -7,7 +7,12 @@ export interface DesktopBridge {
   readonly appVersion: string;
   /** Opens an http(s) URL in the system browser. Rejects when the URL or the system refuses. */
   readonly openExternal: (url: string) => Promise<void>;
+  /** The window background and the pages shown before the app loads follow this from now on. */
+  readonly setTheme: (source: DesktopThemeSource) => Promise<void>;
 }
+
+/** `system` follows the OS appearance. */
+export type DesktopThemeSource = "system" | "light" | "dark";
 
 export const DESKTOP_BRIDGE_KEY = "toolspellDesktop";
 

@@ -7,7 +7,9 @@ const exposing = (bridge: string) =>
 
 describe("verifyPreloadBundle", () => {
   it("accepts a sandbox-safe preload that exposes the whole bridge", () => {
-    verifyPreloadBundle(exposing(`{ platform: "darwin", appVersion: "1", openExternal() {} }`));
+    verifyPreloadBundle(
+      exposing(`{ platform: "darwin", appVersion: "1", openExternal() {}, setTheme() {} }`),
+    );
   });
 
   it.each([

@@ -1,8 +1,8 @@
 // The server's port, remembered across launches. Adapted from T3 Code's
 // apps/desktop/src/app/DesktopApp.ts (MIT).
-import * as NodeFS from "node:fs";
 import * as NodeNet from "node:net";
-import * as NodePath from "node:path";
+
+import { readRemembered, remember } from "./remembered.ts";
 
 export const LOOPBACK = "127.0.0.1";
 const FIRST_PORT = 3884;
@@ -12,21 +12,11 @@ const isPort = (value: unknown): value is number =>
   typeof value === "number" && Number.isInteger(value) && value > 0 && value <= 65_535;
 
 export const readRememberedPort = (file: string) => {
-  try {
-    const { port } = JSON.parse(NodeFS.readFileSync(file, "utf8")) as { readonly port?: unknown };
-    return isPort(port) ? port : undefined;
-  } catch {
-    return undefined;
-  }
+  const { port } = (readRemembered(file) ?? {}) as { readonly port?: unknown };
+  return isPort(port) ? port : undefined;
 };
 
-/** Writes a temporary file and renames it, so a crash mid-write never leaves a torn file. */
-export const rememberPort = (file: string, port: number) => {
-  NodeFS.mkdirSync(NodePath.dirname(file), { recursive: true });
-  const temporary = `${file}.${process.pid}.tmp`;
-  NodeFS.writeFileSync(temporary, `${JSON.stringify({ port })}\n`);
-  NodeFS.renameSync(temporary, file);
-};
+export const rememberPort = (file: string, port: number) => remember(file, { port });
 
 /** Binds the port briefly (0 lets the OS pick) and resolves it, or undefined when it is taken. */
 const listen = (port: number) =>
