@@ -192,7 +192,8 @@ const appConfig = mergeConfig(
     server: {
       port: Number(process.env.PORT ?? 5733),
       strictPort: true,
-      // The dev runner's --host exposes Vite to other devices; the server stays on loopback.
+      // The dev runner sets the host: --host for other devices, 127.0.0.1 for the desktop window.
+      // The server stays on loopback.
       ...(process.env.TOOLSPELL_WEB_HOST ? { host: process.env.TOOLSPELL_WEB_HOST } : {}),
       proxy: Object.fromEntries(
         PROXIED_PREFIXES.map((prefix) => [

@@ -34,8 +34,7 @@ Reviewers: Opus 5.5 and GPT 6.2 Sol (two lenses each), Fable 5.2 and GPT 6.2 Ast
   several worktrees start at once (`scripts/lib/tools.ts` replaces the shared directory); worktree
   setup links a `.env` nothing reads; every worktree setup runs `sync:repos` although most changes
   never read `.repos`; `ci:local`'s overlay aborts when a staged change turns a file into a
-  directory or back (Sol, round 2); the atomic setup-marker claim has no automated test because
-  the script runs at top level (extract the claim if it ever regresses).
+  directory or back (Sol, round 2).
 - **AGENTS.md repeats the testing rules** (Sol, Opus): it and `docs/internals/testing.md` carry the
   same rules and have started to drift, and AGENTS.md is near its line cap. Keep the rules that
   protect live data and the test-at-one-layer rule, point to `testing.md` for the rest. T3 Code
@@ -55,22 +54,22 @@ Reviewers: Opus 5.5 and GPT 6.2 Sol (two lenses each), Fable 5.2 and GPT 6.2 Ast
 - **The outbox fix landed now** despite a split vote (Astra, Sol: critical; Fable, Opus: with the
   real runner): lost accepted work in the template every side effect copies. Failed rows and final
   job reports retry until they succeed, at most 10 s apart. Today only storage errors can fail a
-  handler, so retrying is the right answer. T3 Code instead gives up after 5 tries and settles the
-  effect as failed; adopt that at the first handler that can fail on every try (cap the attempts,
-  dispatch `job.fail`, mark the row done), or a job stays queued forever (Opus, round 2).
-- **Also landed now** (see `git log`): plain-HTTP LAN IDs, auth wiring tests, message and ID caps
-  (64 KiB per WebSocket message; 200, 10.000 and 128 characters), the stored-format rule, and the
-  agent-loop fixes.
-- **Desktop readiness landed now**, reversing the first triage (Sol rated it critical twice;
-  `SECURITY.md` lists a process that merely reaches the port as untrusted, and another OS user's
-  process could take the released port and receive the one-time admin token). The server signals
-  its origin on fd 4 once it serves and holds the token; the shell loads only that, blocks app
-  requests while no run is ready, and guards redirects. In `dev:desktop` Vite binds `127.0.0.1` and
-  answers an HMAC challenge, so the dev window's origin is now `127.0.0.1` (fresh dev localStorage
-  once). Still open: `dev:desktop --host 0.0.0.0` loads `localhost`, leaving one address family
-  unguarded (edge case). Alternative not taken: keep it in the backlog until packaging.
-- **`dev:web` fails on a busy web port** instead of moving to the next one, so pairing links never
-  point at someone else's listener; a stale process on that port now stops it with a message.
+  handler, so retrying is the right answer. At the first handler that can fail on every try, cap
+  its execution attempts and settle the job as failed (`job.fail`), but keep retrying the terminal
+  write until it persists before marking the row done, as T3 Code does (Opus, Sol, rounds 2 and 3).
+- **Desktop readiness landed now**, reversing the first triage: another OS user's process could
+  take the released port and receive the one-time admin token (`SECURITY.md` boundaries 5 and 7).
+  The server signals its origin on fd 4; the shell loads only that, blocks app requests while no
+  run is ready, and guards redirects; in `dev:desktop` Vite binds `127.0.0.1` and answers an HMAC
+  challenge (dev window origin is now `127.0.0.1`). Sol still rates the gap between the child's exit
+  and Electron noticing it critical (fix: the shell owns the origin and forwards to the current
+  child); deferred to the desktop-origin decision under "Desktop packaging". Opus: sound as is.
+- **`dev:web` fails on a busy web port** instead of moving to the next one, so its pairing links do
+  not point at someone else's listener; a stale process on that port now stops it with a message.
+- **ID caps apply where a command creates an id** (workspace and job ids, command ids); references
+  stay uncapped so older records remain addressable (Sol, round 3).
+- **The setup-marker claim stays as is**: three setups racing on a dead marker can still both run
+  (Sol, round 3: fail on a stale marker instead; Opus: accept, T3 Code has no claim at all).
 - **Codex and T3 Code shells count as agents** for the desktop launch mode (`CODEX_THREAD_ID`,
   `CODEX_SANDBOX`, `T3CODE_THREAD_ID`), so `dev:desktop` from T3 Code's terminal panel starts in
   the background too; pass `--foreground` there.
@@ -189,6 +188,14 @@ Reviewers: Opus 5.5 and GPT 6.2 Sol (two lenses each), Fable 5.2 and GPT 6.2 Ast
 - **At the public push**: the PR babysitting rule in AGENTS.md (wait for wake-ups, verify each bot
   finding, stop when green), together with the review bots.
 - **Slow or hanging checks**: step timeouts and a cached last passing run in `check:changed`.
+- **Split dev mode, other orders** (Sol, round 3): `dev:web` started before `dev:server` pins the
+  default backend port, and a shifted `dev:server` then advertises a web origin that proxies
+  elsewhere; `dev:web` also ignores the running server's recorded web origin. Pin both ports in
+  split mode and fail on a conflict. Trigger: the first agent that runs split mode in practice.
+- **`dev:desktop --host 0.0.0.0`** loads `localhost`, leaving one address family outside the dev
+  readiness proof. Trigger: the first real use of `--host` with the desktop app.
+- **Setup-marker claim test**: the claim has no automated test because the script runs at top
+  level. Trigger: the first regression; then extract the claim and test it.
 - **More contributors or cloud agents**: a devcontainer; a patch policy and unused-patch check at
   the first `pnpm patch`; `.env` loading at the first per-developer setting; a dev memory limit at
   the first leaking dev server.
