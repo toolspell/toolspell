@@ -31,6 +31,7 @@ name, so renaming that heading means updating the check.
   first (the fewest that fail on `main` for that reason, in an existing case where one fits), then
   the fix. Purely visual bugs get before and after captures as their proof and no test. A
   server-only fix with no visible surface ships the test plus a short runtime transcript.
+- Never put real user data (names, paths, tokens) in test fixtures or screenshots.
 
 ## Waiting for work
 
