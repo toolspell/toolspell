@@ -13,7 +13,9 @@ const GENERATED = ["**/routeTree.gen.ts"];
 
 export default defineConfig({
   run: {
-    cache: true,
+    // Scripts opt in with `vp run --cache`; cached tasks only see allow-listed env vars,
+    // which would hide the dev runner's TOOLSPELL_* settings from dev servers.
+    cache: { scripts: false },
   },
   test: {
     environment: "node",
@@ -43,7 +45,11 @@ export default defineConfig({
     jsPlugins: [
       { name: "vite-plus", specifier: "vite-plus/oxlint-plugin" },
       "./oxlint-plugin-toolspell/index.ts",
+      "@shadcn/lint",
     ],
+    settings: {
+      shadcn: { ui: "~/components/ui" },
+    },
     categories: {
       correctness: "warn",
       suspicious: "warn",
@@ -90,6 +96,39 @@ export default defineConfig({
       {
         files: ["apps/web/src/**", "apps/desktop/src/**"],
         rules: { "toolspell/no-unreasoned-state-sync": "error" },
+      },
+      {
+        // React Compiler owns memoization; upstream rules do not ban redundant useMemo/useCallback.
+        files: ["apps/web/src/**/*.{ts,tsx}"],
+        rules: {
+          "react/globals": "error",
+          "react/hooks": "error",
+          "react/memo-dependencies": "error",
+          "react/preserve-manual-memoization": "error",
+          "react/set-state-in-render": "error",
+          "react/unsupported-syntax": "error",
+          "toolspell/no-manual-memo": "error",
+        },
+      },
+      {
+        // React Compiler caches use* functions only if they call a hook.
+        files: ["apps/web/src/**/*.{ts,tsx}"],
+        excludeFiles: ["**/*.test.ts", "**/*.test.tsx"],
+        rules: { "toolspell/no-hookless-use-function": "error" },
+      },
+      {
+        files: ["apps/web/src/**"],
+        rules: { "shadcn/no-unknown-classes": "error", "shadcn/no-raw-colors": "error" },
+      },
+      {
+        // components/ui exports own their look; everything else picks a variant or size.
+        files: ["apps/web/src/**"],
+        excludeFiles: ["apps/web/src/components/ui/**"],
+        rules: {
+          "shadcn/require-static-classes": "error",
+          "shadcn/no-arbitrary-values": "error",
+          "shadcn/no-restyle": ["error", { allow: ["layout"] }],
+        },
       },
       {
         // Lint rules and dev scripts are plain Node programs, not Effect services.

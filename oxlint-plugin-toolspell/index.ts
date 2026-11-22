@@ -2,6 +2,8 @@
 import { definePlugin } from "@oxlint/plugins";
 
 import namespaceNodeImports from "./rules/namespace-node-imports.ts";
+import noHooklessUseFunction from "./rules/no-hookless-use-function.ts";
+import noManualMemo from "./rules/no-manual-memo.ts";
 import noPollingLoopInTests from "./rules/no-polling-loop-in-tests.ts";
 import noRealTimeWaitInTests from "./rules/no-real-time-wait-in-tests.ts";
 import noTestTimeoutOrUnreasonedSkip from "./rules/no-test-timeout-or-unreasoned-skip.ts";
@@ -16,6 +18,8 @@ export default definePlugin({
   },
   rules: {
     "namespace-node-imports": namespaceNodeImports,
+    "no-hookless-use-function": noHooklessUseFunction,
+    "no-manual-memo": noManualMemo,
     "no-polling-loop-in-tests": noPollingLoopInTests,
     "no-real-time-wait-in-tests": noRealTimeWaitInTests,
     "no-test-timeout-or-unreasoned-skip": noTestTimeoutOrUnreasonedSkip,

@@ -1,0 +1,40 @@
+{
+  "name": "@toolspell/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vp dev",
+    "build": "vp build",
+    "preview": "vp preview",
+    "typecheck": "effect-tsgo tsrs --noEmit",
+    "test": "vp test run --passWithNoTests"
+  },
+  "dependencies": {
+    "@base-ui/react": "catalog:",
+    "@effect/atom-react": "catalog:",
+    "@fontsource-variable/inter": "catalog:",
+    "@tanstack/react-router": "catalog:",
+    "@toolspell/client-runtime": "workspace:*",
+    "@toolspell/contracts": "workspace:*",
+    "class-variance-authority": "catalog:",
+    "cn": "catalog:",
+    "effect": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/vitest": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "@tanstack/router-plugin": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "oxc-transform-react": "0.158.0",
+    "shadcn": "catalog:",
+    "tailwindcss": "catalog:",
+    "tw-animate-css": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}

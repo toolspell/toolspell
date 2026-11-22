@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@effect/tsgo": "0.73.2",
+    "@shadcn/lint": "0.2.5",
     "@types/node": "catalog:",
     "vite-plus": "catalog:"
   },
