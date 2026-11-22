@@ -4,9 +4,13 @@ import {
   PROTOCOL_VERSION,
   type SessionStatus,
 } from "@toolspell/contracts";
+import * as Digest from "effect/crypto/Digest";
 import * as Effect from "effect/Effect";
+import * as Base64 from "effect/encoding/Base64";
+import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
+import * as Path from "effect/Path";
 import * as Redacted from "effect/Redacted";
 import {
   HttpRouter,
@@ -116,12 +120,26 @@ const sessionRoute = HttpRouter.add(
   }),
 );
 
-// Inline style attributes come from React and Base UI, so styles allow them; scripts never do.
+const INLINE_SCRIPT = /<script>([\s\S]*?)<\/script>/g;
+
+/** Hash sources for index.html's attribute-less inline scripts, such as the theme boot script. */
+const inlineScriptSources = Effect.fn("http.inlineScriptSources")(function* (html: string) {
+  const digest = yield* Digest.Digest;
+  return yield* Effect.forEach(html.matchAll(INLINE_SCRIPT), ([, script = ""]) =>
+    // Browsers hash the text after the HTML parser turned CRLF into LF.
+    digest
+      .digest(Digest.sha256, new TextEncoder().encode(script.replace(/\r\n?/g, "\n")))
+      .pipe(Effect.map((hash) => `'sha256-${Base64.encode(hash)}'`)),
+  );
+});
+
+// Inline style attributes come from React and Base UI, so styles allow them. An inline script
+// runs only when index.html shipped it, by hash.
 // 'self' covers same-origin WebSockets in current browsers; the explicit sources cover older ones.
-const contentSecurityPolicy = (host: string | undefined) =>
+const contentSecurityPolicy = (host: string | undefined, scripts: ReadonlyArray<string>) =>
   [
     "default-src 'self'",
-    "script-src 'self'",
+    ["script-src 'self'", ...scripts].join(" "),
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data:",
     "font-src 'self' data:",
@@ -139,6 +157,12 @@ export const staticRoutes = Layer.unwrap(
   Effect.gen(function* () {
     const config = yield* ServerConfig;
     if (Option.isNone(config.staticDir)) return Layer.empty;
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const html = yield* fs
+      .readFileString(path.join(config.staticDir.value, "index.html"))
+      .pipe(Effect.orElseSucceed(() => ""));
+    const scripts = yield* inlineScriptSources(html).pipe(Effect.provide(Digest.layerWebCrypto));
     const serve = yield* HttpStaticServer.make({ root: config.staticDir.value, spa: true });
     return HttpRouter.add("GET", "/*", (request) =>
       serve.pipe(
@@ -147,7 +171,7 @@ export const staticRoutes = Layer.unwrap(
             ? HttpServerResponse.setHeader(
                 response,
                 "Content-Security-Policy",
-                contentSecurityPolicy(request.headers.host),
+                contentSecurityPolicy(request.headers.host, scripts),
               )
             : response,
         ),

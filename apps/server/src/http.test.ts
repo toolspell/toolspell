@@ -14,10 +14,11 @@ import { staticRoutes } from "./http.ts";
 
 describe("static client routes", () => {
   it("send a Content-Security-Policy with pages but not with assets", async () => {
+    // CRLF, as a Windows checkout has it; the browser hashes the script with LF.
     const root = NodeFS.mkdtempSync(NodePath.join(NodeOS.tmpdir(), "toolspell-client-"));
     NodeFS.writeFileSync(
       NodePath.join(root, "index.html"),
-      "<!doctype html><title>ToolSpell</title>",
+      '<!doctype html><script>\r\n  boot();\r\n</script><script type="module" src="/a.js"></script>',
     );
     NodeFS.mkdirSync(NodePath.join(root, "assets"));
     NodeFS.writeFileSync(NodePath.join(root, "assets", "app.js"), "export {};");
@@ -39,7 +40,11 @@ describe("static client routes", () => {
       // The SPA fallback serves index.html for client routes, which needs the policy as much.
       for (const path of ["/", "/workspaces/abc"]) {
         const header = await policy(path);
-        assert.include(header, "script-src 'self'", path);
+        assert.include(
+          header,
+          "script-src 'self' 'sha256-HWJmK22GE8bxWlhwDDLrv+tra1MCoS4w8uHujufVXjs=';",
+          path,
+        );
         assert.include(header, "frame-ancestors 'none'", path);
       }
       assert.isNull(await policy("/assets/app.js"));
