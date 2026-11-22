@@ -95,8 +95,8 @@ const browserTestProject = {
   },
 } satisfies TestProjectInlineConfiguration;
 
-// Render scenarios count React commits; they run only through scripts/render-metrics.ts,
-// which reads the per-scenario reports this command writes.
+// Render scenarios count React renders and assert their budgets in the web test script.
+// scripts/render-metrics.ts sets TOOLSPELL_RENDER_REPORT_DIR to collect each scenario's counts.
 const renderScenariosProject = {
   ...browserTestProject,
   test: {
@@ -112,8 +112,7 @@ const renderScenariosProject = {
         ...browserTestProject.test.browser.commands,
         writeRenderReport: async (_context, scenario: string, json: string) => {
           const directory = process.env.TOOLSPELL_RENDER_REPORT_DIR;
-          if (!directory) throw new Error("TOOLSPELL_RENDER_REPORT_DIR is not set");
-          await NodeFSP.writeFile(`${directory}/${scenario}.json`, json);
+          if (directory) await NodeFSP.writeFile(`${directory}/${scenario}.json`, json);
         },
       },
     },

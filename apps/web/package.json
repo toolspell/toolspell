@@ -9,7 +9,7 @@
     "build": "vp build",
     "preview": "vp preview",
     "typecheck": "effect-tsgo tsrs --noEmit",
-    "test": "vp test run --passWithNoTests --project unit --project browser",
+    "test": "vp test run --passWithNoTests --project unit --project browser --project renders",
     "verify:boot": "node scripts/verify-built-boot.ts"
   },
   "dependencies": {

@@ -44,10 +44,20 @@ export const progressed = (sequence: number, progress: number, message: string):
   },
 });
 
-const workspaces: WorkspacesView = {
-  sequence: EventSequence.make(1),
+export const OTHER_WORKSPACE_ID = WorkspaceId.make("workspace-other");
+
+export const renamed = (sequence: number, name: string): EventEnvelope => ({
+  sequence: EventSequence.make(sequence),
+  occurredAt: CREATED_AT + sequence,
+  event: { type: "workspace.renamed", workspaceId: OTHER_WORKSPACE_ID, name },
+});
+
+/** The workspace the page shows and another one, which no job belongs to. */
+export const initialWorkspaces: WorkspacesView = {
+  sequence: EventSequence.make(2),
   workspaces: [
     { id: WORKSPACE_ID, name: "Render scenarios", createdAt: CREATED_AT, updatedAt: CREATED_AT },
+    { id: OTHER_WORKSPACE_ID, name: "Other", createdAt: CREATED_AT, updatedAt: CREATED_AT },
   ],
 };
 
@@ -60,13 +70,14 @@ export const initialJobs: JobsView = {
   ),
 };
 
-/** Each test's registry starts from `initialJobs`; set a new view to stream events. */
+// Each test's registry starts from the initial views; set a new view to stream events.
 export const jobsAtom = Atom.make(AsyncResult.success(initialJobs));
+export const workspacesAtom = Atom.make(AsyncResult.success(initialWorkspaces));
 
 export const atoms = {
   accessAtom: Atom.make(AsyncResult.success<Access>("paired")),
   connectionAtom: Atom.make<ConnectionStatus>("connected"),
-  workspacesAtom: Atom.make(AsyncResult.success(workspaces)),
+  workspacesAtom,
   jobsAtom: (_workspaceId: WorkspaceId) => jobsAtom,
   dispatchAtom: Atom.fn((_command: ClientCommand) =>
     Effect.succeed({ sequence: EventSequence.make(1) }),

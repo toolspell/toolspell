@@ -79,15 +79,20 @@ images and caching differ from GitHub's runners.
 Web browser tests (`*.browser.test.tsx`) run in Playwright's headless Chromium. Install it once
 with `vp exec playwright install chromium` from `apps/web`; CI caches it per Playwright version.
 
+The web test script also runs the render scenarios in
+[`apps/web/test/renderScenarios.renders.tsx`](../../apps/web/test/renderScenarios.renders.tsx), which
+assert render budgets such as "a job's progress renders only its own row". A failing budget means a
+change re-renders more than before: fix the render, or update the budget when the new count is the
+intended one.
+
 Two more checks drive that Chromium and are not part of `check:changed` or `ready`:
 
 - **Built boot.** `vp run build && vp run --filter @toolspell/web verify:boot` loads `apps/web/dist`
   with no server behind it. It passes when the app renders "Cannot reach the ToolSpell server" and
   fails on the boot error screen, an uncaught exception, or a page stuck on the static boot shell.
   CI runs it after the build when the web package is affected.
-- **Render counts.** `vp run report:renders` runs the scenarios in
-  [`apps/web/test/renderScenarios.renders.tsx`](../../apps/web/test/renderScenarios.renders.tsx)
-  three times and prints React commits and component renders per scenario, failing if runs differ.
+- **Render counts.** `vp run report:renders` runs the render scenarios three times and prints
+  React commits and component renders per scenario, failing if runs differ.
   To compare a branch with `main`, run `vp run report:renders --out <file>` in both checkouts (a
   `git worktree add ../main-check main` works), then
   `node scripts/render-metrics.ts compare <main.json> <branch.json>` for a markdown table.
