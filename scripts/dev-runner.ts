@@ -87,9 +87,19 @@ export interface DevPorts {
   readonly cdpPort: number;
 }
 
+/** dev:web cannot move: dev:server already advertises this port in its startup and pair links. */
+export class WebPortBusyError extends Error {
+  readonly port: number;
+  constructor(port: number) {
+    super(`Web port ${port} is busy.`);
+    this.port = port;
+  }
+}
+
 /**
- * Shifts the offset past busy ports, probing only the ports the mode binds. `dev:web` binds only
- * Vite and proxies to the checkout's running server, or to the default port it would start on.
+ * Shifts the offset past busy ports, probing only the ports the mode binds. The split modes agree
+ * on the checkout's default web port instead: dev:server advertises it, and dev:web binds it or
+ * fails. dev:web proxies to the checkout's running server, or to the default port it would start on.
  * Compare T3 Code's resolveModePortOffsets in scripts/dev-runner.ts.
  */
 export const resolvePorts = async (
@@ -98,10 +108,18 @@ export const resolvePorts = async (
   isFree: (port: number) => Promise<boolean>,
   runningServerPort: number | undefined,
 ): Promise<DevPorts> => {
+  if (mode === "dev:web") {
+    const webPort = BASE_WEB_PORT + startOffset;
+    if (!(await isFree(webPort))) throw new WebPortBusyError(webPort);
+    return {
+      serverPort: runningServerPort ?? BASE_SERVER_PORT + startOffset,
+      webPort,
+      cdpPort: BASE_CDP_PORT + startOffset,
+    };
+  }
   const bound = {
     dev: [BASE_SERVER_PORT, BASE_WEB_PORT],
     "dev:server": [BASE_SERVER_PORT],
-    "dev:web": [BASE_WEB_PORT],
     "dev:desktop": [BASE_SERVER_PORT, BASE_WEB_PORT, BASE_CDP_PORT],
   }[mode];
   let offset = startOffset;
@@ -116,14 +134,24 @@ export const resolvePorts = async (
     if (offset > MAX_OFFSET * 2) throw new Error("No free set of dev ports found.");
   }
   return {
-    serverPort:
-      mode === "dev:web"
-        ? (runningServerPort ?? BASE_SERVER_PORT + startOffset)
-        : BASE_SERVER_PORT + offset,
-    // dev:server records the origin dev:web will pick when its default port is free.
+    serverPort: BASE_SERVER_PORT + offset,
     webPort: BASE_WEB_PORT + (mode === "dev:server" ? startOffset : offset),
     cdpPort: BASE_CDP_PORT + offset,
   };
+};
+
+/** The process listening on a port, where `lsof` exists; a hint only, so any failure is silent. */
+const describeListener = (port: number) => {
+  const result = NodeChildProcess.spawnSync(
+    "lsof",
+    ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN", "-Fpc"],
+    { encoding: "utf8" },
+  );
+  const fields = new Map(
+    (result.stdout ?? "").split("\n").map((line) => [line.slice(0, 1), line.slice(1)] as const),
+  );
+  const pid = fields.get("p");
+  return pid ? ` by ${fields.get("c") ?? "a process"} (PID ${pid})` : "";
 };
 
 const isProcessAlive = (pid: number) => {
@@ -183,12 +211,21 @@ const main = async () => {
   const isDesktop = args.mode === "dev:desktop";
   const homeDir = NodePath.resolve(args.homeDir ?? NodePath.join(checkout, ".toolspell"));
   const running = args.mode === "dev:web" ? runningServerPort(homeDir) : undefined;
-  const { serverPort, webPort, cdpPort } = await resolvePorts(
+  const ports = await resolvePorts(
     args.mode,
     offsetFor(process.env, checkout),
     (port) => isPortFree(port),
     running,
-  );
+  ).catch((error: unknown) => {
+    if (!(error instanceof WebPortBusyError)) throw error;
+    process.stderr.write(
+      `[dev-runner] web port ${error.port} is held${describeListener(error.port)}. dev:server ` +
+        `advertises it for this checkout, so dev:web does not move. Stop that process, or start ` +
+        `both dev:server and dev:web with the same free TOOLSPELL_PORT_OFFSET.\n`,
+    );
+    process.exit(1);
+  });
+  const { serverPort, webPort, cdpPort } = ports;
   if (args.mode === "dev:web" && running === undefined) {
     process.stdout.write(
       `[dev-runner] no server is running in ${homeDir}; proxying to its default port ${serverPort}\n`,

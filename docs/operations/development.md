@@ -47,7 +47,9 @@ restarts its server. The desktop app's dev profile and its `logs/server.log` liv
 - Ports derive from the checkout path, so each worktree keeps the same ports across restarts and
   parallel worktrees do not collide. A busy port shifts the ports that mode binds to the next free
   set, so read the real ones from the line above. `dev:web` binds only Vite and proxies to the
-  server recorded in its home's `userdata/server-runtime.json`. `TOOLSPELL_PORT_OFFSET` sets an
+  server recorded in its home's `userdata/server-runtime.json`. It never shifts: `dev:server`
+  advertises the default web port in its links, so a busy one fails `dev:web` and names the
+  holder. `TOOLSPELL_PORT_OFFSET` sets an
   exact offset; `TOOLSPELL_DEV_INSTANCE` hashes a name instead of the path.
 - `--host <host>` exposes Vite on another interface so other devices can open dev; the server
   stays on loopback, because browsers only talk to Vite, which proxies to the server. Leave web

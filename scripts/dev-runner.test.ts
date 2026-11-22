@@ -5,6 +5,7 @@ import {
   offsetFor,
   parseArgs,
   resolvePorts,
+  WebPortBusyError,
   type DevPorts,
   type PortProbes,
 } from "./dev-runner.ts";
@@ -76,7 +77,7 @@ describe("resolvePorts", () => {
       Parameters<typeof resolvePorts>[0],
       ReadonlyArray<number>,
       number | undefined,
-      DevPorts,
+      DevPorts | typeof WebPortBusyError,
     ]
   >([
     ["free ports", "dev", [], undefined, ports(24107, 28107)],
@@ -84,7 +85,13 @@ describe("resolvePorts", () => {
     ["server already listening, start web", "dev:web", [24107], 24107, ports(24107, 28107)],
     ["web proxies to a server that shifted", "dev:web", [24107], 24108, ports(24108, 28107)],
     ["web without a running server", "dev:web", [], undefined, ports(24107, 28107)],
-    ["a busy web port shifts only web", "dev:web", [28107], 24107, ports(24107, 28108, 32108)],
+    [
+      "a busy web port fails dev:web, whose origin dev:server advertises",
+      "dev:web",
+      [28107],
+      24107,
+      WebPortBusyError,
+    ],
     [
       "web already running, start the server",
       "dev:server",
@@ -107,9 +114,14 @@ describe("resolvePorts", () => {
       ports(24108, 28108, 32108),
     ],
   ])("%s", async (_name, mode, busy, running, expected) => {
-    assert.deepStrictEqual(
-      await resolvePorts(mode, 7, async (port) => !busy.includes(port), running),
-      expected,
-    );
+    const resolved = resolvePorts(mode, 7, async (port) => !busy.includes(port), running);
+    if (expected === WebPortBusyError) {
+      await resolved.then(
+        () => assert.fail("expected the busy web port to fail"),
+        (error: unknown) => assert.instanceOf(error, WebPortBusyError),
+      );
+    } else {
+      assert.deepStrictEqual(await resolved, expected);
+    }
   });
 });
