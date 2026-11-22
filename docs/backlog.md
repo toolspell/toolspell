@@ -8,6 +8,65 @@ entry moves into an issue (labels from `.github/labels.json`) and the file is de
 - Add an entry when something is deliberately deferred; remove it in the commit that lands it.
 - Keep entries short: the decision and where to start, not a plan.
 
+## Next up (council review, 22.11.2026)
+
+Rated "now" by the review council and left for the maintainer's review, most important first.
+Reviewers: Opus 5.5 and GPT 6.2 Sol (two lenses each), Fable 5.2 and GPT 6.2 Astra.
+
+- **Permissions in the client** (Opus, Sol, Astra): the client drops the session's scopes, so a
+  device paired from Settings (read and operate) sees a Devices section that only errors and a
+  pairing button that fails, and it cannot sign itself out because listing and revoking sessions
+  need `admin`. Keep the scopes in `accessAtom`, show Devices to admins only, add a self sign-out
+  that takes the session from authentication, and say in the pairing guide which actions need admin
+  (T3 Code `ConnectionsSettings.tsx`).
+- **Desktop sign-out strands the window** (Opus): signing out the current session in the desktop
+  app leaves "pair this browser" until a relaunch, since the bootstrap token is used up. Hide that
+  button in the desktop app, or tell desktop users to relaunch.
+- **A failed live view looks like loading or like fresh data** (Opus, Sol): `liveView` retries
+  every typed error, denials included, and a defect ends the view; the list routes read only the
+  value, so they show a skeleton forever or a stale list under a "connected" header. Retry
+  transport failures only; show an error with retry, or a "stopped updating" note over stale data.
+- **Response scope lists that tolerate new scopes** (Astra; Sol: at the trigger): `SessionStatus`
+  and the session lists decode a closed list strictly, so one new scope locks every older client
+  out at boot. `ForwardCompatibleArray` in responses only; grants and authorization stay strict.
+  Trigger: before the first release, at the latest before the first new scope.
+- **Desktop readiness from the spawned child** (Sol: critical; Astra, Sol's second lens: before
+  packaging): the shell releases its port before spawning, accepts any 200 from `/health`, then
+  loads that origin with the one-time admin token in the fragment, and has no `will-redirect`
+  guard. The child signals readiness on its process channel after it binds and registers the grant;
+  probe and window reject cross-origin redirects (T3 Code `DesktopBackendManager.ts`). Trigger:
+  before the first packaged build, or as soon as a wrong server shows up in the desktop window.
+- **Agent loop leftovers** (Sol, Opus): first-use downloads of `act` and `actionlint` race when
+  several worktrees start at once (`scripts/lib/tools.ts` replaces the shared directory); worktree
+  setup links a `.env` nothing reads; every worktree setup runs `sync:repos` although most changes
+  never read `.repos`.
+- **AGENTS.md repeats the testing rules** (Sol, Opus): it and `docs/internals/testing.md` carry the
+  same rules and have started to drift, and AGENTS.md is near its line cap. Keep the rules that
+  protect live data and the test-at-one-layer rule, point to `testing.md` for the rest. T3 Code
+  keeps both copies.
+
+## Decided during the council review (confirm or revert)
+
+- **Contribution tooling stays** (vouch, PR limits, PR size, stale, the triage skill, review-bot
+  configs). All four reviewers who looked recommended removing or parking it until outside PRs
+  arrive (about 1.800 lines that cannot run before the push). Kept because the maintainer asked for
+  it; enforcement stays off. Alternatives: delete and restore from git history at the trigger, or
+  park it on a branch. Open either way: the triage skill closes at once when enforcement is off,
+  while `CONTRIBUTING.md` promises 72 hours.
+- **`check:changed` runs every test of the affected packages** until GitHub CI exists (Fable).
+  Alternative: T3 Code's tests beside changes plus a map of cross-file guards (Sol, Opus). A web
+  change now takes about 3 s instead of 1,5 s.
+- **The outbox fix landed now** despite a split vote (Astra, Sol: critical; Fable, Opus: with the
+  real runner): lost accepted work in the template every side effect copies. Failed rows retry
+  forever with at most 10 s between tries; T3 Code gives up after 5, which would strand the job.
+- **Also landed now**: plain-HTTP LAN IDs (three reviewers), auth wiring tests and message limits
+  (64 KiB per WebSocket message, 200 characters for names, 10.000 for job input), the stored-format
+  rule with a golden decode test, and the agent-loop fixes (`check:changed` on `main`, `ci:local`
+  with staged files, setup by hand, `dev:web` ports, `--background` in the skill).
+- **Codex and T3 Code shells count as agents** for the desktop launch mode (`CODEX_THREAD_ID`,
+  `CODEX_SANDBOX`, `T3CODE_THREAD_ID`), so `dev:desktop` from T3 Code's terminal panel starts in
+  the background too; pass `--foreground` there.
+
 ## Revisit later
 
 - **Move this backlog to GitHub Issues** at the first public push, then delete this file and point
@@ -18,7 +77,11 @@ entry moves into an issue (labels from `.github/labels.json`) and the file is de
   [universal PNG](../assets/prod/universal-1024.png) as icon inputs. The same files are available
   in [the nightly set](../assets/nightly). Then add a root `start:desktop` that runs the built app
   against a non-live home (a plain `electron .` outside the dev runner would point the server at
-  the live `~/.toolspell`).
+  the live `~/.toolspell`). Trigger: before the first outside user or release. Decide with it
+  (Fable): the desktop origin (a custom app scheme instead of a loopback origin whose port can
+  change, which loses device preferences; until then a fresh origin should start from the
+  remembered desktop theme, Sol), a credential that is not an ambient cookie for a hosted web or
+  mobile client, and CORS for them.
 - **A packaged app launched with `--background`** still registers as a regular macOS app for a
   moment before `main.ts` makes it background only (the dev supervisor avoids that with an
   `LSBackgroundOnly` copy). Trigger: agents testing packaged builds.
@@ -33,7 +96,7 @@ entry moves into an issue (labels from `.github/labels.json`) and the file is de
   `setDesktopName` and Wayland flags; Windows AppUserModelId; deep links; secret storage
   (`safeStorage`, Linux password store); a server "ready" signal instead of polling `/health`;
   killing child processes before exit in an AppImage; clearing the GPU cache after an Electron
-  upgrade; live theme switching on Linux; a custom app scheme instead of a loopback origin.
+  upgrade; live theme switching on Linux.
 - **Platform, later**: a 1 s read timeout for the bootstrap fd, as T3 Code does (on macOS and
   Linux a stray `TOOLSPELL_BOOTSTRAP_FD` hits one of Node's own fds); no copy-on-write for the
   state directory on btrfs; warn when the pnpm store is on another filesystem; Windows long paths for `.repos`; a bootstrap-fd read that treats a
@@ -59,29 +122,57 @@ entry moves into an issue (labels from `.github/labels.json`) and the file is de
   snapshot past it; keep large job output off the wire (`WireProjection`); WebSocket compression
   (`perMessageDeflate`) for remote clients; page the job list past about 500 jobs; a startup profile
   for slow-start reports (`scripts/profile-startup.mjs`); a PR comment comparing budgets with main
-  (`thread-transfer-report`).
-- **Server**: event-log retention and paged resume (resume currently reads every missed event;
+  (`thread-transfer-report`). The transport budget checks bytes twice, exactly and against a
+  ceiling; keep the ceiling for bytes and exact values for counts (Sol).
+- **Server, retention**: event-log retention and paged resume (resume reads every missed event;
   new databases use incremental auto-vacuum, so retention can follow its deletes with
-  `PRAGMA incremental_vacuum`, as T3 Code's `DatabaseStorage.ts` does); seeding dev state from the
-  live install; sharing a dev server over the tailnet; `pair` probing the recorded origin, not only
-  the PID, once a reused PID ever yields a dead link (T3 Code `cli/pair.ts`).
+  `PRAGMA incremental_vacuum`, as T3 Code's `DatabaseStorage.ts` does). The same job deletes done
+  outbox rows, used or expired pairing grants and receipts past the retry window (Opus); a cursor
+  below the retained range gets a snapshot (Astra). Trigger: the first real runner, or resume time
+  in the budgets.
+- **Server, other**: seeding dev state from the live install (trigger: desktop packaging); sharing
+  a dev server over the tailnet; `pair` probing the recorded origin, not only the PID, once a
+  reused PID ever yields a dead link (T3 Code `cli/pair.ts`).
 - **Server SQL** (from the budget tests): `id` in the `jobs_workspace` index removes the snapshot's
   temporary sort; each job command reads the job twice (decide, then project); an index on the
-  events `type` would make a workspaces resume a direct lookup but costs a write per event.
-- **Before database migration 0002**: guards so a CLI migrates only while it holds the home, and a
-  build refuses history from a newer or different build (T3 Code `persistence/Sqlite.ts`,
-  `Migrations.ts`, `databaseMigrationHead.ts`); a smoke test that opens an old-version database.
+  events `type` would make a workspaces resume a direct lookup but costs a write per event; cheaper:
+  the resume batch carries the head it covered, so an idle view moves its cursor (Opus).
+- **Before the first build leaves this machine** (was: before migration 0002; Fable): guards so a
+  CLI migrates only while it holds the home, and a build refuses history from a newer or different
+  build (T3 Code `persistence/Sqlite.ts`, `Migrations.ts`, `databaseMigrationHead.ts`); a smoke
+  test that opens an old-version database. A stored-format change old builds cannot read also adds
+  a migration, even an empty one, so the migration head is the format version. The guard only
+  protects builds that already contain it.
 - **When a client talks to several servers, or cursors survive reloads**: a persisted data identity
-  the client checks (T3 Code `environment/ServerEnvironment.ts`); the desktop app confirms it
-  reached its own server, not any 200 from `/health`.
+  the client checks (T3 Code `environment/ServerEnvironment.ts`).
+- **Server identity, before the first release that browsers pair with** (Fable): a random id
+  created with the database. The session cookie name comes from it, not from a 32-bit hash of the
+  state path (two servers with the same home path behind one hostname share a cookie name; moving
+  the home unpairs every device). The data identity above reuses it.
+- **Version skew, at the first release a remote browser uses** (Fable, Astra):
+  `ForwardCompatibleArray` drops malformed known events along with unknown ones, and `readAfter`
+  drops undecodable rows, so a device can resume to different state than a fresh snapshot. Skip
+  only an unknown `type`, fail loudly on a malformed known one, and fall back to a snapshot when a
+  resume cannot be served completely. Remember the first `/health` version and show the reload
+  screen when it changes.
 - **At the first setting**: decide between the event path and a settings file (T3 Code
   `serverSettings.ts`, `atomicWrite.ts`: lenient decode, invalid file kept and reported, watch,
   atomic write); the web settings page then splits into sub-pages.
 - **Remote access beyond dev** (tailnet, `--host`): server-side session expiry with renewal,
-  `X-Forwarded-Proto` for the Secure cookie flag, keep-alive tuning for proxies.
+  `X-Forwarded-Proto` for the Secure cookie flag, keep-alive tuning for proxies. Cookie-based remote
+  use needs a dedicated hostname when other services on that host belong to someone else, since
+  browsers send the cookie to every port (Astra). An IPv6 bind other than `::` yields invalid
+  origins in startup and pairing links; share one host formatter (T3 Code `hostClassification.ts`;
+  Sol).
 - **With the real runner**: a process runner with timeouts, output caps and typed errors; an
   outbound HTTP wrapper; a scheduler for time-based work; live checks that are shown to fail
-  (T3 Code `processRunner.ts`, `outboundHttp.ts`, `scheduling/`, `verify-background-live.ts`).
+  (T3 Code `processRunner.ts`, `outboundHttp.ts`, `scheduling/`, `verify-background-live.ts`). Also:
+  a limit on jobs running at once (Opus); a crash-durability policy before the first irreversible
+  outside operation, since WAL with `synchronous = NORMAL` can lose a receipt on power loss (use the
+  job id as idempotency key where the outside system takes one; Sol); a retried submission reuses
+  its command id, so a lost acknowledgement cannot start a second job (Astra); a progress report
+  that fails mid-run fails the job as "runner stopped unexpectedly"; the `job.run` outbox row stores
+  the input a second time (store the tag and job id; Sol).
 - **With the real domain, or the first bug that spans server and browser**: a CLI that sends one
   contract command and reads one view of the running server; scenario proofs that fail on the base
   commit and pass on the fix in the real app (T3 Code `scripts/prove-scenario.ts`); a guarded
@@ -117,6 +208,9 @@ entry moves into an issue (labels from `.github/labels.json`) and the file is de
   slips in there.
 - **Agents testing the desktop app in isolation**: explore micro-VMs or similar, so agents can run
   and drive the desktop app in a real, separate machine instead of on the maintainer's screen.
+  Background mode and CDP cover the focus problem on macOS; the trigger is Windows and Linux desktop
+  checks, or tests that must not touch the maintainer's machine. (Opus suggested moving this to
+  "consider later".)
 
 ## Consider later if then relevant
 
@@ -127,7 +221,6 @@ Deliberately not planned; listed so nobody re-surveys them. Each is in T3 Code i
 - A remote task cache, test sharding and cached test runs.
 - A replay provider for recorded runs (the fake runner covers free test runs today).
 - A shared dev login token across worktrees.
-- CORS (everything is same-origin).
 - Attachments or an upload store.
 
 ## Checks after the first push to GitHub
@@ -159,6 +252,11 @@ None of the contribution workflows can run before the repository is on GitHub.
   (`requires: Check`), and does not auto-approve a change under `apps/server/src/auth/`. If a bot
   ignores its config file, fix that before relying on its reviews.
 - **PR assets**: a test PR that commits a file under `.github/pr-assets/` fails the lint job.
+- **Before the push** (Sol, Opus): the issue chooser gets `contact_links` to the private advisory
+  form; the CI lint job runs `actionlint` like `check:changed` does; the docs stop calling `ready`
+  the same as CI (CI also builds and checks the built boot and the preload); `docs/user/install.md`
+  says there is no release yet and points to building from source; after the name check, grep the
+  `toolspell/toolspell` slug in `CONTRIBUTING.md`, `SECURITY.md` and the issue templates.
 
 ## Checks for the Windows and Linux VMs
 
