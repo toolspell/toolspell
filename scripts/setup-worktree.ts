@@ -1,5 +1,5 @@
-// Prepares a fresh git worktree: installs dependencies and links the main checkout's
-// env files. T3 Code runs it on worktree creation (t3.json). Adapted from T3 Code (MIT).
+// Prepares a fresh git worktree: installs dependencies, links the main checkout's env files
+// and copies its .repos. T3 Code runs it on worktree creation (t3.json). Adapted from T3 Code (MIT).
 //
 // Setup runs in the background, so agents can start before it ends. `setup-running`
 // holds this PID until setup ends with `setup-done` or `setup-failed`, so agents wait
@@ -82,4 +82,13 @@ for (const file of ENV_FILES) {
   if (existing && !existing.isSymbolicLink()) continue;
   if (existing) NodeFS.rmSync(target);
   NodeFS.symlinkSync(source, target);
+}
+
+// Reference source is a convenience for agents; a failed sync must not fail setup.
+const repos = NodeChildProcess.spawnSync(process.execPath, ["scripts/sync-repos.ts"], {
+  cwd: worktree,
+  stdio: "inherit",
+});
+if (repos.status !== 0) {
+  process.stderr.write("WARNING: could not sync .repos; run `vp run sync:repos` later.\n");
 }

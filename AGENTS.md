@@ -194,9 +194,11 @@ Architecture and its constraints: [overview](docs/internals/overview.md).
   reducers. No heavy runtime logic.
 - `packages/client-runtime`: connection, reconnect, and live views shared by every client.
 - `oxlint-plugin-toolspell`: the repo's own lint rules. `scripts`: dev runner and checks.
-- Effect reference material ships with the installed package, pinned to its version:
-  `node_modules/effect/AGENTS.md` and `node_modules/effect/ai-docs`, with sources in
-  `node_modules/effect/src`. Prefer its patterns over invented ones.
+- `.repos/effect`: read-only Effect source at the installed version. Read `.repos/effect/LLMS.md`
+  before writing Effect code, `MIGRATION.md` for Effect 3 habits that changed in 4, and
+  `packages/*/test` for real API usage. Prefer its patterns over invented ones; never edit or import
+  from it. It is gitignored: worktree setup fills it, and `vp run sync:repos` does after a bump or
+  when it is missing.
 
 ## Taste
 

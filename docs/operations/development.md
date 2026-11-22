@@ -5,11 +5,14 @@
 1. Install [Vite+](https://viteplus.dev/guide/), which provides the `vp` command, and Node 24.10 or
    newer.
 2. Run `vp i` from the repository root.
-3. Run `vp run dev` and open the `pairingUrl:` it prints.
+3. Run `vp run sync:repos` to download the Effect reference source into the gitignored `.repos`
+   (about 70 MB, pinned to the installed version). Rerun it after bumping `effect`.
+4. Run `vp run dev` and open the `pairingUrl:` it prints.
 
 In a T3 Code worktree, `t3.json` runs `scripts/setup-worktree.ts` in the background on creation. It
 writes `.toolspell/setup-running` with its PID and ends with `.toolspell/setup-done` or
-`.toolspell/setup-failed` (with the error tail). While setup runs, do not run `vp i` yourself.
+`.toolspell/setup-failed` (with the error tail). It also copies the main checkout's `.repos`. While
+setup runs, do not run `vp i` yourself.
 
 ## Choosing a dev process
 

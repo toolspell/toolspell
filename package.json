@@ -18,7 +18,8 @@
     "lint": "vp lint --report-unused-disable-directives",
     "fmt": "vp fmt",
     "test": "vp run -r test",
-    "knip": "knip --no-config-hints"
+    "knip": "knip --no-config-hints",
+    "sync:repos": "node scripts/sync-repos.ts"
   },
   "devDependencies": {
     "@effect/tsgo": "0.73.2",

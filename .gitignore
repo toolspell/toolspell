@@ -48,3 +48,6 @@ dist-electron
 
 # Agent scratch work; never commit plans or research notes
 .plans/
+
+# Read-only upstream source for agents, filled by `vp run sync:repos`
+.repos/

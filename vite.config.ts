@@ -1,6 +1,7 @@
 import { defineConfig } from "vite-plus";
 
 const TEST_EXCLUDE = [
+  "**/.repos/**",
   "**/.toolspell/**",
   "**/.t3/**",
   "**/node_modules/**",
@@ -30,6 +31,7 @@ export default defineConfig({
   },
   fmt: {
     ignorePatterns: [
+      ".repos",
       "dist",
       "dist-electron",
       "node_modules",
@@ -40,7 +42,14 @@ export default defineConfig({
     sortPackageJson: {},
   },
   lint: {
-    ignorePatterns: ["dist", "dist-electron", "node_modules", "pnpm-lock.yaml", ...GENERATED],
+    ignorePatterns: [
+      ".repos",
+      "dist",
+      "dist-electron",
+      "node_modules",
+      "pnpm-lock.yaml",
+      ...GENERATED,
+    ],
     plugins: ["eslint", "oxc", "react", "unicorn", "typescript"],
     jsPlugins: [
       { name: "vite-plus", specifier: "vite-plus/oxlint-plugin" },
