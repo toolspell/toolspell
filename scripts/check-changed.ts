@@ -17,7 +17,8 @@ import { vpCommand } from "./lib/vp.ts";
 
 const root = NodePath.dirname(import.meta.dirname);
 const CODE = /\.(?:[cm]?[jt]sx?)$/;
-const TEST = /\.test\.tsx?$/;
+// Render scenarios (`*.renders.tsx`) are tests too: they assert render budgets.
+const TEST = /\.(test|renders)\.tsx?$/;
 
 const git = (args: ReadonlyArray<string>) =>
   NodeChildProcess.execFileSync("git", args, { cwd: root, encoding: "utf8" });

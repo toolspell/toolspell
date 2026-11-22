@@ -8,6 +8,7 @@ describe("testsFor", () => {
       "apps/server/src/core/Decider.test.ts",
       "apps/web/src/components/InlineForm.browser.test.tsx",
       "apps/web/src/reactCompilerCoverage.test.ts",
+      "apps/web/test/renderScenarios.renders.tsx",
       "scripts/github-scripts.test.ts",
     ]);
     assert.deepStrictEqual(
@@ -19,6 +20,7 @@ describe("testsFor", () => {
           "apps/server/src/core/Gone.test.ts",
           "docs/README.md",
           ".github/scripts/vouch.cjs",
+          "apps/web/test/renderScenarios.renders.tsx",
         ],
         (file) => existing.has(file),
       ),
@@ -26,6 +28,7 @@ describe("testsFor", () => {
         "apps/server/src/core/Decider.test.ts",
         "apps/web/src/components/InlineForm.browser.test.tsx",
         "apps/web/src/reactCompilerCoverage.test.ts",
+        "apps/web/test/renderScenarios.renders.tsx",
         "scripts/github-scripts.test.ts",
       ],
     );
