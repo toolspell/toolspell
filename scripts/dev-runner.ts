@@ -88,12 +88,8 @@ export interface DevPorts {
 }
 
 /** dev:web cannot move: dev:server already advertises this port in its startup and pair links. */
-export class WebPortBusyError extends Error {
-  readonly port: number;
-  constructor(port: number) {
-    super(`Web port ${port} is busy.`);
-    this.port = port;
-  }
+export interface WebPortBusy {
+  readonly busyWebPort: number;
 }
 
 /**
@@ -107,10 +103,10 @@ export const resolvePorts = async (
   startOffset: number,
   isFree: (port: number) => Promise<boolean>,
   runningServerPort: number | undefined,
-): Promise<DevPorts> => {
+): Promise<DevPorts | WebPortBusy> => {
   if (mode === "dev:web") {
     const webPort = BASE_WEB_PORT + startOffset;
-    if (!(await isFree(webPort))) throw new WebPortBusyError(webPort);
+    if (!(await isFree(webPort))) return { busyWebPort: webPort };
     return {
       serverPort: runningServerPort ?? BASE_SERVER_PORT + startOffset,
       webPort,
@@ -216,15 +212,16 @@ const main = async () => {
     offsetFor(process.env, checkout),
     (port) => isPortFree(port),
     running,
-  ).catch((error: unknown) => {
-    if (!(error instanceof WebPortBusyError)) throw error;
+  );
+  if ("busyWebPort" in ports) {
+    const port = ports.busyWebPort;
     process.stderr.write(
-      `[dev-runner] web port ${error.port} is held${describeListener(error.port)}. dev:server ` +
-        `advertises it for this checkout, so dev:web does not move. Stop that process, or start ` +
-        `both dev:server and dev:web with the same free TOOLSPELL_PORT_OFFSET.\n`,
+      `[dev-runner] web port ${port} is held${describeListener(port)}. dev:server advertises it ` +
+        `for this checkout, so dev:web does not move. Stop that process, or start both ` +
+        `dev:server and dev:web with the same free TOOLSPELL_PORT_OFFSET.\n`,
     );
     process.exit(1);
-  });
+  }
   const { serverPort, webPort, cdpPort } = ports;
   if (args.mode === "dev:web" && running === undefined) {
     process.stdout.write(
