@@ -35,7 +35,11 @@ export const emptyJobsView = (workspaceId: WorkspaceId): JobsView => ({
   jobs: [],
 });
 
-/** Applies events newer than the cursor. Replayed duplicates after a reconnect are skipped. */
+/**
+ * Applies events newer than the cursor; replayed duplicates after a reconnect are skipped.
+ * Returns undefined when no item changed, so the caller keeps its view (and its cursor:
+ * replaying a no-op is a no-op). Untouched items keep their identity.
+ */
 const applyEvents = <Item extends { readonly id: string }>(
   items: ReadonlyArray<Item>,
   sequence: EventSequence | undefined,
@@ -43,18 +47,23 @@ const applyEvents = <Item extends { readonly id: string }>(
   apply: (current: Item | undefined, envelope: EventEnvelope) => Item | undefined,
   idOf: (envelope: EventEnvelope) => string | undefined,
 ) => {
-  const byId = new Map(items.map((item) => [item.id, item]));
+  let byId: Map<string, Item> | undefined;
+  let changed = false;
   let cursor = sequence;
   for (const envelope of events) {
     if (cursor !== undefined && envelope.sequence <= cursor) continue;
     cursor = envelope.sequence;
     const id = idOf(envelope);
     if (id === undefined) continue;
-    const next = apply(byId.get(id), envelope);
+    byId ??= new Map(items.map((item) => [item.id, item]));
+    const current = byId.get(id);
+    const next = apply(current, envelope);
+    if (next === current) continue;
+    changed = true;
     if (next === undefined) byId.delete(id);
     else byId.set(id, next);
   }
-  return { items: [...byId.values()], sequence: cursor };
+  return byId && changed ? { items: [...byId.values()], sequence: cursor } : undefined;
 };
 
 export const applyWorkspacesItem = (
@@ -71,7 +80,7 @@ export const applyWorkspacesItem = (
     applyWorkspaceEvent,
     ({ event }) => event.workspaceId,
   );
-  return { ...view, workspaces: next.items, sequence: next.sequence };
+  return next ? { ...view, workspaces: next.items, sequence: next.sequence } : view;
 };
 
 export const applyJobsItem = (view: JobsView, item: JobsStreamItem): JobsView => {
@@ -81,5 +90,5 @@ export const applyJobsItem = (view: JobsView, item: JobsStreamItem): JobsView =>
   const next = applyEvents(view.jobs, view.sequence, item.events, applyJobEvent, ({ event }) =>
     "jobId" in event ? event.jobId : undefined,
   );
-  return { ...view, jobs: next.items, sequence: next.sequence };
+  return next ? { ...view, jobs: next.items, sequence: next.sequence } : view;
 };

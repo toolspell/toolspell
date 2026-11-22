@@ -130,6 +130,8 @@ export const makeToolSpellAtoms = (options: { readonly origin: string }) => {
             }),
             // A dropped socket ends the stream; resubscribe from the cursor once it is back.
             Stream.retry(Schedule.spaced(RESUBSCRIBE_DELAY)),
+            // A replay that changes nothing keeps the view, so readers do not re-render.
+            Stream.changesWith((previous, next) => previous === next),
           );
         }),
       ),
