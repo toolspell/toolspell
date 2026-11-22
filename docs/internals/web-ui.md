@@ -50,6 +50,28 @@ Views read atoms from [`client-runtime`](../../packages/client-runtime/src/atoms
 keeps its last value, so a reconnect does not flash a loading state. Local, ephemeral UI state
 stays in `useState`.
 
+## Motion
+
+Users keep ToolSpell open for hours, often on high-refresh displays, where an animation that never
+stops makes the GPU draw every frame. Motion is budgeted like rendering:
+
+- Nothing loops except the `Spinner`, which is for short pending work. A status that can last
+  (connecting, reconnecting, running) is static. Skeletons use the stepped `animate-skeleton`,
+  which holds its opacity for most of each cycle, so the compositor draws a handful of frames per
+  cycle. Tailwind's `animate-pulse`, `animate-ping`, and `animate-bounce` change every frame.
+- Transitions name their properties (`transition-colors`, `transition-[box-shadow,translate]`).
+  `transition-all` also animates layout and theme switches. Layout properties such as width do
+  not transition; a progress bar jumps to its value.
+- No fixed full-viewport layer that stays mounted, such as a noise or vignette overlay: the
+  compositor blends it again on every frame anything below it changes. Put a texture in the
+  surface's own background. A dialog backdrop is fine; it exists only while the dialog is open.
+- `prefers-reduced-motion: reduce` cuts every animation and transition to one instant step in
+  [`styles.css`](../../apps/web/src/styles.css), so components need no `motion-safe:` variants.
+
+`toolspell/no-costly-motion` enforces the class rules in `apps/web/src`, including in shadcn
+output, which ships `transition-all` and `animate-pulse`. Rules in `styles.css` follow them by
+review.
+
 ## React Compiler
 
 The compiler memoizes a component or hook only when it can prove the code follows React's rules.

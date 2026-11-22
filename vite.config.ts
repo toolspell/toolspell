@@ -183,7 +183,11 @@ export default defineConfig({
       },
       {
         files: ["apps/web/src/**"],
-        rules: { "shadcn/no-unknown-classes": "error", "shadcn/no-raw-colors": "error" },
+        rules: {
+          "shadcn/no-unknown-classes": "error",
+          "shadcn/no-raw-colors": "error",
+          "toolspell/no-costly-motion": "error",
+        },
       },
       {
         // components/ui exports own their look; everything else picks a variant or size.

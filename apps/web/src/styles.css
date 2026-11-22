@@ -89,6 +89,24 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  /* Adapted from T3 Code (MIT): long holds with stepped ramps, so the compositor draws a few
+     frames per cycle instead of one per vsync. Keep the holds dominant. */
+  --animate-skeleton: skeleton 2.4s infinite;
+  @keyframes skeleton {
+    0%,
+    42% {
+      opacity: 1;
+      animation-timing-function: steps(4);
+    }
+    50%,
+    92% {
+      opacity: 0.55;
+      animation-timing-function: steps(4);
+    }
+    100% {
+      opacity: 1;
+    }
+  }
 }
 
 .dark {
@@ -137,5 +155,15 @@
   }
   html {
     @apply font-sans;
+  }
+  /* One switch for every animation and transition, including library ones; a spinner freezes. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
