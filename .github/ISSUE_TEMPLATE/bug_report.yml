@@ -1,0 +1,117 @@
+# Adapted from T3 Code's bug report form (MIT).
+name: Bug report
+description: Report broken behavior, regressions, crashes, or reliability problems.
+title: "[Bug]: "
+labels:
+  - bug
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Search existing issues first and keep the report to one problem.
+        Report security vulnerabilities privately instead, as
+        [SECURITY.md](https://github.com/toolspell/toolspell/blob/main/SECURITY.md) describes.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and did not find a duplicate.
+          required: true
+        - label: I included enough detail to reproduce or investigate the problem.
+          required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of ToolSpell is affected?
+      options:
+        - apps/web
+        - apps/server
+        - apps/desktop
+        - packages/contracts or packages/client-runtime
+        - Build or CI
+        - Docs
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: A minimal, deterministic repro.
+      placeholder: |
+        1. Start the server with `vp run dev`
+        2. Pair a browser and open a workspace
+        3. Stop the server while a job runs
+        4. Start it again
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      placeholder: The job shows as failed and the list stays in sync.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      placeholder: The job stays running until the page is reloaded.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Impact
+      options:
+        - Blocks work completely
+        - Major degradation or frequent failure
+        - Minor bug or occasional failure
+        - Cosmetic issue
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Release version, commit SHA, or branch if known.
+      placeholder: main @ abc1234
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, browser or desktop app, Node version, and how the server runs.
+      placeholder: macOS 15.3, Chrome 135, Node 24.10, `vp run dev`
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or stack traces
+      description: The most relevant output only. Redact secrets and pairing links.
+      render: shell
+
+  - type: upload
+    id: attachments
+    attributes:
+      label: Screenshots, recordings, or supporting files
+      description: Redact secrets before uploading.
+    validations:
+      required: false
+      accept: ".png,.jpg,.jpeg,.gif,.webp,.svg,.mp4,.mov,.webm,.log,.txt,.json,.zip"
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Workaround
+      description: A temporary workaround, if you found one.

@@ -46,6 +46,10 @@ export const testsFor = (files: ReadonlyArray<string>, exists: (file: string) =>
     ...new Set(
       files.flatMap((file) => {
         if (TEST.test(file)) return exists(file) ? [file] : [];
+        // Workflow helpers run inside actions/github-script; their tests live in the scripts package.
+        if (file.startsWith(".github/scripts/")) {
+          return ["scripts/github-scripts.test.ts"].filter(exists);
+        }
         if (!CODE.test(file)) return [];
         const stem = file.replace(/\.[^.]+$/, "");
         return [`${stem}.test.ts`, `${stem}.test.tsx`, `${stem}.browser.test.tsx`].filter(exists);

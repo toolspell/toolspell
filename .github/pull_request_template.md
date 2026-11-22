@@ -1,6 +1,7 @@
 <!--
-Solve one underlying problem per PR. Use a conventional commit title in plain language,
-such as "fix(web): job list no longer flickers on reconnect".
+Read CONTRIBUTING.md first. Meeting it does not guarantee a review or a merge. Solve one
+underlying problem; the same rules apply to drafts. Use a conventional commit title in plain
+language, such as "fix(web): job list no longer flickers on reconnect".
 -->
 
 ## Problem
@@ -10,6 +11,11 @@ such as "fix(web): job list no longer flickers on reconnect".
 ## Change
 
 <!-- How this fixes the problem. If it spans components or clients, say why each change is needed. -->
+
+## Scope
+
+<!-- Link the issue that shows the bug, or the issue where a maintainer agreed to this change.
+For a small fix of an obvious bug, say why it needs no issue. -->
 
 ## Verification
 

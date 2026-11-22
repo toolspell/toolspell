@@ -28,6 +28,12 @@ Open the `pairingUrl:` the server prints. Before you push, run `vp run check:cha
 - [Architecture overview](docs/internals/overview.md)
 - [Agent guide](AGENTS.md)
 
+## Contributing
+
+Review capacity is small, so focused bug fixes are the most likely to land. Read
+[CONTRIBUTING.md](CONTRIBUTING.md) before you open an issue or a pull request. Report
+vulnerabilities privately, as [SECURITY.md](SECURITY.md#report-a-vulnerability) describes.
+
 ## Credits
 
 The architecture, agent guidance, lint rules, and verification tooling are adapted from

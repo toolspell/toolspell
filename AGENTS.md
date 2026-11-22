@@ -158,6 +158,8 @@ before writing rows directly.
 ## Pull requests
 
 - Never make a PR unless the developer explicitly asks.
+- Outside contributions follow [CONTRIBUTING.md](CONTRIBUTING.md); triage them with the
+  [contribution-triage](.agents/skills/contribution-triage/SKILL.md) skill.
 - Conventional commit titles, plain language: `fix(web): job list no longer flickers on reconnect`.
 - Body: the problem in a sentence or two, then how you fixed it. End with the model and harness
   that did the work.

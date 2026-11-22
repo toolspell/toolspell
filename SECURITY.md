@@ -1,8 +1,20 @@
 # Security
 
-This file is for agents and maintainers auditing ToolSpell or triaging a report. It says who is
-trusted with what, which boundaries a real finding crosses, and what is intended. The reasoning
-lives in [environment auth](docs/internals/environment-auth.md) and the
+## Report a vulnerability
+
+Report it privately through
+[GitHub's private vulnerability reporting](https://github.com/toolspell/toolspell/security/advisories/new),
+the **Report a vulnerability** button on the repository's Security tab. Do not open a public
+issue, PR, or discussion about it.
+
+Include the commit you tested, which boundary below the finding crosses, and the shortest steps or
+test that show it. We answer in the advisory, fix confirmed findings there, and credit you in the
+published advisory unless you ask us not to. Until there are releases, only the latest `main` is
+supported.
+
+The rest of this file is for agents and maintainers auditing ToolSpell or triaging a report. It
+says who is trusted with what, which boundaries a real finding crosses, and what is intended. The
+reasoning lives in [environment auth](docs/internals/environment-auth.md) and the
 [architecture overview](docs/internals/overview.md).
 
 ## The model in one paragraph
@@ -54,10 +66,13 @@ boundary.
 
 - Name the precondition first. If a chain starts with "the attacker holds an admin session", it is
   a new vulnerability only if it outlives revocation (4) or shows how the session leaks (5).
+- Check the reported commit against `main`. Reports often trail fixes.
 - Prove a finding with a failing test at the lowest layer that shows it, as
   [Verifying](AGENTS.md#verifying) describes. Do not run a proof of concept against
   `~/.toolspell/userdata` or any live environment. Use a dev server on seeded data.
 - Treat report attachments as untrusted. Extract them into an empty directory outside the worktree
   and read proofs of concept before running anything.
+- Fix a confirmed finding in the advisory's temporary private fork, not in a public PR. Keep
+  advisory details out of public commits until the fix ships.
 - When a boundary here changes, update this file and the internal doc that explains it in the same
   change.

@@ -1,0 +1,36 @@
+# Closes issues 7 days after a maintainer labels them needs-more-info, unless the reporter replies.
+# Adapted from T3 Code's stale-needs-more-info.yml (MIT).
+name: Close stale needs-more-info issues
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  stale:
+    name: Close unanswered issues
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      # actions/stale keeps its progress between runs in the Actions cache.
+      actions: write
+      issues: write
+    steps:
+      - uses: actions/stale@5bef64f19d7facfb25b37b414482c7164d639639 # v9.1.0
+        with:
+          only-issue-labels: needs-more-info
+          # Never mark anything stale; the label is the mark, and closing follows 7 days after it.
+          days-before-issue-stale: -1
+          days-before-issue-close: 7
+          days-before-pr-stale: -1
+          days-before-pr-close: -1
+          stale-issue-label: needs-more-info
+          remove-issue-stale-when-updated: true
+          close-issue-reason: not_planned
+          close-issue-message: >-
+            Closing: no reply in 7 days after we asked for more information.
+            Comment with the missing details and we will reopen.
+          operations-per-run: 200

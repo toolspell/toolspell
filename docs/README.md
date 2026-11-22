@@ -10,7 +10,8 @@
 ## Working on ToolSpell
 
 Start with the [development runbook](./operations/development.md) and [AGENTS.md](../AGENTS.md).
-Deferred topics live in the [backlog](./backlog.md) until the repository has an issue tracker.
+Outside contributions follow [CONTRIBUTING.md](../CONTRIBUTING.md). Deferred topics live in the
+[backlog](./backlog.md) until the repository has an issue tracker.
 
 Internal notes preserve architectural decisions, constraints, and implementation traps that the
 source alone does not explain. Most code changes do not need an internal documentation update.

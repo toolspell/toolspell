@@ -1,0 +1,41 @@
+# Labels each PR by effective changed lines and comments when it grows the test suite noticeably.
+# See .github/scripts/pr-size.cjs. Adapted from T3 Code's pr-size.yml (MIT).
+#
+# pull_request_target has a write token. The checkout is the default branch; the PR's commits are
+# fetched only as git data to diff. Never add installs, builds, tests, or caches here.
+name: PR Size
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions: {}
+
+jobs:
+  label:
+    name: Label PR size
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: write
+    concurrency:
+      group: pr-size-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    steps:
+      # Full history for the merge base. Without persisted credentials the PR head is fetched
+      # anonymously, which works because the repository is public.
+      - name: Checkout trusted scripts
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+
+      - name: Sync size label and test delta comment
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        with:
+          script: |
+            await require("./.github/scripts/pr-size.cjs").run({ github, context, core });

@@ -1,0 +1,49 @@
+name: Feature request
+description: Propose an improvement or new capability. Wait for a maintainer to agree before you open a PR.
+title: "[Feature]: "
+labels:
+  - enhancement
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Search existing issues first and keep the request to one idea. A PR for a feature
+        needs a maintainer's agreement here first, as
+        [CONTRIBUTING.md](https://github.com/toolspell/toolspell/blob/main/CONTRIBUTING.md#scope)
+        describes.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What you are trying to do and what gets in the way today.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: How ToolSpell could solve it. Describe the behavior, not the implementation.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Workarounds or other approaches you considered.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - apps/web
+        - apps/server
+        - apps/desktop
+        - packages/contracts or packages/client-runtime
+        - Build or CI
+        - Docs
+        - Not sure

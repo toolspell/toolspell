@@ -1,0 +1,55 @@
+# Labels issues and PRs by author trust and closes what denounced authors open. See
+# .github/scripts/vouch.cjs. Adapted from T3 Code's pr-vouch.yml and issue-vouch.yml (MIT).
+#
+# pull_request_target has a write token: this loads its script from the default branch and never
+# checks out or runs PR code. A `/recheck-vouch` comment on a PR relabels it; a change to
+# VOUCHED.td or a manual run relabels every open issue and PR.
+name: Vouch
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review]
+  issues:
+    types: [opened, reopened]
+  issue_comment:
+    types: [created]
+  push:
+    branches: [main]
+    paths:
+      - .github/VOUCHED.td
+      - .github/scripts/vouch.cjs
+      - .github/workflows/vouch.yml
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  label:
+    name: Label by author trust
+    # Most comments are not recheck commands; skip them before a runner starts.
+    if: >-
+      github.event_name != 'issue_comment' ||
+      (github.event.issue.pull_request && contains(github.event.comment.body, '/recheck-vouch'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    # Job level, so skipped comment runs never join the group. Every run is idempotent; queue them.
+    concurrency:
+      group: vouch-${{ github.event.pull_request.number || github.event.issue.number || 'all' }}
+      cancel-in-progress: false
+    steps:
+      - name: Checkout trusted scripts
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+
+      - name: Sync vouch labels
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        with:
+          script: |
+            await require("./.github/scripts/vouch.cjs").run({ github, context, core });

@@ -35,13 +35,14 @@ entry moves into an issue (labels from `.github/labels.json`) and the file is de
   is on another filesystem; Windows long paths for `.repos`; a bootstrap-fd read that treats a
   missing fd as "no token"; Cmd versus Ctrl helpers once the web app has shortcuts.
 - **GitHub, once pushed**: Dependabot for `github-actions` only, to keep the SHA pins fresh; a
-  `~/.vite-plus` and pnpm store cache saved only on main (T3 Code `.github/actions/setup-ci-deps`);
-  issue templates (areas: web, server, desktop, packages, CI, docs) and labels once this backlog
-  moves to issues; a "Reporting" section in `SECURITY.md` once public.
+  `~/.vite-plus` and pnpm store cache saved only on main (T3 Code `.github/actions/setup-ci-deps`).
+  The contribution workflows have their own checklist below.
 - **GitHub, with releases**: T3 Code's release patterns (`resolve_commit`, `concurrency` with
   queued runs, per-platform `workflow_call`, a release smoke job on pull requests).
-- **GitHub, with outside contributors**: PR size labels, contributor limits, a test-count delta
-  comment; a PR comment comparing `report:renders` with main follows the same pattern.
+- **GitHub, with outside contributors**: a PR comment comparing `report:renders` with main, in the
+  pattern of the test delta comment in `.github/scripts/pr-size.cjs`.
+- **Third-party license notices** before the first build ships to users: T3 Code generates them at
+  build time and shows them in Settings (its `docs/internals/open-source-licenses.md`).
 - **Performance, later** (T3 Code has each; budgets pin today's values first): merge `job.progressed`
   per job in a short window (`ThreadLiveEventCoalescer`) once a runner reports often; bound each
   subscriber's queue and make it resume from its cursor (`LiveStreamBudget`); cap resume and send a
@@ -51,6 +52,29 @@ entry moves into an issue (labels from `.github/labels.json`) and the file is de
   (`thread-transfer-report`); a smoke test that opens an old-version database.
 - **Server**: event-log retention and paged resume (resume currently reads every missed event);
   seeding dev state from the live install; sharing a dev server over the tailnet.
+
+## Checks after the first push to GitHub
+
+None of the contribution workflows can run before the repository is on GitHub.
+
+- **Settings**: enable private vulnerability reporting (Security, Advisories); require the `Check`
+  status on `main`; keep the default workflow token read-only and approval for first-time
+  contributors' workflow runs (Actions, General).
+- **Labels**: the push runs `labels.yml`; if it did not, `gh workflow run labels.yml`. Then
+  `gh label list` shows every name in `.github/labels.json`.
+- **Vouch**: from an account without write access, open an issue and a PR; the PR gets
+  `vouch:unvouched`, the issue no label, a maintainer PR `vouch:trusted`. Denounce a test account
+  in `VOUCHED.td` and check that its next issue and PR close with the ban comment, then remove it.
+  `/recheck-vouch` on a PR relabels it.
+- **PR size**: a fork PR gets one `size:*` label that changes after a push; a PR adding 20 or more
+  test cases gets the test delta comment, which goes away when the cases are removed.
+- **PR limits**: with `PR_LIMITS_ENFORCE` unset, a fourth PR from the test account logs "would
+  close"; `gh workflow run pr-limits.yml` logs the sweep. Then
+  `gh variable set PR_LIMITS_ENFORCE --body true` and watch one real run.
+- **Stale**: label a test issue `needs-more-info`; a comment removes the label, and 7 days
+  without one close it (`gh workflow run stale-needs-more-info.yml` runs the check now).
+- **Templates**: the issue chooser shows the bug and feature forms and the security policy link,
+  and a new PR starts from the template.
 
 ## Checks for the Windows and Linux VMs
 

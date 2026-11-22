@@ -1,0 +1,87 @@
+[
+  {
+    "name": "bug",
+    "color": "d73a4a",
+    "description": "Something is broken or behaving incorrectly."
+  },
+  {
+    "name": "enhancement",
+    "color": "a2eeef",
+    "description": "Requested improvement or new capability."
+  },
+  {
+    "name": "needs-triage",
+    "color": "fbca04",
+    "description": "Needs maintainer review and initial categorization."
+  },
+  {
+    "name": "needs-more-info",
+    "color": "d4c5f9",
+    "description": "Waiting on the reporter. Closes after 7 days without a reply."
+  },
+  {
+    "name": "vouch:trusted",
+    "color": "1f883d",
+    "description": "Author has write access or is vouched in .github/VOUCHED.td."
+  },
+  {
+    "name": "vouch:unvouched",
+    "color": "fbca04",
+    "description": "Author is not yet vouched in .github/VOUCHED.td."
+  },
+  {
+    "name": "vouch:denounced",
+    "color": "d1242f",
+    "description": "Author is denounced in .github/VOUCHED.td."
+  },
+  {
+    "name": "needs-rebase",
+    "color": "e99695",
+    "description": "Conflicts with its base branch. Closes after 7 days without activity."
+  },
+  {
+    "name": "triage:closing",
+    "color": "b60205",
+    "description": "Breaks a contribution rule. Closes 72 hours after the notice without activity."
+  },
+  {
+    "name": "triage:keep-open",
+    "color": "0e8a16",
+    "description": "A maintainer keeps this open; automated closing leaves it alone."
+  },
+  {
+    "name": "triage:ready",
+    "color": "0075ca",
+    "description": "Passed contribution triage and waits for maintainer review."
+  },
+  {
+    "name": "size:XS",
+    "color": "0e8a16",
+    "description": "0-9 effective changed lines (test files excluded in mixed PRs)."
+  },
+  {
+    "name": "size:S",
+    "color": "5ebd3e",
+    "description": "10-29 effective changed lines (test files excluded in mixed PRs)."
+  },
+  {
+    "name": "size:M",
+    "color": "fbca04",
+    "description": "30-99 effective changed lines (test files excluded in mixed PRs)."
+  },
+  {
+    "name": "size:L",
+    "color": "fe7d37",
+    "description": "100-499 effective changed lines (test files excluded in mixed PRs)."
+  },
+  {
+    "name": "size:XL",
+    "color": "d93f0b",
+    "description": "500-999 effective changed lines (test files excluded in mixed PRs)."
+  },
+  {
+    "name": "size:XXL",
+    "color": "b60205",
+    "description": "1,000+ effective changed lines (test files excluded in mixed PRs)."
+  }
+]

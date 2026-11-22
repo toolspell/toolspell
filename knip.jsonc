@@ -6,7 +6,8 @@
   "ignoreBinaries": ["vp", "vpx", "electron", "effect-tsgo"],
   "workspaces": {
     ".": {
-      "entry": ["vite.config.ts"],
+      // Workflows load the .github/scripts helpers through actions/github-script.
+      "entry": ["vite.config.ts", ".github/scripts/*.cjs"],
     },
     "apps/server": {
       "entry": ["src/bin.ts", "src/**/*.test.ts"],

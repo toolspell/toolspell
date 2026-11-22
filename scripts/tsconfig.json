@@ -3,6 +3,8 @@
   "compilerOptions": {
     "types": ["node"],
     "lib": ["ESNext", "esnext.disposable"],
+    // Types the .github/scripts helpers the tests import from their CommonJS source.
+    "allowJs": true,
     "plugins": [
       {
         "name": "@effect/language-service",
