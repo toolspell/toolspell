@@ -131,6 +131,7 @@ export default defineConfig({
       "typescript/no-extraneous-class": "error",
       "toolspell/namespace-node-imports": "error",
       "toolspell/no-inline-schema-compile": "error",
+      "toolspell/no-low-value-comments": "error",
       "toolspell/no-manual-effect-runtime-in-tests": "error",
       "toolspell/no-polling-loop-in-tests": "error",
       "toolspell/no-real-time-wait-in-tests": "error",

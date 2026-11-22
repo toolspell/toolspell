@@ -8,6 +8,7 @@ import noEmDashCopy from "./rules/no-em-dash-copy.ts";
 import noFrameWaitsInBrowserTests from "./rules/no-frame-waits-in-browser-tests.ts";
 import noHooklessUseFunction from "./rules/no-hookless-use-function.ts";
 import noInlineSchemaCompile from "./rules/no-inline-schema-compile.ts";
+import noLowValueComments from "./rules/no-low-value-comments.ts";
 import noManualEffectRuntimeInTests from "./rules/no-manual-effect-runtime-in-tests.ts";
 import noManualMemo from "./rules/no-manual-memo.ts";
 import noPollingLoopInTests from "./rules/no-polling-loop-in-tests.ts";
@@ -33,6 +34,7 @@ export default definePlugin({
     "no-frame-waits-in-browser-tests": noFrameWaitsInBrowserTests,
     "no-hookless-use-function": noHooklessUseFunction,
     "no-inline-schema-compile": noInlineSchemaCompile,
+    "no-low-value-comments": noLowValueComments,
     "no-manual-effect-runtime-in-tests": noManualEffectRuntimeInTests,
     "no-manual-memo": noManualMemo,
     "no-polling-loop-in-tests": noPollingLoopInTests,

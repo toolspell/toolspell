@@ -250,8 +250,9 @@ Architecture and its constraints: [overview](docs/internals/overview.md).
   Use `Effect.fnUntraced` only when spans would be too frequent, and say why nearby.
 - Inferred types over annotations. `any` is the enemy.
 - Default to no comment. Write one only for a constraint, an external quirk, or an invariant the
-  code can't show, in one line where you can and four at most. Don't restate names, narrate steps,
-  record history, or explain the fix you just made; the PR carries that.
+  code can't show, in one line where you can and four at most. Don't restate names or signatures,
+  narrate steps, record history, or explain the fix you just made; the PR carries that.
+  `toolspell/no-low-value-comments` enforces the length cap and the mechanical cases.
 - React effects are for synchronizing with something outside React. Derive in render and act in
   handlers instead of syncing state. `toolspell/no-unreasoned-state-sync` reports every effect; one
   that stays says why with
