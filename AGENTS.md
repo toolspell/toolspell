@@ -183,8 +183,9 @@ Most code changes do not need a documentation change. Agents can read the code.
 ## Plans and work artifacts
 
 Do not commit implementation plans, research notes, or agent scratch files. Keep temporary
-material outside the worktree. A merged PR is the implementation record; track active work in the
-issue that owns it.
+material outside the worktree. A merged PR is the implementation record. Until the repository has
+an issue tracker, deferred and queued work lives in [the backlog](docs/backlog.md): add an entry
+when something is deliberately deferred, and remove it in the commit that lands it.
 
 ## How it works
 
@@ -213,6 +214,11 @@ Architecture and its constraints: [overview](docs/internals/overview.md).
   `packages/*/test` for real API usage. Prefer its patterns over invented ones; never edit or import
   from it. It is gitignored: worktree setup fills it, and `vp run sync:repos` does after a bump or
   when it is missing.
+- `.repos/t3code`: T3 Code at a pinned commit, the battle-proven app ToolSpell grew from; same sync.
+  For a problem T3 Code has likely solved (desktop, platforms, auth, connections, CI, packaging),
+  start at its `docs/internals` and the files they link. Adopt its approach when it fits ToolSpell's
+  size; otherwise pick a simpler or better one and say why. It is a reference, not a template: never
+  copy its feature scope or names (`t3`, `T3CODE_*`), and credit adapted files (T3 Code, MIT).
 
 ## Taste
 

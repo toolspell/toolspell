@@ -6,13 +6,27 @@ import * as NodeChildProcess from "node:child_process";
 import * as NodeFS from "node:fs";
 import * as NodePath from "node:path";
 
-interface ReferenceRepo {
-  readonly id: string;
-  readonly repository: string;
-  /** Key in the pnpm-workspace.yaml catalog that pins the installed version. */
-  readonly catalogKey: string;
-  readonly tagPrefix: string;
-}
+type ReferenceRepo =
+  | {
+      readonly id: string;
+      readonly repository: string;
+      /** Key in the pnpm-workspace.yaml catalog that pins the installed version. */
+      readonly catalogKey: string;
+      readonly tagPrefix: string;
+    }
+  | {
+      readonly id: string;
+      readonly repository: string;
+      /** Re-pin deliberately; references and citations stay valid while it holds. */
+      readonly commit: string;
+      /** Sparse-checkout exclusions, so unneeded files are never downloaded. */
+      readonly exclude: ReadonlyArray<string>;
+    };
+
+const REFERENCE_BINARY_EXTENSIONS = [
+  ...["png", "jpg", "jpeg", "gif", "webp", "mp4", "mov", "ttf", "woff", "woff2", "icns", "ico"],
+  ...["a", "so", "glb", "tgz", "ndjson"],
+];
 
 const REPOS: ReadonlyArray<ReferenceRepo> = [
   {
@@ -20,6 +34,21 @@ const REPOS: ReadonlyArray<ReferenceRepo> = [
     repository: "https://github.com/Effect-TS/effect.git",
     catalogKey: "effect",
     tagPrefix: "effect@",
+  },
+  {
+    // A reference for problems T3 Code already solved, not a template. See AGENTS.md.
+    id: "t3code",
+    repository: "https://github.com/pingdotgg/t3code.git",
+    commit: "11224f63d2a3d444ca1fd1f67cd3ff21c1f5f8a1",
+    // Only readable source: no nested references, dependency patches, vendored native code,
+    // media, binaries or recorded fixtures.
+    exclude: [
+      "/.repos/",
+      "/patches/",
+      "Vendor/",
+      "*.xcframework/",
+      ...REFERENCE_BINARY_EXTENSIONS.map((extension) => `*.${extension}`),
+    ],
   },
 ];
 
@@ -37,11 +66,51 @@ const refOf = (dir: string) => {
   }
 };
 
-const sync = (repo: ReferenceRepo) => {
+const refFor = (repo: ReferenceRepo) => {
+  if ("commit" in repo) return repo.commit;
   const workspaceYaml = NodeFS.readFileSync(NodePath.join(root, "pnpm-workspace.yaml"), "utf8");
   const version = catalogVersion(workspaceYaml, repo.catalogKey);
   if (version === undefined) throw new Error(`No catalog version for ${repo.catalogKey}.`);
-  const ref = `${repo.tagPrefix}${version}`;
+  return `${repo.tagPrefix}${version}`;
+};
+
+const git = (args: ReadonlyArray<string>) =>
+  NodeChildProcess.execFileSync("git", ["-c", "advice.detachedHead=false", ...args], {
+    stdio: "inherit",
+  });
+
+const download = (repo: ReferenceRepo, ref: string, staging: string) => {
+  if (!("commit" in repo)) {
+    git(["clone", "--quiet", "--depth", "1", "--branch", ref, repo.repository, staging]);
+    return;
+  }
+  // A partial, sparse fetch of one commit: excluded paths are never downloaded.
+  git(["init", "--quiet", staging]);
+  git([
+    "-C",
+    staging,
+    "sparse-checkout",
+    "set",
+    "--no-cone",
+    "/*",
+    ...repo.exclude.map((path) => `!${path}`),
+  ]);
+  git([
+    "-C",
+    staging,
+    "fetch",
+    "--quiet",
+    "--depth",
+    "1",
+    "--filter=blob:none",
+    repo.repository,
+    ref,
+  ]);
+  git(["-C", staging, "checkout", "--quiet", "FETCH_HEAD"]);
+};
+
+const sync = (repo: ReferenceRepo) => {
+  const ref = refFor(repo);
   const target = NodePath.join(root, ".repos", repo.id);
   if (refOf(target) === ref) {
     process.stdout.write(`.repos/${repo.id} is at ${ref}.\n`);
@@ -59,22 +128,7 @@ const sync = (repo: ReferenceRepo) => {
     NodeFS.cpSync(mainCopy, staging, { recursive: true });
   } else {
     process.stdout.write(`Downloading ${repo.repository} at ${ref}...\n`);
-    NodeChildProcess.execFileSync(
-      "git",
-      [
-        "-c",
-        "advice.detachedHead=false",
-        "clone",
-        "--quiet",
-        "--depth",
-        "1",
-        "--branch",
-        ref,
-        repo.repository,
-        staging,
-      ],
-      { stdio: "inherit" },
-    );
+    download(repo, ref, staging);
     NodeFS.rmSync(NodePath.join(staging, ".git"), { recursive: true, force: true });
     NodeFS.writeFileSync(NodePath.join(staging, MARKER), `${ref}\n`);
   }

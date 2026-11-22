@@ -20,7 +20,9 @@
     "fmt": "vp fmt",
     "test": "vp run -r test",
     "knip": "knip --no-config-hints",
-    "sync:repos": "node scripts/sync-repos.ts"
+    "sync:repos": "node scripts/sync-repos.ts",
+    "ci:local": "node scripts/ci-local.ts",
+    "actionlint": "node scripts/lib/tools.ts actionlint"
   },
   "devDependencies": {
     "@effect/tsgo": "0.73.2",

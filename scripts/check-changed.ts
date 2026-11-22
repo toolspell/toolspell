@@ -1,6 +1,7 @@
 // Runs CI's fast checks for this branch's changes, so a push rarely fails CI:
 // format and lint of the changed files, knip, typecheck of the affected packages and
-// their dependents, the tests beside the changed files, and the agent-docs check.
+// their dependents, the tests beside the changed files, the agent-docs check, and actionlint
+// when a workflow changes.
 // Adapted from T3 Code's scripts/check-changed.ts (MIT).
 //
 //   vp run check:changed          compare against the merge base with origin/main (or main)
@@ -135,6 +136,9 @@ const main = async () => {
       : []),
     ...(code.length > 0 || files.some((file) => file.endsWith("package.json"))
       ? [{ name: "knip", command: ["vp", "run", "knip"] }]
+      : []),
+    ...(files.some((file) => file.startsWith(".github/"))
+      ? [{ name: "actionlint", command: ["node", "scripts/lib/tools.ts", "actionlint"] }]
       : []),
     ...(typecheckFilters.length > 0
       ? [

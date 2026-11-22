@@ -5,8 +5,9 @@
 1. Install [Vite+](https://viteplus.dev/guide/), which provides the `vp` command, and Node 24.10 or
    newer.
 2. Run `vp i` from the repository root.
-3. Run `vp run sync:repos` to download the Effect reference source into the gitignored `.repos`
-   (about 70 MB, pinned to the installed version). Rerun it after bumping `effect`.
+3. Run `vp run sync:repos` to download reference source into the gitignored `.repos`: Effect at
+   the installed version and T3 Code at a pinned commit (about 190 MB together). Rerun it after
+   bumping `effect` or re-pinning T3 Code in `scripts/sync-repos.ts`.
 4. Run `vp run dev` and open the `pairingUrl:` it prints.
 
 In a T3 Code worktree, `t3.json` runs `scripts/setup-worktree.ts` in the background on creation. It
@@ -64,6 +65,16 @@ Without `--admin` the link grants `read` and `operate` only.
 | `vp run typecheck`     | `effect-tsgo` per package, cached.                                      |
 | `vp run knip`          | Unused files, exports, and dependencies.                                |
 | `vp run ready`         | The full local gate, the same as CI. Slow; not needed for every change. |
+
+## CI before GitHub
+
+Until the repository has GitHub Actions, `vp run ci:local` runs `.github/workflows/ci.yml` with
+[act](https://github.com/nektos/act) in Docker; pass `-- -j <job>` for one job. It runs on the
+active Docker context in that engine's architecture, or on another engine with
+`--context <name>`, which copies the checkout into its containers. act and actionlint are pinned
+release binaries that `scripts/lib/tools.ts` downloads and verifies on first use;
+`check:changed` runs actionlint when a workflow changes. A green act run is evidence, not proof:
+images and caching differ from GitHub's runners.
 
 Web browser tests (`*.browser.test.tsx`) run in Playwright's headless Chromium. Install it once
 with `vp exec playwright install chromium` from `apps/web`; CI caches it per Playwright version.

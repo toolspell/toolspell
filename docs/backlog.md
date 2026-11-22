@@ -10,10 +10,6 @@ where to start, not a plan.
 - **Job list re-renders**: render metrics show every `job.progressed` event re-renders all job rows
   (600 of 780 renders in the 20-job scenario). Keep unchanged rows from re-rendering, then confirm
   with `vp run report:renders`.
-- **actionlint and `vp run ci:local`**: actionlint in `check:changed` when `.github/**` changes; act
-  runs the workflow on local Docker (arm64 images) or on a remote engine via `--context`. Contexts
-  `build-box` (Linux) and `windows-box` (Windows containers) exist and
-  were tested over SSH; `docker cp` into a Windows container needs a directory destination.
 - **Platform fixes (A)**: home dir from `os.homedir()`; graceful stdin-lifeline shutdown instead of
   a self-kill (Windows); SQLite-based home lock instead of PID files; Windows process handling in
   the dev runner (no shell, `taskkill /T`, `SIGBREAK`); `check:changed` without a shell and with
@@ -35,8 +31,9 @@ where to start, not a plan.
 - **Login-shell `PATH`** for apps launched from Finder or the Start menu; needed before the first
   real runner spawns tools (T3 Code: `apps/desktop/src/shell/DesktopShellEnvironment.ts`).
 - **Windows verification on VMs** rather than containers. Checklist below.
-- **Windows CI job**: the `windows-box` engine runs Windows containers, but act's Windows support
-  is experimental; a GitHub Windows runner is the likely route once the repo is on GitHub.
+- **Windows CI job**: the maintainer's `windows-box` docker context (Windows Server, tested
+  over SSH; `docker cp` needs a directory destination) runs Windows containers, but act's Windows
+  support is experimental; a GitHub Windows runner is the likely route once the repo is on GitHub.
 - **Desktop, later**: saved window position that survives display changes; Linux desktop entry,
   `setDesktopName` and Wayland flags; Windows AppUserModelId; deep links; secret storage
   (`safeStorage`, Linux password store); a server "ready" signal instead of polling `/health`;
