@@ -7,8 +7,8 @@ that it stays signed in until you sign it out or revoke it.
 
 - From a paired device: open **Settings → Devices** and choose **Create pairing link**. Open the
   link on the new device.
-- From the server's machine: run `toolspell pair`. Add `--admin` to let the new device manage
-  access too.
+- From the server's machine, while the server runs: run `toolspell pair`, with the same
+  `--home-dir` if the server uses one. Add `--admin` to let the new device manage access too.
 
 A link works once and expires after 10 minutes. A device can only hand out the permissions it has
 itself.

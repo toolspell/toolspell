@@ -72,9 +72,9 @@ Before calling work done, say which of these applied:
   live PID, wait for it and do not run `vp i`. It ends with `.toolspell/setup-done` or
   `.toolspell/setup-failed` (with the error tail). With no marker at all, run `vp i` yourself.
 - `vp run dev` starts server and web; `dev:server`, `dev:web`, and `dev:desktop` start parts. State
-  always lives in the checkout's gitignored `.toolspell`, never in `~/.toolspell`. `--home-dir`
-  picks another directory; `--host <host>` exposes Vite to other devices (the server stays on
-  loopback behind Vite's proxy).
+  always lives in the checkout's gitignored `.toolspell`, never in `~/.toolspell`; so does
+  `node apps/server/src/bin.ts` run from a checkout. `--home-dir` picks another directory;
+  `--host <host>` exposes Vite to other devices (the server stays on loopback behind Vite's proxy).
 - The desktop app (`dev:desktop`) runs in the background when you start it: no window on screen,
   no Dock icon, and it never takes focus from the maintainer, who works on the same machine. Drive
   and screenshot it over CDP with the
@@ -84,8 +84,8 @@ Before calling work done, say which of these applied:
 - Ports derive from the checkout path and stay stable across restarts. Read the real ones from the
   `[dev-runner]` line, since occupied ports shift.
 - The server prints a `pairingUrl:` line with admin scopes at startup. Open the full URL once in an
-  unpaired browser. For a fresh link, run
-  `node apps/server/src/bin.ts pair --home-dir .toolspell --web-origin http://localhost:<webPort>`.
+  unpaired browser. For a fresh link, run `node apps/server/src/bin.ts pair --admin` while the dev
+  server runs; it finds the server through its home and prints a link for its web origin.
 - Stop what you started, by the PID or task you tracked (rule 1). `vp` does not pass SIGTERM on, so
   signalling the `vp run dev` PID alone leaves Vite and the server running; the dev runner signals
   its whole process group.

@@ -39,7 +39,7 @@ before the first render and removes it from the address bar. Then use `preview_s
 interaction tools. If the token was used or expired (after 10 minutes), mint a fresh one:
 
 ```bash
-node apps/server/src/bin.ts pair --home-dir .toolspell --web-origin http://localhost:<webPort> --admin
+node apps/server/src/bin.ts pair --admin
 ```
 
 Keep using the same tab.

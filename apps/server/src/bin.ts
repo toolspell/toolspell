@@ -14,6 +14,7 @@ import packageJson from "../package.json" with { type: "json" };
 import { AuthStore } from "./auth/AuthStore.ts";
 import { readBootstrapToken } from "./bootstrap.ts";
 import * as ServerConfig from "./config.ts";
+import * as RuntimeState from "./persistence/RuntimeState.ts";
 import * as FakeRunner from "./runners/FakeRunner.ts";
 import * as Server from "./server.ts";
 
@@ -77,8 +78,6 @@ const pairCommand = Command.make(
   "pair",
   {
     homeDir: homeDirFlag,
-    webOrigin: webOriginFlag,
-    port: portFlag,
     admin: Flag.Boolean("admin").pipe(
       Flag.withDescription("Also allow managing access (pairing devices, revoking sessions)."),
       Flag.withDefault(false),
@@ -86,22 +85,32 @@ const pairCommand = Command.make(
   },
   (flags) =>
     Effect.gen(function* () {
-      const auth = yield* AuthStore;
-      const config = yield* ServerConfig.ServerConfig;
-      const grant = yield* auth.createPairingGrant(
-        flags.admin ? ALL_AUTH_SCOPES : STANDARD_AUTH_SCOPES,
-      );
-      yield* Console.log(`pairingUrl: ${config.webOrigin}/pair#token=${grant.token}`);
+      // Before storage opens, so pair never creates or migrates a home no server uses.
+      const server = yield* RuntimeState.findRunning();
+      const grant = yield* Effect.gen(function* () {
+        const auth = yield* AuthStore;
+        return yield* auth.createPairingGrant(flags.admin ? ALL_AUTH_SCOPES : STANDARD_AUTH_SCOPES);
+      }).pipe(Effect.provide(Server.layerAuth));
+      yield* Console.log(`pairingUrl: ${server.webOrigin}/pair#token=${grant.token}`);
     }).pipe(
       Effect.provide(
-        Layer.unwrap(
-          Effect.map(configLayer({ ...flags, host: "127.0.0.1" }), (config) =>
-            Server.layerAuth.pipe(Layer.provideMerge(config)),
-          ),
-        ),
+        ServerConfig.layer({
+          version: packageJson.version,
+          homeDir: ServerConfig.resolveHomeDir(Option.getOrUndefined(flags.homeDir)),
+          // Only the home matters here; the running server's file has its origins.
+          host: "127.0.0.1",
+          port: 0,
+          webOrigin: Option.none(),
+          staticDir: Option.none(),
+          bootstrapToken: Option.none(),
+        }),
       ),
     ),
-).pipe(Command.withDescription("Print a one-time link that pairs another browser or device."));
+).pipe(
+  Command.withDescription(
+    "Print a one-time link that pairs another browser or device with the running server.",
+  ),
+);
 
 /**
  * Set by a launcher for this process only. A child that inherited them would read an unrelated

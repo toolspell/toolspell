@@ -62,7 +62,9 @@ entry moves into an issue (labels from `.github/labels.json`) and the file is de
   for slow-start reports (`scripts/profile-startup.mjs`); a PR comment comparing budgets with main
   (`thread-transfer-report`).
 - **Server**: event-log retention and paged resume (resume currently reads every missed event);
-  seeding dev state from the live install; sharing a dev server over the tailnet.
+  seeding dev state from the live install; sharing a dev server over the tailnet; `pair` probing
+  the recorded origin, not only the PID, once a reused PID ever yields a dead link (T3 Code
+  `cli/pair.ts`).
 - **Server SQL** (from the budget tests): `id` in the `jobs_workspace` index removes the snapshot's
   temporary sort; each job command reads the job twice (decide, then project); an index on the
   events `type` would make a workspaces resume a direct lookup but costs a write per event.

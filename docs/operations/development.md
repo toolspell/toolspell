@@ -70,13 +70,17 @@ as a regular app before any of our code runs.
 ## Pairing in dev
 
 The server prints a one-time admin link at every start. It works once and expires after 10
-minutes. For a fresh one:
+minutes. For a fresh one, while the dev server runs:
 
 ```bash
-node apps/server/src/bin.ts pair --home-dir .toolspell --web-origin http://localhost:<webPort> --admin
+node apps/server/src/bin.ts pair --admin
 ```
 
-Without `--admin` the link grants `read` and `operate` only.
+Without `--admin` the link grants `read` and `operate` only. While running, the server keeps
+`userdata/server-runtime.json` in its home with its PID, its origin, and the web origin browsers
+open (Vite's in dev), and removes it on exit. `pair` reads that file, so the link points at the
+running server; it refuses when no live server uses the home, and never opens a home's database
+without one. Pass the server's `--home-dir` if it uses another home.
 
 ## Checks
 
