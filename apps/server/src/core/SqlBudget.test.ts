@@ -180,20 +180,18 @@ const paths: ReadonlyArray<{
 ];
 
 describe("SQL budgets", () => {
-  for (const path of paths) {
-    it.effect(path.name, () =>
-      Effect.gen(function* () {
-        const cursor = yield* seed;
-        const trace = traceSqlStatements();
-        yield* path.run(cursor).pipe(Effect.withTracer(trace.tracer));
-        const statements = trace.statements();
-        assert.strictEqual(statements.length, path.statements, statements.join("\n"));
-        const plans = yield* Effect.forEach(new Set(statements), (statement) =>
-          Effect.map(queryPlan(statement), (plan) => `${statement.trim()}\n  ${plan.join("\n  ")}`),
-        );
-        for (const plan of plans) assert.notMatch(plan, FULL_SCAN);
-        if (path.seeks !== undefined) assert.match(plans.join("\n"), path.seeks);
-      }).pipe(Effect.provide(layerServicesTest(emptyRunner))),
-    );
-  }
+  it.effect.each(paths)("$name", (path) =>
+    Effect.gen(function* () {
+      const cursor = yield* seed;
+      const trace = traceSqlStatements();
+      yield* path.run(cursor).pipe(Effect.withTracer(trace.tracer));
+      const statements = trace.statements();
+      assert.strictEqual(statements.length, path.statements, statements.join("\n"));
+      const plans = yield* Effect.forEach(new Set(statements), (statement) =>
+        Effect.map(queryPlan(statement), (plan) => `${statement.trim()}\n  ${plan.join("\n  ")}`),
+      );
+      for (const plan of plans) assert.notMatch(plan, FULL_SCAN);
+      if (path.seeks !== undefined) assert.match(plans.join("\n"), path.seeks);
+    }).pipe(Effect.provide(layerServicesTest(emptyRunner))),
+  );
 });
