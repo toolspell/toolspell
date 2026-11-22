@@ -1,0 +1,4 @@
+interface:
+  display_name: "ToolSpell App Testing"
+  short_description: "Test ToolSpell web and desktop in T3 Code's Browser panel"
+  default_prompt: "Use $test-toolspell-app to verify the affected web or desktop flow through T3 Code's Browser panel."
