@@ -4,6 +4,7 @@ import {
   PROTOCOL_VERSION,
   type SessionStatus,
 } from "@toolspell/contracts";
+import * as ByteSize from "effect/ByteSize";
 import * as Digest from "effect/crypto/Digest";
 import * as Effect from "effect/Effect";
 import * as Base64 from "effect/encoding/Base64";
@@ -32,6 +33,28 @@ const invalidRequest = HttpServerResponse.jsonUnsafe(
 );
 
 const unauthenticated: SessionStatus = { authenticated: false, scopes: [] };
+
+// Every body this server reads is a small JSON request; nothing uploads.
+const MAX_BODY_BYTES = 64 * 1024;
+
+const bodyTooLarge = HttpServerResponse.jsonUnsafe(
+  { message: "Request body is too large." },
+  { status: 413 },
+);
+
+/**
+ * Caps every request body, on every route. A declared length over the cap gets 413 before any
+ * byte is read; a chunked body gets it as soon as the bytes read pass the cap.
+ */
+const bodySizeLimit = HttpRouter.middleware(
+  (httpEffect) =>
+    Effect.gen(function* () {
+      const request = yield* HttpServerRequest.HttpServerRequest;
+      if (Number(request.headers["content-length"] ?? 0) > MAX_BODY_BYTES) return bodyTooLarge;
+      return yield* httpEffect;
+    }).pipe(Effect.provideService(HttpServerRequest.MaxBodySize, ByteSize.bytes(MAX_BODY_BYTES))),
+  { global: true },
+);
 
 /** Whether a browser request comes from a page this server (or its dev proxy) served. */
 export const isSameOriginRequest = Effect.fn("http.isSameOriginRequest")(function* (
@@ -100,7 +123,12 @@ const pairRoute = HttpRouter.add(
       PairingFailedError: (error) =>
         Effect.succeed(HttpServerResponse.jsonUnsafe({ message: error.message }, { status: 401 })),
       SchemaError: () => Effect.succeed(invalidRequest),
-      HttpServerError: () => Effect.succeed(invalidRequest),
+      HttpServerError: ({ reason }) =>
+        Effect.succeed(
+          reason._tag === "RequestParseError" && reason.reason === "BodyTooLarge"
+            ? bodyTooLarge
+            : invalidRequest,
+        ),
     }),
     Effect.orDie,
   ),
@@ -181,4 +209,10 @@ export const staticRoutes = Layer.unwrap(
   }),
 );
 
-export const routes = Layer.mergeAll(healthRoute, pairRoute, sessionRoute, staticRoutes);
+export const routes = Layer.mergeAll(
+  bodySizeLimit,
+  healthRoute,
+  pairRoute,
+  sessionRoute,
+  staticRoutes,
+);

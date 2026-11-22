@@ -2,6 +2,7 @@
 import * as NodeHttpPlatform from "@effect/platform-node/NodeHttpPlatform";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { assert, describe, it } from "@effect/vitest";
+import { AUTH_HTTP_PATHS } from "@toolspell/contracts";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import { HttpRouter } from "effect/http";
@@ -10,7 +11,9 @@ import * as NodeOS from "node:os";
 import * as NodePath from "node:path";
 
 import * as ServerConfig from "./config.ts";
-import { staticRoutes } from "./http.ts";
+import { routes, staticRoutes } from "./http.ts";
+import * as FakeRunner from "./runners/FakeRunner.ts";
+import { layerServicesTest } from "./testkit.ts";
 
 describe("static client routes", () => {
   it("send a Content-Security-Policy with pages but not with assets", async () => {
@@ -51,6 +54,59 @@ describe("static client routes", () => {
     } finally {
       await dispose();
       NodeFS.rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+/** A request body that counts the bytes the server pulled from it. */
+const countedBody = (bytes: number) => {
+  const chunk = new Uint8Array(16 * 1024).fill(0x20);
+  let sent = 0;
+  const body = new ReadableStream<Uint8Array>(
+    {
+      pull: (controller) => {
+        if (sent >= bytes) return controller.close();
+        sent += chunk.byteLength;
+        controller.enqueue(chunk);
+      },
+    },
+    // Nothing is read ahead, so `pulled` counts only what the server asked for.
+    { highWaterMark: 0 },
+  );
+  return { body, pulled: () => sent };
+};
+
+describe("request bodies", () => {
+  it.each([
+    // Refused on the header alone.
+    { name: "a declared length over the cap", declared: true, maxPulled: 0 },
+    // Read up to the 64 KiB cap plus the chunk that crossed it.
+    { name: "a chunked body over the cap", declared: false, maxPulled: 80 * 1024 },
+  ])("$name gets 413 before the body is buffered", async ({ declared, maxPulled }) => {
+    const { handler, dispose } = HttpRouter.toWebHandler(
+      routes.pipe(
+        Layer.provideMerge(layerServicesTest(FakeRunner.layer())),
+        Layer.provide(NodeHttpPlatform.layer),
+      ),
+      { disableLogger: true },
+    );
+    const pair = (init: RequestInit) =>
+      handler(new Request(`http://localhost${AUTH_HTTP_PATHS.pair}`, { method: "POST", ...init }));
+    try {
+      const length = 1024 * 1024;
+      const { body, pulled } = countedBody(length);
+      const response = await pair({
+        headers: declared ? { "content-length": String(length) } : {},
+        body,
+        duplex: "half",
+      });
+      assert.strictEqual(response.status, 413);
+      assert.isAtMost(pulled(), maxPulled);
+      // A small body still reaches the route, which rejects the unknown token.
+      const small = await pair({ body: JSON.stringify({ token: "unknown" }) });
+      assert.strictEqual(small.status, 401);
+    } finally {
+      await dispose();
     }
   });
 });
