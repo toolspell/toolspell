@@ -18,15 +18,17 @@ const sourceFiles = (dir: string): ReadonlyArray<string> =>
     .filter((file) => !file.endsWith(".gen.ts"))
     .map((file) => NodePath.join(repoRoot, dir, file));
 
-const IMPORT = /(?:import|export)\s+(type\s+)?[^;]*?from\s+"([^"]+)"|import\("([^"]+)"\)/g;
+const IMPORT =
+  /(?:import|export)\s+(type\s+)?[^;]*?from\s+"([^"]+)"|import\("([^"]+)"\)|import\s+"([^"]+)"/g;
 const needsPrebundle = (specifier: string) =>
   !/^[.~]|^node:|^@toolspell\//.test(specifier) && specifier !== "vite-plus/test";
 
 const importedPackages = () => {
   const found = new Set<string>();
   for (const file of browserReachable.flatMap(sourceFiles)) {
-    for (const [, typeOnly, from, dynamic] of NodeFS.readFileSync(file, "utf8").matchAll(IMPORT)) {
-      const specifier = from ?? dynamic;
+    const source = NodeFS.readFileSync(file, "utf8");
+    for (const [, typeOnly, from, dynamic, bare] of source.matchAll(IMPORT)) {
+      const specifier = from ?? dynamic ?? bare;
       if (typeOnly === undefined && specifier !== undefined && needsPrebundle(specifier)) {
         found.add(specifier);
       }
