@@ -5,7 +5,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import * as Hash from "effect/Hash";
-import { defineConfig, mergeConfig } from "vite-plus";
+import { defineConfig, mergeConfig, type Plugin } from "vite-plus";
 import { playwright } from "vite-plus/test/browser-playwright";
 import { defineProject, type TestProjectInlineConfiguration } from "vite-plus/test/config";
 
@@ -119,6 +119,30 @@ const renderScenariosProject = {
   },
 } satisfies TestProjectInlineConfiguration;
 
+// Adapted from T3 Code (MIT). A static import cycle between chunks can run a chunk before the
+// values it imports exist, which blanks the app at boot. Fail the build instead of shipping it.
+function chunkCycleGuardPlugin(): Plugin {
+  return {
+    name: "toolspell:chunk-cycle-guard",
+    apply: "build",
+    generateBundle(_options, bundle) {
+      const done = new Set<string>();
+      const visit = (fileName: string, path: ReadonlyArray<string>) => {
+        if (done.has(fileName)) return;
+        const start = path.indexOf(fileName);
+        if (start !== -1) {
+          this.error(`Chunk import cycle: ${[...path.slice(start), fileName].join(" -> ")}`);
+        }
+        const chunk = bundle[fileName];
+        if (chunk?.type !== "chunk") return;
+        for (const imported of chunk.imports) visit(imported, [...path, fileName]);
+        done.add(fileName);
+      };
+      for (const fileName of Object.keys(bundle)) visit(fileName, []);
+    },
+  };
+}
+
 export default mergeConfig(
   basePackageConfig,
   defineConfig({
@@ -126,6 +150,7 @@ export default mergeConfig(
       tanstackRouter({ target: "react", autoCodeSplitting: true }),
       react({ compiler: true }),
       tailwindcss(),
+      chunkCycleGuardPlugin(),
     ],
     resolve: {
       alias: { "~": new URL("./src", import.meta.url).pathname },
