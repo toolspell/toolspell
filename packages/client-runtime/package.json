@@ -12,6 +12,10 @@
     "./views": {
       "types": "./src/views.ts",
       "import": "./src/views.ts"
+    },
+    "./preferences": {
+      "types": "./src/preferences.ts",
+      "import": "./src/preferences.ts"
     }
   },
   "scripts": {
