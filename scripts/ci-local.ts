@@ -8,6 +8,9 @@
 // not proof. Remote engines cannot see this machine's files, so act copies the checkout into
 // its containers instead of mounting it.
 import * as NodeChildProcess from "node:child_process";
+import * as NodeFS from "node:fs";
+import * as NodeOS from "node:os";
+import * as NodePath from "node:path";
 
 import { runTool } from "./lib/tools.ts";
 
@@ -25,6 +28,39 @@ export const parseArgs = (argv: ReadonlyArray<string>) => {
     throw new Error("Usage: ci:local [--context <docker context>] [-- <act arguments>]");
   }
   return { context, passthrough };
+};
+
+const git = (cwd: string, args: ReadonlyArray<string>) =>
+  NodeChildProcess.execFileSync("git", ["-c", "core.quotePath=false", ...args], {
+    cwd,
+    encoding: "utf8",
+  });
+
+/**
+ * act copies the checkout into its containers. In a git worktree `.git` is only a pointer to
+ * the main checkout, which the container lacks, so git fails there. A worktree therefore runs
+ * from a temporary clone of the same commit with the uncommitted changes copied over.
+ */
+const standaloneCheckout = (root: string) => {
+  if (NodeFS.statSync(NodePath.join(root, ".git")).isDirectory()) {
+    return { dir: root, cleanup: () => undefined };
+  }
+  const dir = NodeFS.mkdtempSync(NodePath.join(NodeOS.tmpdir(), "toolspell-ci-"));
+  git(root, ["clone", "--quiet", "--no-hardlinks", root, dir]);
+  git(dir, ["checkout", "--quiet", "--detach", git(root, ["rev-parse", "HEAD"]).trim()]);
+  const list = (args: ReadonlyArray<string>) =>
+    git(root, ["ls-files", "-z", ...args])
+      .split("\0")
+      .filter(Boolean);
+  for (const file of list(["--modified", "--others", "--exclude-standard"])) {
+    const source = NodePath.join(root, file);
+    if (!NodeFS.existsSync(source)) continue;
+    NodeFS.mkdirSync(NodePath.dirname(NodePath.join(dir, file)), { recursive: true });
+    NodeFS.copyFileSync(source, NodePath.join(dir, file));
+  }
+  for (const file of list(["--deleted"])) NodeFS.rmSync(NodePath.join(dir, file), { force: true });
+  process.stderr.write(`[ci:local] running from a temporary clone of this worktree: ${dir}\n`);
+  return { dir, cleanup: () => NodeFS.rmSync(dir, { recursive: true, force: true }) };
 };
 
 const dockerOutput = (args: ReadonlyArray<string>) =>
@@ -51,6 +87,7 @@ const main = async () => {
   process.stderr.write(
     `[ci:local] engine=${context ?? "local"} architecture=${architecture} image=${UBUNTU_IMAGE}\n`,
   );
+  const checkout = standaloneCheckout(NodePath.dirname(import.meta.dirname));
   process.exitCode = await runTool(
     "act",
     [
@@ -63,7 +100,8 @@ const main = async () => {
       ...passthrough,
     ],
     env,
-  );
+    checkout.dir,
+  ).finally(checkout.cleanup);
 };
 
 if (import.meta.main) await main();

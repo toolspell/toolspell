@@ -111,10 +111,11 @@ export const runTool = async (
   name: ToolName,
   args: ReadonlyArray<string>,
   env: NodeJS.ProcessEnv = process.env,
+  cwd: string = process.cwd(),
 ) => {
   const binary = await ensureTool(name);
   return new Promise<number>((resolve) => {
-    const child = NodeChildProcess.spawn(binary, args, { stdio: "inherit", env });
+    const child = NodeChildProcess.spawn(binary, args, { stdio: "inherit", env, cwd });
     child.on("close", (code) => resolve(code ?? 1));
   });
 };
