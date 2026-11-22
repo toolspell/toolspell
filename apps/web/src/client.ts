@@ -3,6 +3,7 @@ import { makeDevicePreferences } from "@toolspell/client-runtime/preferences";
 import * as KeyValueStore from "effect/persistence/KeyValueStore";
 import * as Atom from "effect/reactivity/Atom";
 
+import { randomUUID } from "./lib/randomUUID.ts";
 import { THEME_IDS } from "./theme.ts";
 
 /** The web client always talks to the origin that served it (Vite proxies in dev). */
@@ -16,7 +17,7 @@ export const preferences = makeDevicePreferences({
 /** Set when a pairing link failed, so the pairing screen can say why. */
 export const pairingErrorAtom = Atom.make<string | null>(null).pipe(Atom.keepAlive);
 
-export const newId = (): string => crypto.randomUUID();
+export const newId = (): string => randomUUID();
 
 /** Turns a rejected call into text for the user. Tagged server errors carry a message. */
 export const errorMessage = (error: unknown): string =>
