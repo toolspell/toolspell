@@ -24,7 +24,7 @@ export const PROTOCOL_VERSION = 1;
 export const PROTOCOL_QUERY_PARAM = "protocol";
 export const WS_PATH = "/ws";
 
-export const ServerInfo = Schema.Struct({
+const ServerInfo = Schema.Struct({
   version: Schema.String,
   protocolVersion: Schema.Int,
   scopes: Schema.Array(AuthScope),
@@ -48,7 +48,7 @@ export const EventsBatch = Schema.Struct({
 });
 export type EventsBatch = typeof EventsBatch.Type;
 
-export const WorkspacesSnapshot = Schema.Struct({
+const WorkspacesSnapshot = Schema.Struct({
   type: Schema.tag("snapshot"),
   sequence: EventSequence,
   workspaces: ForwardCompatibleArray(Workspace),
@@ -58,7 +58,7 @@ export type WorkspacesSnapshot = typeof WorkspacesSnapshot.Type;
 export const WorkspacesStreamItem = Schema.Union([WorkspacesSnapshot, EventsBatch]);
 export type WorkspacesStreamItem = typeof WorkspacesStreamItem.Type;
 
-export const JobsSnapshot = Schema.Struct({
+const JobsSnapshot = Schema.Struct({
   type: Schema.tag("snapshot"),
   sequence: EventSequence,
   workspaceId: WorkspaceId,
@@ -79,38 +79,38 @@ export const RPC_METHODS = {
   authRevokeSession: "auth.revokeSession",
 } as const;
 
-export const ServerGetInfoRpc = Rpc.make(RPC_METHODS.serverGetInfo, {
+const ServerGetInfoRpc = Rpc.make(RPC_METHODS.serverGetInfo, {
   success: ServerInfo,
 });
 
-export const CommandsDispatchRpc = Rpc.make(RPC_METHODS.commandsDispatch, {
+const CommandsDispatchRpc = Rpc.make(RPC_METHODS.commandsDispatch, {
   payload: ClientCommand,
   success: DispatchResult,
   error: CommandRejectedError,
 });
 
-export const WorkspacesSubscribeRpc = Rpc.make(RPC_METHODS.workspacesSubscribe, {
+const WorkspacesSubscribeRpc = Rpc.make(RPC_METHODS.workspacesSubscribe, {
   payload: Schema.Struct(StreamResume),
   success: WorkspacesStreamItem,
   stream: true,
 });
 
-export const JobsSubscribeRpc = Rpc.make(RPC_METHODS.jobsSubscribe, {
+const JobsSubscribeRpc = Rpc.make(RPC_METHODS.jobsSubscribe, {
   payload: Schema.Struct({ workspaceId: WorkspaceId, ...StreamResume }),
   success: JobsStreamItem,
   stream: true,
 });
 
-export const AuthCreatePairingGrantRpc = Rpc.make(RPC_METHODS.authCreatePairingGrant, {
+const AuthCreatePairingGrantRpc = Rpc.make(RPC_METHODS.authCreatePairingGrant, {
   payload: Schema.Struct({ scopes: Schema.Array(AuthScope) }),
   success: PairingGrant,
 });
 
-export const AuthListSessionsRpc = Rpc.make(RPC_METHODS.authListSessions, {
+const AuthListSessionsRpc = Rpc.make(RPC_METHODS.authListSessions, {
   success: Schema.Array(AuthSession),
 });
 
-export const AuthRevokeSessionRpc = Rpc.make(RPC_METHODS.authRevokeSession, {
+const AuthRevokeSessionRpc = Rpc.make(RPC_METHODS.authRevokeSession, {
   payload: Schema.Struct({ sessionId: AuthSessionId }),
 });
 

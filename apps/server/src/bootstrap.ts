@@ -5,10 +5,10 @@ import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
 import * as NodeFS from "node:fs";
 
-export class BootstrapReadError extends Schema.TaggedError<BootstrapReadError>()(
-  "BootstrapReadError",
-  { fd: Schema.Number, message: Schema.String },
-) {}
+class BootstrapReadError extends Schema.TaggedError<BootstrapReadError>()("BootstrapReadError", {
+  fd: Schema.Number,
+  message: Schema.String,
+}) {}
 
 /**
  * A launcher such as the desktop app writes a one-time pairing token to an inherited

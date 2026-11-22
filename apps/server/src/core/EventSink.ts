@@ -73,7 +73,7 @@ const toEnvelopes = (rows: ReadonlyArray<EventRow>): ReadonlyArray<EventEnvelope
     }),
   );
 
-export const make = Effect.gen(function* () {
+const make = Effect.gen(function* () {
   const sql = yield* SqlClient.SqlClient;
   const projections = yield* ProjectionStore;
   const published = yield* PubSub.unbounded<EventEnvelope>();

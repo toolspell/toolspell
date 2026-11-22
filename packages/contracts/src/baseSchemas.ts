@@ -17,7 +17,7 @@ export const TrimmedNonEmptyString = Schema.String.pipe(
   }),
 );
 
-export const NonNegativeInt = Schema.Int.check(Schema.isGreaterThanOrEqualTo(0));
+const NonNegativeInt = Schema.Int.check(Schema.isGreaterThanOrEqualTo(0));
 
 /** Milliseconds since the epoch. Plain numbers keep the wire format small and sortable. */
 export const EpochMillis = NonNegativeInt;

@@ -52,7 +52,7 @@ export class ProjectionStore extends Context.Service<ProjectionStore, Projection
   "toolspell/core/ProjectionStore",
 ) {}
 
-export const make = Effect.gen(function* () {
+const make = Effect.gen(function* () {
   const sql = yield* SqlClient.SqlClient;
 
   // A row this build cannot decode is a bug or a downgrade; fail loudly instead of hiding it.

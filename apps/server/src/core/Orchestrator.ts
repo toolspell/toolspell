@@ -27,7 +27,7 @@ export class Orchestrator extends Context.Service<Orchestrator, OrchestratorShap
 
 const INTERNAL_COMMAND_ID = CommandId.make("internal");
 
-export const make = Effect.gen(function* () {
+const make = Effect.gen(function* () {
   const sink = yield* EventSink;
   const projections = yield* ProjectionStore;
   // Commands are decided one at a time, so each decision sees the result of the previous one.

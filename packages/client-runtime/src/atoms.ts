@@ -45,7 +45,7 @@ export type ConnectionStatus = "connecting" | "connected" | "reconnecting";
 const makeRpc = RpcClient.make(ToolSpellRpcs, { flatten: true });
 type Rpc = Effect.Success<typeof makeRpc>;
 
-export class RpcConnection extends Context.Service<RpcConnection, Rpc>()(
+class RpcConnection extends Context.Service<RpcConnection, Rpc>()(
   "@toolspell/client-runtime/atoms/RpcConnection",
 ) {}
 

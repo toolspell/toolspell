@@ -24,7 +24,6 @@
     "react-dom": "catalog:"
   },
   "devDependencies": {
-    "@effect/vitest": "catalog:",
     "@tailwindcss/vite": "catalog:",
     "@tanstack/router-plugin": "catalog:",
     "@types/react": "catalog:",

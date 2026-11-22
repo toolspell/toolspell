@@ -13,7 +13,7 @@ import * as Result from "effect/Result";
 import * as Schema from "effect/Schema";
 
 // Commands the server sends itself as side effects report back. They never cross the wire.
-export const InternalCommand = Schema.Union([
+const InternalCommand = Schema.Union([
   Schema.Struct({ type: Schema.tag("job.markStarted"), jobId: JobId }),
   Schema.Struct({
     type: Schema.tag("job.reportProgress"),

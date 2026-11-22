@@ -31,7 +31,7 @@ export class Subscriptions extends Context.Service<Subscriptions, SubscriptionsS
   "toolspell/core/Subscriptions",
 ) {}
 
-export const make = Effect.gen(function* () {
+const make = Effect.gen(function* () {
   const sql = yield* SqlClient.SqlClient;
   const sink = yield* EventSink;
   const projections = yield* ProjectionStore;

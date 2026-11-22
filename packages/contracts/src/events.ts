@@ -12,32 +12,32 @@ import { JobProgress } from "./domain.ts";
 // Events are stored and replayed, so a change here must still decode old rows.
 // Add optional fields or new event types; never repurpose an existing one.
 
-export const WorkspaceCreatedEvent = Schema.Struct({
+const WorkspaceCreatedEvent = Schema.Struct({
   type: Schema.tag("workspace.created"),
   workspaceId: WorkspaceId,
   name: TrimmedNonEmptyString,
 });
 
-export const WorkspaceRenamedEvent = Schema.Struct({
+const WorkspaceRenamedEvent = Schema.Struct({
   type: Schema.tag("workspace.renamed"),
   workspaceId: WorkspaceId,
   name: TrimmedNonEmptyString,
 });
 
-export const JobQueuedEvent = Schema.Struct({
+const JobQueuedEvent = Schema.Struct({
   type: Schema.tag("job.queued"),
   jobId: JobId,
   workspaceId: WorkspaceId,
   input: TrimmedNonEmptyString,
 });
 
-export const JobStartedEvent = Schema.Struct({
+const JobStartedEvent = Schema.Struct({
   type: Schema.tag("job.started"),
   jobId: JobId,
   workspaceId: WorkspaceId,
 });
 
-export const JobProgressedEvent = Schema.Struct({
+const JobProgressedEvent = Schema.Struct({
   type: Schema.tag("job.progressed"),
   jobId: JobId,
   workspaceId: WorkspaceId,
@@ -45,21 +45,21 @@ export const JobProgressedEvent = Schema.Struct({
   message: Schema.NullOr(Schema.String),
 });
 
-export const JobSucceededEvent = Schema.Struct({
+const JobSucceededEvent = Schema.Struct({
   type: Schema.tag("job.succeeded"),
   jobId: JobId,
   workspaceId: WorkspaceId,
   output: Schema.String,
 });
 
-export const JobFailedEvent = Schema.Struct({
+const JobFailedEvent = Schema.Struct({
   type: Schema.tag("job.failed"),
   jobId: JobId,
   workspaceId: WorkspaceId,
   error: Schema.String,
 });
 
-export const JobCancelledEvent = Schema.Struct({
+const JobCancelledEvent = Schema.Struct({
   type: Schema.tag("job.cancelled"),
   jobId: JobId,
   workspaceId: WorkspaceId,

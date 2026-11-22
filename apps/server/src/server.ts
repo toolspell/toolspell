@@ -50,7 +50,7 @@ const layerStartupAccess = Layer.effectDiscard(
   }),
 );
 
-export const layerHttpServer = Layer.unwrap(
+const layerHttpServer = Layer.unwrap(
   Effect.gen(function* () {
     const config = yield* ServerConfig;
     return HttpRouter.serve(Layer.mergeAll(Http.routes, Ws.route)).pipe(

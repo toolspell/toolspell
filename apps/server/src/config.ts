@@ -35,7 +35,7 @@ export interface ServerConfigInput {
   readonly bootstrapToken: Option.Option<Redacted.Redacted<string>>;
 }
 
-export const make = Effect.fn("ServerConfig.make")(function* (input: ServerConfigInput) {
+const make = Effect.fn("ServerConfig.make")(function* (input: ServerConfigInput) {
   const path = yield* Path.Path;
   const homeDir = path.resolve(input.homeDir);
   const stateDir = path.join(homeDir, "userdata");

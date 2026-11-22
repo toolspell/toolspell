@@ -14,15 +14,17 @@
     "start:desktop": "vp run --filter @toolspell/desktop start",
     "typecheck": "vp run -r --cache typecheck",
     "check:changed": "node scripts/check-changed.ts",
-    "ready": "vp fmt --check && vp lint && vp run -r --cache typecheck && vp run -r test",
+    "ready": "vp fmt --check && vp lint && vp run knip && vp run -r --cache typecheck && vp run -r test",
     "lint": "vp lint --report-unused-disable-directives",
     "fmt": "vp fmt",
-    "test": "vp run -r test"
+    "test": "vp run -r test",
+    "knip": "knip --no-config-hints"
   },
   "devDependencies": {
     "@effect/tsgo": "0.73.2",
     "@shadcn/lint": "0.2.5",
     "@types/node": "catalog:",
+    "knip": "6.47.0",
     "vite-plus": "catalog:"
   },
   "devEngines": {

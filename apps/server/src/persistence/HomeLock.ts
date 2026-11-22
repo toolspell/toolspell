@@ -7,7 +7,7 @@ import * as NodePath from "node:path";
 
 import { ServerConfig } from "../config.ts";
 
-export class HomeInUseError extends Schema.TaggedError<HomeInUseError>()("HomeInUseError", {
+class HomeInUseError extends Schema.TaggedError<HomeInUseError>()("HomeInUseError", {
   stateDir: Schema.String,
   pid: Schema.Number,
 }) {

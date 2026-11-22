@@ -5,21 +5,21 @@ import { CommandId, JobId, TrimmedNonEmptyString, WorkspaceId } from "./baseSche
 // Clients generate entity ids, so they can navigate to a new record before the
 // server confirms it, and a retried command targets the same record.
 
-export const WorkspaceCreateCommand = Schema.Struct({
+const WorkspaceCreateCommand = Schema.Struct({
   type: Schema.tag("workspace.create"),
   commandId: CommandId,
   workspaceId: WorkspaceId,
   name: TrimmedNonEmptyString,
 });
 
-export const WorkspaceRenameCommand = Schema.Struct({
+const WorkspaceRenameCommand = Schema.Struct({
   type: Schema.tag("workspace.rename"),
   commandId: CommandId,
   workspaceId: WorkspaceId,
   name: TrimmedNonEmptyString,
 });
 
-export const JobStartCommand = Schema.Struct({
+const JobStartCommand = Schema.Struct({
   type: Schema.tag("job.start"),
   commandId: CommandId,
   jobId: JobId,
@@ -27,7 +27,7 @@ export const JobStartCommand = Schema.Struct({
   input: TrimmedNonEmptyString,
 });
 
-export const JobCancelCommand = Schema.Struct({
+const JobCancelCommand = Schema.Struct({
   type: Schema.tag("job.cancel"),
   commandId: CommandId,
   jobId: JobId,

@@ -25,10 +25,9 @@ import * as Stream from "effect/Stream";
 
 export const PAIRING_GRANT_TTL = Duration.minutes(10);
 
-export class PairingFailedError extends Schema.TaggedError<PairingFailedError>()(
-  "PairingFailedError",
-  { message: Schema.String },
-) {}
+class PairingFailedError extends Schema.TaggedError<PairingFailedError>()("PairingFailedError", {
+  message: Schema.String,
+}) {}
 
 export interface AuthenticatedSession {
   readonly id: AuthSessionId;
@@ -79,7 +78,7 @@ interface SessionRow {
   readonly last_seen_at: number;
 }
 
-export const make = Effect.gen(function* () {
+const make = Effect.gen(function* () {
   const sql = yield* SqlClient.SqlClient;
   const random = yield* SecureRandom.SecureRandom;
   const digest = yield* Digest.Digest;
