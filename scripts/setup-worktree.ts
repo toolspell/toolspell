@@ -13,6 +13,24 @@ const runningMarker = NodePath.join(markerDir, "setup-running");
 const doneMarker = NodePath.join(markerDir, "setup-done");
 const failedMarker = NodePath.join(markerDir, "setup-failed");
 
+/** Signal 0 only probes; EPERM means the process exists under another user. */
+const isAlive = (pid: number) => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === "EPERM";
+  }
+};
+
+const runningPid = NodeFS.existsSync(runningMarker)
+  ? Number(NodeFS.readFileSync(runningMarker, "utf8").trim())
+  : 0;
+if (Number.isInteger(runningPid) && runningPid > 0 && isAlive(runningPid)) {
+  process.stderr.write(`Setup is already running here (PID ${runningPid}); wait for it to end.\n`);
+  process.exit(1);
+}
+
 NodeFS.rmSync(doneMarker, { force: true });
 NodeFS.rmSync(failedMarker, { force: true });
 NodeFS.mkdirSync(markerDir, { recursive: true });
@@ -37,10 +55,16 @@ for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
   });
 }
 
-const projectRoot = process.env.T3CODE_PROJECT_ROOT;
-if (!projectRoot) {
-  throw new Error("T3CODE_PROJECT_ROOT is not set. Run this through the t3.json setup action.");
-}
+// T3 Code names the main checkout; by hand, git's shared directory sits inside it.
+const projectRoot =
+  process.env.T3CODE_PROJECT_ROOT ||
+  NodePath.dirname(
+    NodeChildProcess.execFileSync(
+      "git",
+      ["rev-parse", "--path-format=absolute", "--git-common-dir"],
+      { cwd: worktree, encoding: "utf8" },
+    ).trim(),
+  );
 
 // A stale lockfile must fail, not be rewritten. Closed stdin makes prompts fail. A shell finds
 // the Windows vp shim; scripts/lib/vp.ts cannot help, since vite-plus is not installed yet.
@@ -107,6 +131,7 @@ for (const file of ENV_FILES) {
 // Reference source is a convenience for agents; a failed sync must not fail setup.
 const repos = NodeChildProcess.spawnSync(process.execPath, ["scripts/sync-repos.ts"], {
   cwd: worktree,
+  env: { ...process.env, T3CODE_PROJECT_ROOT: projectRoot },
   stdio: "inherit",
 });
 if (repos.status !== 0) {
