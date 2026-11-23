@@ -5,14 +5,26 @@
 1. Install [Vite+](https://viteplus.dev/guide/), which provides the `vp` command and the Node
    version pinned in `package.json` (`engines.node`), so no separate Node install is needed.
 2. Run `vp i` from the repository root.
-3. Run `vp run sync:repos` to download reference source into the gitignored `.repos`: Effect at
-   the installed version and T3 Code at a pinned commit (about 190 MB together). Rerun it after
-   bumping `effect` or re-pinning T3 Code in `scripts/sync-repos.ts`.
-4. Run `vp run dev` and open the `pairingUrl:` it prints.
+3. Run `vp run dev` and open the `pairingUrl:` it prints.
+
+On Windows, clone with Git's long-path support enabled. The committed dependency sources under
+`.repos/` can otherwise make checkout fail with `Filename too long`:
+
+```powershell
+git clone -c core.longpaths=true https://github.com/toolspell/toolspell.git
+```
+
+This saves the setting in the new clone before checkout, without changing your global Git settings.
+
+`.repos/` holds the source of key dependencies at their installed version (today Effect). After
+bumping one, run `vp run sync:repos` and commit the refreshed source with the bump. Reference apps
+(today T3 Code) are configured in [`scripts/sync-repos.ts`](../../scripts/sync-repos.ts), fetched
+into the gitignored `.reference-apps/` with `vp run sync:repos --app <id>`, and each has a
+`reference-<id>` skill. Adding one means an entry there and a skill.
 
 In a T3 Code worktree, `t3.json` runs `scripts/setup-worktree.ts` in the background on creation. It
 writes `.toolspell/setup-running` with its PID and ends with `.toolspell/setup-done` or
-`.toolspell/setup-failed` (with the error tail). It also copies the main checkout's `.repos`. While
+`.toolspell/setup-failed` (with the error tail). It also links the main checkout's `.env`. While
 setup runs, do not run `vp i` yourself. In a worktree made by hand, run
 `node scripts/setup-worktree.ts`; it finds the main checkout through git and refuses to start while
 another setup runs in that worktree.

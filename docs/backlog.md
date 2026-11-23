@@ -8,17 +8,6 @@ entry moves into an issue (labels from `.github/labels.json`) and the file is de
 - Add an entry when something is deliberately deferred; remove it in the commit that lands it.
 - Keep entries short: the decision and where to start, not a plan.
 
-## Next up (council review, 22.11.2026)
-
-Rated "now" by the review council and left for the maintainer's review, most important first.
-Reviewers: Opus 5.5 and GPT 6.2 Sol (two lenses each), Fable 5.2 and GPT 6.2 Astra.
-
-- **Reference source on every worktree setup** (Sol): setup copies `.repos` (Effect and T3 Code
-  sources, 189 MB) from the main checkout into each new worktree before it reports done, and
-  downloads it when the main checkout has none, although most changes never read it. Option: finish
-  setup after the install and fetch `.repos` on demand (`vp run sync:repos`), with an AGENTS.md
-  line that agents sync before reading it. The maintainer looks at this first; do not act yet.
-
 ## Revisit later
 
 - **Move this backlog to GitHub Issues** at the first public push, then delete this file and point
@@ -56,7 +45,7 @@ Reviewers: Opus 5.5 and GPT 6.2 Sol (two lenses each), Fable 5.2 and GPT 6.2 Ast
   clearing the GPU cache after an Electron upgrade; live theme switching on Linux.
 - **Platform, later**: a 1 s read timeout for the bootstrap fd, as T3 Code does (on macOS and
   Linux a stray `TOOLSPELL_BOOTSTRAP_FD` hits one of Node's own fds); no copy-on-write for the
-  state directory on btrfs; warn when the pnpm store is on another filesystem; Windows long paths for `.repos`; a bootstrap-fd read that treats a
+  state directory on btrfs; warn when the pnpm store is on another filesystem; a bootstrap-fd read that treats a
   missing fd as "no token"; Cmd versus Ctrl helpers once the web app has shortcuts.
 - **GitHub, once pushed**: Dependabot for `github-actions` only, to keep the SHA pins fresh; a
   `~/.vite-plus` and pnpm store cache saved only on main (T3 Code `.github/actions/setup-ci-deps`).

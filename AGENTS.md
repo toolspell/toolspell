@@ -193,16 +193,13 @@ Architecture and its constraints: [overview](docs/internals/overview.md).
   reducers. No heavy runtime logic.
 - `packages/client-runtime`: connection, reconnect, and live views shared by every client.
 - `oxlint-plugin-toolspell`: the repo's own lint rules. `scripts`: dev runner and checks.
-- `.repos/effect`: read-only Effect source at the installed version. Read `.repos/effect/LLMS.md`
-  before writing Effect code, `MIGRATION.md` for Effect 3 habits that changed in 4, and
-  `packages/*/test` for real API usage. Prefer its patterns over invented ones; never edit or import
-  from it. It is gitignored: worktree setup fills it, and `vp run sync:repos` does after a bump or
-  when it is missing.
-- `.repos/t3code`: T3 Code at a pinned commit, the battle-proven app ToolSpell grew from; same sync.
-  For a problem T3 Code has likely solved (desktop, platforms, auth, connections, CI, packaging),
-  start at its `docs/internals` and the files they link. Adopt its approach when it fits ToolSpell's
-  size; otherwise pick a simpler or better one and say why. It is a reference, not a template: never
-  copy its feature scope or names (`t3`, `T3CODE_*`), and credit adapted files (T3 Code, MIT).
+- `.repos/<package>`: committed source of a key dependency at its installed version (today
+  Effect: read `.repos/effect/LLMS.md` before writing Effect code, `MIGRATION.md` for Effect 3
+  habits that changed in 4, `packages/*/test` for real API usage). Never edit or import from it.
+- `.reference-apps/<app>`: other products to learn from, gitignored. Before designing something
+  another product has likely solved, use that app's `reference-<app>` skill, and fetch an app
+  only when the task needs it. Adopt an approach when it fits ToolSpell's size, never the app's
+  feature scope or names, and credit adapted files.
 
 ## Taste
 
