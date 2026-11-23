@@ -2,6 +2,7 @@ import { defineConfig } from "vite-plus";
 
 const TEST_EXCLUDE = [
   "**/.repos/**",
+  "**/.reference-apps/**",
   "**/.toolspell/**",
   "**/.t3/**",
   "**/node_modules/**",
@@ -57,12 +58,17 @@ export default defineConfig({
       : {}),
   },
   staged: {
-    // In order, so lint reads the formatted file.
-    "*": ["vp fmt --no-error-on-unmatched-pattern", "vp lint --no-error-on-unmatched-pattern"],
+    // In order, so lint reads the formatted file. Committed reference sources (`.repos`) match
+    // nothing, so a dependency bump commits them without formatting or linting thousands of files.
+    "{*,!(.repos)/**}": [
+      "vp fmt --no-error-on-unmatched-pattern",
+      "vp lint --no-error-on-unmatched-pattern",
+    ],
   },
   fmt: {
     ignorePatterns: [
       ".repos",
+      ".reference-apps",
       // Macroscope requires one glob per line; Markdown formatting corrupts it.
       ".macroscope/ignore.md",
       "dist",
@@ -77,6 +83,7 @@ export default defineConfig({
   lint: {
     ignorePatterns: [
       ".repos",
+      ".reference-apps",
       "dist",
       "dist-electron",
       "node_modules",

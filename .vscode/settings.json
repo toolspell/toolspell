@@ -25,12 +25,15 @@
   "typescript.preferences.autoImportFileExcludePatterns": [".repos/**"],
   "javascript.preferences.autoImportFileExcludePatterns": [".repos/**"],
   "files.exclude": {
-    ".repos": true
+    ".repos": true,
+    ".reference-apps": true
   },
   "files.watcherExclude": {
-    ".repos/**": true
+    ".repos/**": true,
+    ".reference-apps/**": true
   },
   "search.exclude": {
-    ".repos/**": true
+    ".repos/**": true,
+    ".reference-apps/**": true
   }
 }

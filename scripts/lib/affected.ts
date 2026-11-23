@@ -12,8 +12,9 @@ export interface WorkspacePackage {
 
 const PACKAGE_GLOBS = ["apps/*", "packages/*", "oxlint-plugin-toolspell", "scripts"];
 
-// Docs and agent instructions change no package; the agent-docs check covers them.
-const INERT = [/\.md$/, /^docs\//, /^\.agents\//, /^\.claude\//, /^LICENSE$/];
+// Docs and agent instructions change no package; the agent-docs check covers them. Committed
+// dependency sources change with the dependency's own manifest or lockfile entry.
+const INERT = [/\.md$/, /^docs\//, /^\.agents\//, /^\.claude\//, /^\.repos\//, /^LICENSE$/];
 
 // Shared config affects every package, so a change runs everything.
 const GLOBAL = [

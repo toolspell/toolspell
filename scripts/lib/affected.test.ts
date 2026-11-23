@@ -29,9 +29,13 @@ describe("affectedPackages", () => {
     assert.strictEqual(affectedPackages(workspace, ["packages/contracts/src/rpc.ts"])?.length, 4);
   });
 
-  it("ignores docs and runs everything for shared config or unknown paths", () => {
+  it("ignores docs and reference sources and runs everything for shared config or unknown paths", () => {
     assert.deepStrictEqual(
-      affectedPackages(workspace, ["docs/internals/overview.md", "AGENTS.md"]),
+      affectedPackages(workspace, [
+        "docs/internals/overview.md",
+        "AGENTS.md",
+        ".repos/effect/packages/effect/src/Effect.ts",
+      ]),
       [],
     );
     assert.isUndefined(affectedPackages(workspace, ["pnpm-lock.yaml"]));

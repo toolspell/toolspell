@@ -42,7 +42,7 @@ describe("testFilters", () => {
 });
 
 describe("changedFiles", () => {
-  it("on main, checks uncommitted changes and says how to check commits", () => {
+  it("on main, checks uncommitted changes, skips reference sources, and says how to check commits", () => {
     const dir = NodeFS.mkdtempSync(NodePath.join(NodeOS.tmpdir(), "toolspell-check-changed-"));
     try {
       const git = (...args: ReadonlyArray<string>) =>
@@ -54,9 +54,12 @@ describe("changedFiles", () => {
       git("add", ".");
       git("commit", "--quiet", "-m", "first");
       NodeFS.writeFileSync(NodePath.join(dir, "second.ts"), "");
+      NodeFS.mkdirSync(NodePath.join(dir, ".repos/effect"), { recursive: true });
+      NodeFS.writeFileSync(NodePath.join(dir, ".repos/effect/Effect.ts"), "");
       git("add", ".");
       git("commit", "--quiet", "-m", "second");
       NodeFS.writeFileSync(NodePath.join(dir, "draft.ts"), "");
+      NodeFS.writeFileSync(NodePath.join(dir, ".repos/effect/draft.ts"), "");
 
       const onMain = changedFiles(undefined, dir);
       assert.deepStrictEqual(onMain.files, ["draft.ts"]);

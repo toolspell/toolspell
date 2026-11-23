@@ -43,5 +43,5 @@ dist-electron
 # Agent scratch work; never commit plans or research notes
 .plans/
 
-# Read-only upstream source for agents, filled by `vp run sync:repos`
-.repos/
+# Other products to learn from, fetched on demand with `vp run sync:repos --app <id>`
+.reference-apps/

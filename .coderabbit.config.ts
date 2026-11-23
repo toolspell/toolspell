@@ -21,7 +21,7 @@ export default defineConfig((ctx) => ({
       docstrings: { mode: "off" as const },
       override_requested_reviewers_only: isGated(ctx),
     },
-    path_filters: ["!.repos/**", "!.toolspell/**"],
+    path_filters: ["!.repos/**", "!.reference-apps/**", "!.toolspell/**"],
     path_instructions: [
       {
         path: "{apps,packages}/**/*.ts",

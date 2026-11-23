@@ -10,7 +10,8 @@ const MAX_AGENT_FILE_LINES = 300;
 const tracked = NodeChildProcess.execFileSync(
   "git",
   // -z keeps non-ASCII paths raw instead of quoted.
-  ["ls-files", "--cached", "--others", "--exclude-standard", "-z", "*.md"],
+  // Committed dependency sources follow their own upstream's rules.
+  ["ls-files", "--cached", "--others", "--exclude-standard", "-z", "*.md", ":(exclude).repos"],
   { cwd: root, encoding: "utf8" },
 )
   .split("\0")

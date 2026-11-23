@@ -8,6 +8,11 @@
       // Workflows load the .github/scripts helpers through actions/github-script, and
       // CodeRabbit loads its configuration by filename.
       "entry": ["vite.config.ts", ".github/scripts/*.cjs", ".coderabbit.config.ts"],
+      // Keeps the committed dependency sources in .repos out of the root project; the root has
+      // no tests of its own, so the Vite and Vitest plugins' test globs would only find theirs.
+      "project": ["*.{js,mjs,cjs,ts,mts,cts}", ".github/**/*.cjs"],
+      "vite": { "entry": ["vite.config.ts"] },
+      "vitest": { "entry": [] },
     },
     "apps/server": {
       "entry": ["src/bin.ts", "src/**/*.test.ts"],

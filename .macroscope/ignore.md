@@ -251,9 +251,10 @@ ENV/**
 **/e2e/**
 
 # ---- ToolSpell ----
-# Read-only reference checkouts of Effect and T3 Code (see scripts/sync-repos.ts).
-# Nothing imports from them; findings there belong upstream.
+# Read-only upstream source: committed dependency sources and gitignored reference
+# apps (see scripts/sync-repos.ts). Nothing imports from them; findings belong upstream.
 .repos/**
+.reference-apps/**
 
 # Per-checkout dev state. Gitignored; listed so a stray commit is never reviewed.
 .toolspell/**

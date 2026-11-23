@@ -11,6 +11,7 @@ include:
   - "**/*.test.*"
 exclude:
   - ".repos/**"
+  - ".reference-apps/**"
 requires:
   - Check
 maxBudgetPerRun: 1

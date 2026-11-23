@@ -33,8 +33,10 @@ export const changedFiles = (baseRef: string | undefined, cwd = root) => {
       ? git(cwd, ["branch", "--show-current"]).trim()
       : "";
   // -z lists paths raw; otherwise git quotes and escapes non-ASCII ones, which then match no file.
-  const tracked = git(cwd, ["diff", "--name-only", "--no-renames", "-z", mergeBase]);
-  const untracked = git(cwd, ["ls-files", "--others", "--exclude-standard", "-z"]);
+  // Committed dependency sources are never checked; their bump changes a checked manifest.
+  const paths = ["--", ".", ":(exclude).repos"];
+  const tracked = git(cwd, ["diff", "--name-only", "--no-renames", "-z", mergeBase, ...paths]);
+  const untracked = git(cwd, ["ls-files", "--others", "--exclude-standard", "-z", ...paths]);
   return {
     files: [...new Set([...tracked.split("\0"), ...untracked.split("\0")])].filter(Boolean).sort(),
     notice:
