@@ -17,7 +17,7 @@ class HomeInUseError extends Schema.TaggedError<HomeInUseError>()("HomeInUseErro
   override readonly [Runtime.errorExitCode] = SERVER_EXIT_CODE_HOME_IN_USE;
 
   override get message() {
-    return `Another ToolSpell server is using ${this.stateDir}. Stop it or pass another --home-dir.`;
+    return `Another Toolspell server is using ${this.stateDir}. Stop it or pass another --home-dir.`;
   }
 }
 

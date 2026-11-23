@@ -1,6 +1,6 @@
 # Runners
 
-A runner is how ToolSpell hands a job to something outside its own code (a CLI, a remote API, a
+A runner is how Toolspell hands a job to something outside its own code (a CLI, a remote API, a
 model) and gets progress and a result back. Everything past the
 [runner interface](../../apps/server/src/runners/Runner.ts) is normalized: the decider, the event
 log, subscriptions, and clients never know which runner ran a job. Adapted from T3 Code's provider
@@ -46,14 +46,14 @@ reviving the job.
   never from the client, and drops inherited credentials it was not configured with, so two setups
   cannot silently share an account.
 - **Processes and environment.** Spawn through Effect's `ChildProcess`, which kills the whole tree,
-  also on Windows. Do not pass ToolSpell's own variables (such as `ELECTRON_RUN_AS_NODE`) to child
+  also on Windows. Do not pass Toolspell's own variables (such as `ELECTRON_RUN_AS_NODE`) to child
   processes. A desktop app launched from Finder or the Start menu has a minimal `PATH`, so a tool
   found in development can be missing in the installed app (see the [backlog](../backlog.md)).
   Test a symlinked working directory, such as macOS `/tmp`.
 
 ## Several runners
 
-When ToolSpell grows a second runner, select it through a registry keyed by what the job asks for,
+When Toolspell grows a second runner, select it through a registry keyed by what the job asks for,
 and describe differences as capabilities the decider and clients read, never as checks on the
 runner's name. A capability that is advertised but fails at runtime is a bug; turn it off instead.
 

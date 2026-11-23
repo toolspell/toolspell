@@ -41,7 +41,7 @@ try {
   });
 
   await page.goto(`${origin}/`);
-  const booted = page.getByRole("heading", { name: "Cannot reach the ToolSpell server" });
+  const booted = page.getByRole("heading", { name: "Cannot reach the Toolspell server" });
   const failed = page.locator("#boot-error-reload");
   const waitError = await booted
     .or(failed)

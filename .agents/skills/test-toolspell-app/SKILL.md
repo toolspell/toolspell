@@ -1,9 +1,9 @@
 ---
 name: test-toolspell-app
-description: Test ToolSpell's web and desktop UI through T3 Code's built-in Browser panel against isolated development state. Use for browser verification, browser pairing recovery, and test fixtures.
+description: Test Toolspell's web and desktop UI through T3 Code's built-in Browser panel against isolated development state. Use for browser verification, browser pairing recovery, and test fixtures.
 ---
 
-# Test ToolSpell web and desktop
+# Test Toolspell web and desktop
 
 Use the Browser panel of the T3 Code instance you run in. Follow the recovery steps below before
 declaring it unavailable. Do not install or switch to another automation system.

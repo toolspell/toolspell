@@ -1,6 +1,6 @@
 # Architecture
 
-ToolSpell keeps execution and state in the environment that owns them. Web and desktop clients
+Toolspell keeps execution and state in the environment that owns them. Web and desktop clients
 control it over authenticated RPC. A remote client must never substitute its own filesystem,
 credentials, or machine state for the environment's. The desktop app bundles a server, but its
 window follows the same boundary: it pairs and connects like any other client.

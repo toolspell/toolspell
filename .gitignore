@@ -36,7 +36,7 @@ dist-ssr
 dist-electron
 *.tsbuildinfo
 
-# ToolSpell dev state (per worktree) and T3 Code worktree setup markers
+# Toolspell dev state (per worktree) and T3 Code worktree setup markers
 .toolspell/
 .t3/
 

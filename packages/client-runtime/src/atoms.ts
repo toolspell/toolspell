@@ -5,7 +5,7 @@ import {
   PROTOCOL_QUERY_PARAM,
   PROTOCOL_VERSION,
   SessionStatus,
-  ToolSpellRpcs,
+  ToolspellRpcs,
   WS_PATH,
   type AuthScope,
   type AuthSessionId,
@@ -49,7 +49,7 @@ export type Access =
   | { readonly status: "incompatible" };
 export type ConnectionStatus = "connecting" | "connected" | "reconnecting";
 
-const makeRpc = RpcClient.make(ToolSpellRpcs, { flatten: true });
+const makeRpc = RpcClient.make(ToolspellRpcs, { flatten: true });
 type Rpc = Effect.Success<typeof makeRpc>;
 
 class RpcConnection extends Context.Service<RpcConnection, Rpc>()(
@@ -67,7 +67,7 @@ class PairingError extends Schema.TaggedError<PairingError>()("PairingError", {
  * A view's subscription runs while something reads it and resumes from its cursor after a
  * reconnect. The socket opens on first use and closes once nothing reads RPC-backed atoms.
  */
-export const makeToolSpellAtoms = (options: { readonly origin: string }) => {
+export const makeToolspellAtoms = (options: { readonly origin: string }) => {
   const origin = options.origin.replace(/\/$/, "");
   const wsUrl = `${origin.replace(/^http/, "ws")}${WS_PATH}?${PROTOCOL_QUERY_PARAM}=${PROTOCOL_VERSION}`;
   const http = Atom.runtime(FetchHttpClient.layer);
@@ -188,21 +188,21 @@ export const makeToolSpellAtoms = (options: { readonly origin: string }) => {
   );
 
   const dispatchAtom = rpc.fn(
-    Effect.fn("ToolSpell.dispatch")(function* (command: ClientCommand) {
+    Effect.fn("Toolspell.dispatch")(function* (command: ClientCommand) {
       const call = yield* RpcConnection;
       return yield* call("commands.dispatch", command);
     }),
   );
 
   const createPairingGrantAtom = rpc.fn(
-    Effect.fn("ToolSpell.createPairingGrant")(function* (scopes: ReadonlyArray<AuthScope>) {
+    Effect.fn("Toolspell.createPairingGrant")(function* (scopes: ReadonlyArray<AuthScope>) {
       const call = yield* RpcConnection;
       return yield* call("auth.createPairingGrant", { scopes });
     }),
   );
 
   const revokeSessionAtom = rpc.fn(
-    Effect.fn("ToolSpell.revokeSession")(function* (sessionId: AuthSessionId) {
+    Effect.fn("Toolspell.revokeSession")(function* (sessionId: AuthSessionId) {
       const call = yield* RpcConnection;
       yield* call("auth.revokeSession", { sessionId });
       const registry = yield* AtomRegistry.AtomRegistry;
@@ -212,7 +212,7 @@ export const makeToolSpellAtoms = (options: { readonly origin: string }) => {
 
   /** Ends this browser's own session. Its socket closes, and the pairing screen follows. */
   const signOutAtom = rpc.fn(
-    Effect.fn("ToolSpell.signOut")(function* () {
+    Effect.fn("Toolspell.signOut")(function* () {
       const call = yield* RpcConnection;
       yield* call("auth.signOut", undefined);
       const registry = yield* AtomRegistry.AtomRegistry;
@@ -221,7 +221,7 @@ export const makeToolSpellAtoms = (options: { readonly origin: string }) => {
   );
 
   /** Exchanges a pairing token for a session cookie. */
-  const pair = Effect.fn("ToolSpell.pair")(function* (token: string) {
+  const pair = Effect.fn("Toolspell.pair")(function* (token: string) {
     const request = yield* HttpClientRequest.post(`${origin}${AUTH_HTTP_PATHS.pair}`).pipe(
       HttpClientRequest.schemaBodyJson(PairRequest)({ token }),
     );
@@ -251,4 +251,4 @@ export const makeToolSpellAtoms = (options: { readonly origin: string }) => {
   };
 };
 
-export type ToolSpellAtoms = ReturnType<typeof makeToolSpellAtoms>;
+export type ToolspellAtoms = ReturnType<typeof makeToolspellAtoms>;

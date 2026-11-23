@@ -1,4 +1,4 @@
-import { makeToolSpellAtoms } from "@toolspell/client-runtime/atoms";
+import { makeToolspellAtoms } from "@toolspell/client-runtime/atoms";
 import { makeDevicePreferences } from "@toolspell/client-runtime/preferences";
 import * as KeyValueStore from "effect/persistence/KeyValueStore";
 import * as Atom from "effect/reactivity/Atom";
@@ -7,7 +7,7 @@ import { randomUUID } from "./lib/randomUUID.ts";
 import { THEME_IDS } from "./theme.ts";
 
 /** The web client always talks to the origin that served it (Vite proxies in dev). */
-export const atoms = makeToolSpellAtoms({ origin: window.location.origin });
+export const atoms = makeToolspellAtoms({ origin: window.location.origin });
 
 export const preferences = makeDevicePreferences({
   store: KeyValueStore.layerStorage(() => window.localStorage),

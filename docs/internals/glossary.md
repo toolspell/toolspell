@@ -6,8 +6,8 @@ Shared vocabulary for code, docs, and conversations. It defines terms; it is not
 
 | Term           | Meaning                                                                          |
 | -------------- | -------------------------------------------------------------------------------- |
-| environment    | One running ToolSpell server and the machine, files, and state it owns.          |
-| ToolSpell home | The base data directory (`~/.toolspell`, or the checkout's `.toolspell` in dev). |
+| environment    | One running Toolspell server and the machine, files, and state it owns.          |
+| Toolspell home | The base data directory (`~/.toolspell`, or the checkout's `.toolspell` in dev). |
 | userdata       | The home's runtime state directory: the database and the server lock.            |
 | client         | The web or desktop UI. Clients control an environment; they never own its state. |
 | session        | A paired client's credential, carried as an HttpOnly cookie, with scopes.        |

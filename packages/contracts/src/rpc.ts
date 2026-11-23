@@ -141,7 +141,7 @@ const AuthRevokeSessionRpc = Rpc.make(RPC_METHODS.authRevokeSession, {
 /** Ends the caller's own session; the session comes from authentication, never the payload. */
 const AuthSignOutRpc = Rpc.make(RPC_METHODS.authSignOut, { defect: ServerDefect });
 
-export const ToolSpellRpcs = RpcGroup.make(
+export const ToolspellRpcs = RpcGroup.make(
   ServerGetInfoRpc,
   CommandsDispatchRpc,
   WorkspacesSubscribeRpc,

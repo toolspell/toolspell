@@ -1,6 +1,6 @@
 # SQLite fixtures
 
-Load this reference only when inspecting or seeding local ToolSpell state directly.
+Load this reference only when inspecting or seeding local Toolspell state directly.
 
 ## Select the correct database
 

@@ -32,7 +32,7 @@ const escapeHtml = (text: string) => text.replace(/[&<>"']/g, (char) => `&#${cha
 
 /** A self-contained page in the web app's colours; Electron maps nativeTheme to the media query. */
 const localPage = (body: string) => {
-  const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="color-scheme" content="light dark"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>ToolSpell</title><style>
+  const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="color-scheme" content="light dark"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>Toolspell</title><style>
 html,body{margin:0;height:100%;background:${COLORS.light.background};color:${COLORS.light.text}}
 @media (prefers-color-scheme:dark){html,body{background:${COLORS.dark.background};color:${COLORS.dark.text}}}
 body{box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;font:14px system-ui,sans-serif;text-align:center;-webkit-user-select:none;user-select:none}
@@ -41,7 +41,7 @@ a{color:inherit;border:1px solid currentColor;border-radius:6px;padding:6px 14px
   return `data:text/html;charset=utf-8,${encodeURIComponent(html)}`;
 };
 
-const STARTUP_PAGE = localPage("Starting ToolSpell…");
+const STARTUP_PAGE = localPage("Starting Toolspell…");
 
 const isLocalPage = (url: string) => url.startsWith("data:");
 
@@ -65,7 +65,7 @@ export const showStartupPage = (window: BrowserWindow) => {
 /** Its link only has to navigate: the window intercepts it and loads the app again. */
 export const showRetryPage = (window: BrowserWindow, reason: string, origin: string) => {
   const page = localPage(
-    `<div>ToolSpell could not load.</div><div>${escapeHtml(reason)}</div><a href="${escapeHtml(origin)}/">Try again</a>`,
+    `<div>Toolspell could not load.</div><div>${escapeHtml(reason)}</div><a href="${escapeHtml(origin)}/">Try again</a>`,
   );
   window.loadURL(page).catch(ignoreLoadFailure);
 };
@@ -124,7 +124,7 @@ export const createMainWindow = ({
   const window = new BrowserWindow({
     width: 1200,
     height: 800,
-    title: "ToolSpell",
+    title: "Toolspell",
     ...(icon === undefined ? {} : { icon }),
     show: false,
     backgroundColor: windowBackground(),
@@ -153,7 +153,7 @@ export const createMainWindow = ({
     if (process.platform === "linux") contents.once("did-finish-load", reveal);
   }
 
-  // Links leave the app for the system browser; the window only shows ToolSpell.
+  // Links leave the app for the system browser; the window only shows Toolspell.
   contents.setWindowOpenHandler(({ url }) => {
     const external = parseExternalUrl(url);
     if (external !== undefined) openExternal(external);
@@ -198,11 +198,11 @@ export const createMainWindow = ({
       return;
     }
     const detail = `Its renderer process ended (${details.reason}, exit code ${details.exitCode}).`;
-    if (background) return note(`ToolSpell's window stopped working. ${detail}`);
+    if (background) return note(`Toolspell's window stopped working. ${detail}`);
     void dialog
       .showMessageBox(window, {
         type: "error",
-        message: "ToolSpell's window stopped working.",
+        message: "Toolspell's window stopped working.",
         detail,
         buttons: ["Reload", "Quit"],
         defaultId: 0,

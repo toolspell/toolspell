@@ -133,7 +133,7 @@ intended one.
 Two more checks drive that Chromium and are not part of `check:changed` or `ready`:
 
 - **Built boot.** `vp run build && vp run --filter @toolspell/web verify:boot` loads `apps/web/dist`
-  with no server behind it. It passes when the app renders "Cannot reach the ToolSpell server" and
+  with no server behind it. It passes when the app renders "Cannot reach the Toolspell server" and
   fails on the boot error screen, an uncaught exception, or a page stuck on the static boot shell.
   CI runs it after the build when the web package is affected.
 - **Render counts.** `vp run report:renders` runs the render scenarios three times and prints

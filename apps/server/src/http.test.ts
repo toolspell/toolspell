@@ -8,7 +8,7 @@ import {
   PROTOCOL_QUERY_PARAM,
   PROTOCOL_VERSION,
   STANDARD_AUTH_SCOPES,
-  ToolSpellRpcs,
+  ToolspellRpcs,
   WS_PATH,
   type AuthScope,
 } from "@toolspell/contracts";
@@ -222,7 +222,7 @@ const rpcClient = Effect.fn("test.rpcClient")(function* (cookie: string) {
   );
   // Built in the test's scope, so the socket outlives this helper.
   const context = yield* Layer.build(protocol);
-  return yield* RpcClient.make(ToolSpellRpcs, { flatten: true }).pipe(Effect.provide(context));
+  return yield* RpcClient.make(ToolspellRpcs, { flatten: true }).pipe(Effect.provide(context));
 });
 
 describe("transport guards", () => {

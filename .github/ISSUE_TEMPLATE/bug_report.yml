@@ -27,7 +27,7 @@ body:
     id: area
     attributes:
       label: Area
-      description: Which part of ToolSpell is affected?
+      description: Which part of Toolspell is affected?
       options:
         - apps/web
         - apps/server

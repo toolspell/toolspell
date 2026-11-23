@@ -12,14 +12,14 @@ test that show it. We answer in the advisory, fix confirmed findings there, and 
 published advisory unless you ask us not to. Until there are releases, only the latest `main` is
 supported.
 
-The rest of this file is for agents and maintainers auditing ToolSpell or triaging a report. It
+The rest of this file is for agents and maintainers auditing Toolspell or triaging a report. It
 says who is trusted with what, which boundaries a real finding crosses, and what is intended. The
 reasoning lives in [environment auth](docs/internals/environment-auth.md) and the
 [architecture overview](docs/internals/overview.md).
 
 ## The model in one paragraph
 
-An environment is a ToolSpell server running as an OS user. Clients get authority by pairing, which
+An environment is a Toolspell server running as an OS user. Clients get authority by pairing, which
 issues a scoped session. Security work here is about who can get a session, what each kind of
 session can reach, and whether revocation and grant ceilings hold. Runners execute with the
 server user's privileges; what a runner may do is a product decision per runner, not a session

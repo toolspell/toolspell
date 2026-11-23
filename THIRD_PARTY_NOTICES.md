@@ -1,6 +1,6 @@
 # Third-party notices
 
-ToolSpell's architecture is inspired by T3 Code, and portions of ToolSpell are adapted from it.
+Toolspell's architecture is inspired by T3 Code, and portions of Toolspell are adapted from it.
 Files that adapt T3 Code code say so in a comment ("Adapted from T3 Code (MIT)").
 
 ## T3 Code

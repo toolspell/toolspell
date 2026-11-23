@@ -151,7 +151,7 @@ const serverCommand = Command.make(
       return yield* exitWithStdin ? Effect.raceFirst(server, launcherGone) : server;
     }),
 ).pipe(
-  Command.withDescription("Run the ToolSpell server."),
+  Command.withDescription("Run the Toolspell server."),
   Command.withSubcommands([pairCommand]),
 );
 

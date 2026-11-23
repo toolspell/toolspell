@@ -90,7 +90,7 @@ export class ServerSupervisor {
 
   start() {
     void this.#supervise().catch((error: unknown) =>
-      this.#options.onFatal("ToolSpell's server could not start", String(error)),
+      this.#options.onFatal("Toolspell's server could not start", String(error)),
     );
   }
 
@@ -116,14 +116,14 @@ export class ServerSupervisor {
     if (this.#stopping) return;
     if (result === "timeout") {
       this.#options.onFatal(
-        "ToolSpell's server did not start",
+        "Toolspell's server did not start",
         `It was not ready within ${READY_TIMEOUT_MS / 60_000} minutes.\n\n${this.#options.log.tail()}`,
       );
       return;
     }
     if (result !== "stopped" && !result.ok) {
       this.#options.onFatal(
-        "ToolSpell's server did not start",
+        "Toolspell's server did not start",
         `${result.problem}\n\n${this.#options.log.tail()}`,
       );
       return;
@@ -143,8 +143,8 @@ export class ServerSupervisor {
     if (decision.kind === "home-in-use") {
       this.#options.note("Another server holds the home; not restarting.");
       this.#options.onFatal(
-        "Another ToolSpell is using this data",
-        `Quit the other ToolSpell app or server, then open ToolSpell again.\n\n${this.#options.log.tail()}`,
+        "Another Toolspell is using this data",
+        `Quit the other Toolspell app or server, then open Toolspell again.\n\n${this.#options.log.tail()}`,
       );
       return;
     }

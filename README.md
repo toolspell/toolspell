@@ -1,4 +1,4 @@
-# ToolSpell
+# Toolspell
 
 A server that owns state and execution, with web and desktop clients that control it over
 authenticated WebSocket RPC. Run it on your machine and use it from the desktop app, a browser, or
@@ -36,7 +36,7 @@ vulnerabilities privately, as [SECURITY.md](SECURITY.md#report-a-vulnerability) 
 
 ## License
 
-- ToolSpell is licensed under the MIT License; see [LICENSE](LICENSE).
+- Toolspell is licensed under the MIT License; see [LICENSE](LICENSE).
 - Its architecture is inspired by [T3 Code](https://github.com/pingdotgg/t3code), and portions are
   adapted from it; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
-- The MIT License covers the code, not the ToolSpell name or logo.
+- The MIT License covers the code, not the Toolspell name or logo.

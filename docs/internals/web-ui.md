@@ -69,7 +69,7 @@ stays in `useState`.
 
 ## Motion
 
-Users keep ToolSpell open for hours, often on high-refresh displays, where an animation that never
+Users keep Toolspell open for hours, often on high-refresh displays, where an animation that never
 stops makes the GPU draw every frame. Motion is budgeted like rendering:
 
 - Nothing loops except the `Spinner`, which is for short pending work. A status that can last

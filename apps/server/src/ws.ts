@@ -1,7 +1,7 @@
 import {
   PROTOCOL_QUERY_PARAM,
   PROTOCOL_VERSION,
-  ToolSpellRpcs,
+  ToolspellRpcs,
   WS_PATH,
 } from "@toolspell/contracts";
 import * as Effect from "effect/Effect";
@@ -23,13 +23,13 @@ import * as DefectReporter from "./observability/DefectReporter.ts";
 // Storage failures are defects here: the reporter logs each once with its cause in the request's
 // span, and the contracts' defect schema sends the client a generic error.
 const handlersFor = (session: AuthenticatedSession) =>
-  ToolSpellRpcs.toLayer(
+  ToolspellRpcs.toLayer(
     Effect.gen(function* () {
       const config = yield* ServerConfig;
       const orchestrator = yield* Orchestrator;
       const subscriptions = yield* Subscriptions;
       const auth = yield* AuthStore;
-      return ToolSpellRpcs.of({
+      return ToolspellRpcs.of({
         "server.getInfo": () =>
           Effect.succeed({
             version: config.version,
@@ -90,7 +90,7 @@ export const route = HttpRouter.add(
       return HttpServerResponse.jsonUnsafe({ message: "Pair this device first." }, { status: 401 });
     }
     const { protocol, httpEffect } = yield* RpcServer.makeProtocolWithHttpEffectWebsocket;
-    yield* RpcServer.make(ToolSpellRpcs, RPC_SERVER_OPTIONS).pipe(
+    yield* RpcServer.make(ToolspellRpcs, RPC_SERVER_OPTIONS).pipe(
       Effect.provideService(RpcServer.Protocol, protocol),
       Effect.provide(
         Layer.merge(handlersFor(session.value), RpcAuthorization.layer(session.value.scopes)),

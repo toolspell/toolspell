@@ -20,12 +20,12 @@ where they move.
   (`toolspell-github-rollout-plan.html`).
 - **PR template** (the maintainer wants to revisit it): `.github/pull_request_template.md` is T3
   Code's, with sections Problem, Change, Scope (bug fixes only, link the issue) and Verification,
-  ending with the model and harness. A guide only, nothing enforces it. Decide what ToolSpell asks
+  ending with the model and harness. A guide only, nothing enforces it. Decide what Toolspell asks
   of a PR before outside contributions start.
 - **CONTRIBUTING.md rules** (the maintainer wants to revisit them): adapted from T3 Code: bug fixes
   only unless agreed or vouched, one problem per PR, show that it works, model and harness named,
   3 open PRs per person, keep the PR mergeable, closing after a 72-hour notice. Decide which fit
-  ToolSpell before outside contributions start (related: the triage-policy check under "Checks
+  Toolspell before outside contributions start (related: the triage-policy check under "Checks
   after the first push").
 - **Desktop packaging**: electron-builder, signing and notarization, auto-update. `backend.ts`
   already expects the bundled server at `resources/server/bin.mjs`. Use the release
@@ -47,7 +47,7 @@ where they move.
 - **A packaged app launched with `--background`** still registers as a regular macOS app for a
   moment before `main.ts` makes it background only (the dev supervisor avoids that with an
   `LSBackgroundOnly` copy). Trigger: agents testing packaged builds.
-- **A real runner**: first decide what a ToolSpell job does. See [runners](internals/runners.md).
+- **A real runner**: first decide what a Toolspell job does. See [runners](internals/runners.md).
 - **Login-shell `PATH`** for apps launched from Finder or the Start menu; needed before the first
   real runner spawns tools (T3 Code: `apps/desktop/src/shell/DesktopShellEnvironment.ts`).
 - **Windows verification on VMs** rather than containers. Checklist below.
@@ -86,7 +86,7 @@ where they move.
 - **Third-party license notices** before the first web or desktop release: adapt T3 Code's build-time
   generator (its `docs/internals/open-source-licenses.md` and `third-party-licenses.config.json`),
   including a custom notice for T3 Code itself (today in `THIRD_PARTY_NOTICES.md`).
-- **Name, company, trademark**: before publishing, check "ToolSpell" for name conflicts (DPMA,
+- **Name, company, trademark**: before publishing, check "Toolspell" for name conflicts (DPMA,
   EUIPO, USPTO). Once the company exists, the maintainer grants it exclusive usage rights (under
   German law, § 29 UrhG, copyright itself cannot be transferred); then update the copyright line
   in `LICENSE` and the README. Once the trademark is registered, a trademark policy replaces the
@@ -270,7 +270,7 @@ None of the contribution workflows can run before the repository is on GitHub.
   (drvfs), where SQLite locking may be unreliable.
 - **Desktop on Windows**: Ctrl+W does nothing and the menu bar shows on Alt; no console window
   flashes when the server starts or restarts; ending the server in Task Manager brings it back
-  within about a second and the window reconnects; ending ToolSpell ends the server; File, Exit
+  within about a second and the window reconnects; ending Toolspell ends the server; File, Exit
   leaves no server process; a server that ignores stdin for over 5 s is taken by `taskkill /T /F`
   on quit; in dev, editing `apps/desktop/src/main.ts` restarts Electron without a "data in use"
   dialog. Background mode (`vp run dev:desktop --background`): no window or taskbar button appears

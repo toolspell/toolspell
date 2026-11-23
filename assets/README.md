@@ -1,4 +1,4 @@
-# ToolSpell icons
+# Toolspell icons
 
 Each channel uses the same white spark and handle glyph over a solid background.
 
@@ -77,5 +77,5 @@ The glyph came from the built-in ImageGen tool. The opaque white silhouette was 
 the generated raster and fitted within a centered 700 × 700 px area in the universal masters.
 
 ```text
-Use case: logo-brand. Create artwork for a new original ToolSpell app icon. Single flat opaque white silhouette on a genuinely transparent square canvas: a stout diagonal handle that widens into a single four-point smithing spark at its upper-right head, seamlessly fused into one shape like a magical hand tool. Orient the solid handle from bottom left to top right, with a slightly rounded blunt pommel. Use a crisp bold silhouette and thick geometry, with at most one broad change of width in the handle. Keep the spark's other three rays short and substantial. Center the whole silhouette optically, balanced with generous transparent space. The single shape must stay recognizable at 16 pixels. Crisp polished raster logo, pure white only, no lines, holes, extra marks, separate sparkles, reflections, shadows, outlines, gradients, tiles, frame, words, letters or resemblance to existing brand marks.
+Use case: logo-brand. Create artwork for a new original Toolspell app icon. Single flat opaque white silhouette on a genuinely transparent square canvas: a stout diagonal handle that widens into a single four-point smithing spark at its upper-right head, seamlessly fused into one shape like a magical hand tool. Orient the solid handle from bottom left to top right, with a slightly rounded blunt pommel. Use a crisp bold silhouette and thick geometry, with at most one broad change of width in the handle. Keep the spark's other three rays short and substantial. Center the whole silhouette optically, balanced with generous transparent space. The single shape must stay recognizable at 16 pixels. Crisp polished raster logo, pure white only, no lines, holes, extra marks, separate sparkles, reflections, shadows, outlines, gradients, tiles, frame, words, letters or resemblance to existing brand marks.
 ```

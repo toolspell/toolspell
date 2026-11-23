@@ -6,13 +6,13 @@ import * as Rpc from "effect/rpc/Rpc";
 
 import { SessionStatus } from "./auth.ts";
 import { ClientCommand } from "./commands.ts";
-import { JobsStreamItem, RPC_METHODS, ToolSpellRpcs } from "./rpc.ts";
+import { JobsStreamItem, RPC_METHODS, ToolspellRpcs } from "./rpc.ts";
 
 const decodeJobsItem = Schema.decodeUnknownSync(JobsStreamItem);
 const decodeCommand = Schema.decodeUnknownSync(ClientCommand);
 const decodeSessionStatus = Schema.decodeUnknownSync(SessionStatus);
 const decodeGrantRequest = Schema.decodeUnknownSync(
-  ToolSpellRpcs.requests.get(RPC_METHODS.authCreatePairingGrant)!.payloadSchema,
+  ToolspellRpcs.requests.get(RPC_METHODS.authCreatePairingGrant)!.payloadSchema,
 );
 
 const job = (id: string, status: string) => ({
@@ -74,7 +74,7 @@ describe("forward-compatible responses", () => {
 
 describe("defects", () => {
   // Iterates the group, so a new RPC without the defect schema fails here.
-  it.each([...ToolSpellRpcs.requests.values()])(
+  it.each([...ToolspellRpcs.requests.values()])(
     "$_tag tells a client that the server failed, not why",
     (rpc) => {
       const codec = Schema.toCodecJson(Rpc.exitSchema(rpc));

@@ -1,6 +1,6 @@
-# ToolSpell
+# Toolspell
 
-ToolSpell is a server that owns state and execution, with web and desktop clients that control it over
+Toolspell is a server that owns state and execution, with web and desktop clients that control it over
 authenticated WebSocket RPC. The desktop app bundles the server; every client, local or remote,
 reaches it the same way.
 
@@ -13,16 +13,16 @@ reaches it the same way.
 - Measure twice, cut once, and yagni. Fight scope creep. Honor the developer's intent in a minimal
   and realistic way.
 - Treat this file as good defaults, not hard rules. The developer's preferences override it.
-- You may be running inside a live ToolSpell or T3 Code instance, controlled remotely. Be careful
+- You may be running inside a live Toolspell or T3 Code instance, controlled remotely. Be careful
   with data, dev servers, and processes that may belong to the session you run in.
 - Performance is a feature. Watch what crosses the socket, what re-renders, and what animates.
 
 ## Glossary
 
-- **you**: the agent reading this file. **we** and **maintainers**: the people building ToolSpell.
-- **user**: the person using ToolSpell. **client**: the web or desktop UI.
-- **environment**: one running ToolSpell server and the machine, files, and state it owns.
-- **ToolSpell home**: the base data directory; runtime state lives in its `userdata` directory.
+- **you**: the agent reading this file. **we** and **maintainers**: the people building Toolspell.
+- **user**: the person using Toolspell. **client**: the web or desktop UI.
+- **environment**: one running Toolspell server and the machine, files, and state it owns.
+- **Toolspell home**: the base data directory; runtime state lives in its `userdata` directory.
 - **workspace** and **job**: the placeholder domain. A workspace owns jobs; a runner executes a job.
 - **command**: a request to change state. **event**: a fact the server decided and stored.
 - **decider**: the pure function that turns a command and current records into events and effects.
@@ -39,7 +39,7 @@ The [glossary](docs/internals/glossary.md) has the full vocabulary.
    and the machine may run other dev servers. Kill only a PID you captured at spawn, or the owner of
    your port from `lsof -nP -iTCP:<port> -sTCP:LISTEN` after `lsof -p <pid>` shows its cwd is your
    worktree.
-2. **Writing to the live install.** `~/.toolspell/userdata` is the developer's real ToolSpell data.
+2. **Writing to the live install.** `~/.toolspell/userdata` is the developer's real Toolspell data.
    Reading and copying from it are fine. Never start a server against it, never open it
    read-write, never clean it up.
 3. **Baking in origins.** Never add a server URL to the web bundle, such as a `VITE_*` variable for
@@ -198,7 +198,7 @@ Architecture and its constraints: [overview](docs/internals/overview.md).
   habits that changed in 4, `packages/*/test` for real API usage). Never edit or import from it.
 - `.reference-apps/<app>`: other products to learn from, gitignored. Before designing something
   another product has likely solved, use that app's `reference-<app>` skill, and fetch an app
-  only when the task needs it. Adopt an approach when it fits ToolSpell's size, never the app's
+  only when the task needs it. Adopt an approach when it fits Toolspell's size, never the app's
   feature scope or names, and credit adapted files.
 
 ## Taste

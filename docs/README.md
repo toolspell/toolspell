@@ -1,13 +1,13 @@
-# ToolSpell docs
+# Toolspell docs
 
-## Using ToolSpell
+## Using Toolspell
 
-- [Run ToolSpell](./user/install.md)
+- [Run Toolspell](./user/install.md)
 - [Pairing and access](./user/pairing-and-access.md)
 
 ---
 
-## Working on ToolSpell
+## Working on Toolspell
 
 Start with the [development runbook](./operations/development.md) and [AGENTS.md](../AGENTS.md).
 To see what a server did, read its [trace file](./operations/observability.md).

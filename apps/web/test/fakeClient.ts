@@ -1,6 +1,6 @@
 // Writable stand-ins for the atoms the workspace page reads from `~/client`, so a test drives
 // the UI by setting atoms instead of running a server. renderScenarios.renders.tsx swaps them in.
-import type { Access, ConnectionStatus, ToolSpellAtoms } from "@toolspell/client-runtime/atoms";
+import type { Access, ConnectionStatus, ToolspellAtoms } from "@toolspell/client-runtime/atoms";
 import type { JobsView, WorkspacesView } from "@toolspell/client-runtime/views";
 import {
   ALL_AUTH_SCOPES,
@@ -72,10 +72,10 @@ export const initialJobs: JobsView = {
 };
 
 // Each test's registry starts from the initial views; set a new view to stream events.
-export const jobsAtom = Atom.make<Atom.Type<ReturnType<ToolSpellAtoms["jobsAtom"]>>>(
+export const jobsAtom = Atom.make<Atom.Type<ReturnType<ToolspellAtoms["jobsAtom"]>>>(
   AsyncResult.success(initialJobs),
 );
-export const workspacesAtom = Atom.make<Atom.Type<ToolSpellAtoms["workspacesAtom"]>>(
+export const workspacesAtom = Atom.make<Atom.Type<ToolspellAtoms["workspacesAtom"]>>(
   AsyncResult.success(initialWorkspaces),
 );
 

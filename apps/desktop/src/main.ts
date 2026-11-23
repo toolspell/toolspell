@@ -40,7 +40,7 @@ if (background && process.platform === "darwin") app.setActivationPolicy("prohib
 
 // Identity comes before the single-instance lock, which lives in userData like every profile
 // file. A dev profile sits in the checkout's dev home, so checkouts run side by side.
-app.setName(isDevelopment ? "ToolSpell Dev" : "ToolSpell");
+app.setName(isDevelopment ? "Toolspell Dev" : "Toolspell");
 const devHome = isDevelopment ? process.env.TOOLSPELL_HOME : undefined;
 app.setPath(
   "userData",
@@ -122,7 +122,7 @@ const keepTrying = async (detail: string) => {
   }
   const options = {
     type: "error" as const,
-    message: "ToolSpell's server keeps stopping.",
+    message: "Toolspell's server keeps stopping.",
     detail: withLogPath(detail),
     buttons: ["Keep Trying", "Quit"],
     defaultId: 0,
@@ -153,7 +153,7 @@ const openLink = (url: string) => {
     if (window === undefined || window.isDestroyed()) return;
     void dialog.showMessageBox(window, {
       type: "warning",
-      message: "ToolSpell could not open the link.",
+      message: "Toolspell could not open the link.",
       detail: url,
     });
   });
@@ -311,7 +311,7 @@ const trustedFrame = () =>
 
 const assertTrusted = (event: IpcMainInvokeEvent) => {
   if (!isTrustedSender(event, trustedFrame())) {
-    throw new Error("Only the ToolSpell window may use the desktop bridge.");
+    throw new Error("Only the Toolspell window may use the desktop bridge.");
   }
 };
 
@@ -366,5 +366,5 @@ if (!app.requestSingleInstanceLock()) {
   void app
     .whenReady()
     .then(start)
-    .catch((error: unknown) => fatal("ToolSpell could not start", describe(error)));
+    .catch((error: unknown) => fatal("Toolspell could not start", describe(error)));
 }

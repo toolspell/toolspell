@@ -1,7 +1,7 @@
 # Files Macroscope skips during code review and in Check Run Agents.
 # This file REPLACES Macroscope's built-in defaults rather than extending them,
 # so the defaults are reproduced below (from docs.macroscope.com, Code Review),
-# followed by ToolSpell's own entries at the end. Adapted from T3 Code (MIT).
+# followed by Toolspell's own entries at the end. Adapted from T3 Code (MIT).
 # One glob per line; not Markdown, and excluded from vp fmt for that reason.
 
 # ---- Macroscope defaults ----
@@ -250,7 +250,7 @@ ENV/**
 **/specs/**
 **/e2e/**
 
-# ---- ToolSpell ----
+# ---- Toolspell ----
 # Read-only upstream source: committed dependency sources and gitignored reference
 # apps (see scripts/sync-repos.ts). Nothing imports from them; findings belong upstream.
 .repos/**

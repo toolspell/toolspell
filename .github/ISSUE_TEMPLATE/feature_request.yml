@@ -25,7 +25,7 @@ body:
     id: proposal
     attributes:
       label: Proposal
-      description: How ToolSpell could solve it. Describe the behavior, not the implementation.
+      description: How Toolspell could solve it. Describe the behavior, not the implementation.
     validations:
       required: true
 

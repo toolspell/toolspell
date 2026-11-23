@@ -2,7 +2,7 @@
 
 <!-- Adapted from T3 Code's CONTRIBUTING.md (MIT). -->
 
-ToolSpell has very little review capacity. Reviewing a PR usually takes more effort than writing
+Toolspell has very little review capacity. Reviewing a PR usually takes more effort than writing
 one, so these rules keep review possible. The most useful contributions are bug reports with a
 good repro and focused fixes for bugs you hit yourself.
 
@@ -112,7 +112,7 @@ links the old one.
 3. Use a conventional commit title in plain language, such as
    `fix(web): job list no longer flickers on reconnect`, and fill in the PR template.
 
-The [architecture overview](docs/internals/overview.md) explains how ToolSpell works, and
+The [architecture overview](docs/internals/overview.md) explains how Toolspell works, and
 [testing](docs/internals/testing.md) says what a good test covers.
 
 ## License

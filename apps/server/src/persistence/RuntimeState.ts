@@ -29,7 +29,7 @@ class NoRunningServerError extends Schema.TaggedError<NoRunningServerError>()(
   { homeDir: Schema.String },
 ) {
   override get message() {
-    return `No running ToolSpell server uses ${this.homeDir}. Start one there first, or pass --home-dir.`;
+    return `No running Toolspell server uses ${this.homeDir}. Start one there first, or pass --home-dir.`;
   }
 }
 

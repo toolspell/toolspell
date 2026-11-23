@@ -20,7 +20,7 @@ export function showBootError(error: unknown) {
   );
   panel.id = "boot-error";
   panel.append(
-    element("h1", "text-lg font-semibold", "ToolSpell could not start"),
+    element("h1", "text-lg font-semibold", "Toolspell could not start"),
     element("p", "max-w-md text-center text-sm text-muted-foreground", String(error)),
     reload,
   );

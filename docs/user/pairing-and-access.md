@@ -1,6 +1,6 @@
 # Pairing and access
 
-Every browser or device signs in to your ToolSpell server by opening a pairing link once. After
+Every browser or device signs in to your Toolspell server by opening a pairing link once. After
 that it stays signed in until you sign it out or revoke it.
 
 ## Pair another device

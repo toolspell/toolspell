@@ -1,6 +1,6 @@
 ---
 name: contribution-triage
-description: Enforce ToolSpell's PR contribution policy by closing ineligible submissions and marking eligible ones ready for maintainer review, within authorized scope, through the gh CLI. Supports explicit dry runs. Use for contribution moderation, not for a full code review.
+description: Enforce Toolspell's PR contribution policy by closing ineligible submissions and marking eligible ones ready for maintainer review, within authorized scope, through the gh CLI. Supports explicit dry runs. Use for contribution moderation, not for a full code review.
 ---
 
 # Contribution triage

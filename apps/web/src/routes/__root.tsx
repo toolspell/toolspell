@@ -42,7 +42,7 @@ function RootScreen() {
     if (AsyncResult.isFailure(access)) {
       return (
         <Centered>
-          <h1 className="text-lg font-semibold">Cannot reach the ToolSpell server</h1>
+          <h1 className="text-lg font-semibold">Cannot reach the Toolspell server</h1>
           <Button variant="outline" onClick={retry}>
             Try again
           </Button>
@@ -80,7 +80,7 @@ function AppShell() {
     <div className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 p-6">
       <header className="flex items-center gap-4">
         <Link to="/" className="font-semibold">
-          ToolSpell
+          Toolspell
         </Link>
         <nav className="flex gap-3 text-sm text-muted-foreground">
           <Link

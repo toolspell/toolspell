@@ -49,7 +49,7 @@ export function RouteNotFound() {
           <CompassIcon />
         </EmptyMedia>
         <EmptyTitle>Page not found</EmptyTitle>
-        <EmptyDescription>This link does not point to a page in ToolSpell.</EmptyDescription>
+        <EmptyDescription>This link does not point to a page in Toolspell.</EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
         <Button render={<Link to="/" />}>Go to workspaces</Button>
