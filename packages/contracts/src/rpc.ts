@@ -8,6 +8,7 @@ import {
   AuthSession,
   AuthSessionId,
   PairingGrant,
+  ResponseScopes,
   RpcAuthorization,
   type AuthScope as AuthScopeType,
 } from "./auth.ts";
@@ -28,7 +29,7 @@ export const WS_PATH = "/ws";
 const ServerInfo = Schema.Struct({
   version: Schema.String,
   protocolVersion: Schema.Int,
-  scopes: Schema.Array(AuthScope),
+  scopes: ResponseScopes,
 });
 export type ServerInfo = typeof ServerInfo.Type;
 

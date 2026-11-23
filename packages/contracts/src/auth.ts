@@ -1,7 +1,7 @@
 import * as Schema from "effect/Schema";
 import * as RpcMiddleware from "effect/rpc/RpcMiddleware";
 
-import { EpochMillis, TrimmedNonEmptyString } from "./baseSchemas.ts";
+import { EpochMillis, ForwardCompatibleArray, TrimmedNonEmptyString } from "./baseSchemas.ts";
 import { AUTH_SESSION_PATH } from "./desktop.ts";
 
 /**
@@ -15,13 +15,19 @@ export type AuthScope = typeof AuthScope.Type;
 export const ALL_AUTH_SCOPES: ReadonlyArray<AuthScope> = AuthScope.literals;
 export const STANDARD_AUTH_SCOPES: ReadonlyArray<AuthScope> = ["read", "operate"];
 
+/**
+ * Scopes in a response. A scope a newer server added is dropped instead of failing the response,
+ * so it cannot lock older clients out. Grant requests and stored authority stay strict.
+ */
+export const ResponseScopes = ForwardCompatibleArray(AuthScope);
+
 export const AuthSessionId = TrimmedNonEmptyString.pipe(Schema.brand("AuthSessionId"));
 export type AuthSessionId = typeof AuthSessionId.Type;
 
 export const AuthSession = Schema.Struct({
   id: AuthSessionId,
   label: Schema.String,
-  scopes: Schema.Array(AuthScope),
+  scopes: ResponseScopes,
   createdAt: EpochMillis,
   lastSeenAt: EpochMillis,
   /** True for the session making the request. */
@@ -31,7 +37,7 @@ export type AuthSession = typeof AuthSession.Type;
 
 export const PairingGrant = Schema.Struct({
   token: TrimmedNonEmptyString,
-  scopes: Schema.Array(AuthScope),
+  scopes: ResponseScopes,
   expiresAt: EpochMillis,
 });
 export type PairingGrant = typeof PairingGrant.Type;
@@ -66,6 +72,6 @@ export type PairRequest = typeof PairRequest.Type;
 
 export const SessionStatus = Schema.Struct({
   authenticated: Schema.Boolean,
-  scopes: Schema.Array(AuthScope),
+  scopes: ResponseScopes,
 });
 export type SessionStatus = typeof SessionStatus.Type;

@@ -26,10 +26,6 @@ Reviewers: Opus 5.5 and GPT 6.2 Sol (two lenses each), Fable 5.2 and GPT 6.2 Ast
   every typed error, denials included, and a defect ends the view; the list routes read only the
   value, so they show a skeleton forever or a stale list under a "connected" header. Retry
   transport failures only; show an error with retry, or a "stopped updating" note over stale data.
-- **Response scope lists that tolerate new scopes** (Astra; Sol: at the trigger): `SessionStatus`
-  and the session lists decode a closed list strictly, so one new scope locks every older client
-  out at boot. `ForwardCompatibleArray` in responses only; grants and authorization stay strict.
-  Trigger: before the first release, at the latest before the first new scope.
 - **Agent loop leftovers** (Sol, Opus): first-use downloads of `act` and `actionlint` race when
   several worktrees start at once (`scripts/lib/tools.ts` replaces the shared directory); worktree
   setup links a `.env` nothing reads; every worktree setup runs `sync:repos` although most changes

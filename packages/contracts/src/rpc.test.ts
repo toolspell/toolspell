@@ -4,11 +4,16 @@ import * as Exit from "effect/Exit";
 import * as Schema from "effect/Schema";
 import * as Rpc from "effect/rpc/Rpc";
 
+import { SessionStatus } from "./auth.ts";
 import { ClientCommand } from "./commands.ts";
-import { JobsStreamItem, ToolSpellRpcs } from "./rpc.ts";
+import { JobsStreamItem, RPC_METHODS, ToolSpellRpcs } from "./rpc.ts";
 
 const decodeJobsItem = Schema.decodeUnknownSync(JobsStreamItem);
 const decodeCommand = Schema.decodeUnknownSync(ClientCommand);
+const decodeSessionStatus = Schema.decodeUnknownSync(SessionStatus);
+const decodeGrantRequest = Schema.decodeUnknownSync(
+  ToolSpellRpcs.requests.get(RPC_METHODS.authCreatePairingGrant)!.payloadSchema,
+);
 
 const job = (id: string, status: string) => ({
   id,
@@ -24,7 +29,7 @@ const job = (id: string, status: string) => ({
 });
 
 describe("forward-compatible responses", () => {
-  it("drops records and events a newer server added instead of failing", () => {
+  it("drops records, events, and scopes a newer server added instead of failing", () => {
     const snapshot = decodeJobsItem({
       type: "snapshot",
       sequence: 3,
@@ -51,12 +56,19 @@ describe("forward-compatible responses", () => {
       batch.type === "events" ? batch.events.map((entry) => entry.sequence) : [],
       [5],
     );
+
+    const session = decodeSessionStatus({
+      authenticated: true,
+      scopes: ["read", "scope-from-a-newer-server"],
+    });
+    assert.deepStrictEqual(session.scopes, ["read"]);
   });
 
-  it("still rejects a malformed stream item", () => {
+  it("still rejects a malformed stream item and a grant request for an unknown scope", () => {
     assert.throws(() =>
       decodeJobsItem({ type: "snapshot", sequence: -1, workspaceId: "w1", jobs: [] }),
     );
+    assert.throws(() => decodeGrantRequest({ scopes: ["read", "teleport"] }));
   });
 });
 
