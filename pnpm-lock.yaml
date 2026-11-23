@@ -174,7 +174,7 @@ settings:
 catalogs:
   default:
     '@base-ui/react':
-      specifier: ^1.9.0
+      specifier: 1.9.0
       version: 1.9.0
     '@effect/atom-react':
       specifier: 4.1.5
@@ -189,7 +189,7 @@ catalogs:
       specifier: 4.1.5
       version: 4.1.5
     '@fontsource-variable/inter':
-      specifier: ^5.3.0
+      specifier: 5.3.0
       version: 5.3.0
     '@oxlint/plugins':
       specifier: 1.94.0
@@ -222,10 +222,10 @@ catalogs:
       specifier: 8.19.0
       version: 8.19.0
     class-variance-authority:
-      specifier: ^0.7.1
+      specifier: 0.7.1
       version: 0.7.1
     cn:
-      specifier: ^0.5.2
+      specifier: 0.5.2
       version: 0.5.2
     effect:
       specifier: 4.1.5
@@ -234,7 +234,7 @@ catalogs:
       specifier: 45.4.1
       version: 45.4.1
     lucide-react:
-      specifier: ^0.564.0
+      specifier: 0.564.0
       version: 0.564.0
     playwright:
       specifier: 1.65.1
@@ -246,13 +246,13 @@ catalogs:
       specifier: 19.3.1
       version: 19.3.1
     shadcn:
-      specifier: ^4.23.0
+      specifier: 4.23.0
       version: 4.23.0
     tailwindcss:
       specifier: 4.3.5
       version: 4.3.5
     tw-animate-css:
-      specifier: ^1.4.0
+      specifier: 1.4.0
       version: 1.4.0
     vite:
       specifier: npm:@voidzero-dev/vite-plus-core@8.3.8000
@@ -3484,10 +3484,12 @@ packages:
   yuku-core@0.19.0:
     resolution: {integrity: sha512-kYK9e1XdfirNhkipzW0wmMcSWcVF/CWnuugodfVYRCUwvoBefweL9HzB96OiKEhsx78V5WbUxbJqlizMX869Qg==}
     engines: {node: '>=14.18.0'}
+    deprecated: 'Yuku is now one package with one core. Use "yuku" instead: https://yuku.fyi/javascript/. Existing installs keep working but get no more fixes.'
 
   yuku-parser@0.19.0:
     resolution: {integrity: sha512-XrBh9ZiQK5mJVRxZBAvD6LwRyAYrK3MFtH3+onyuxFL5hFD44EC3QOmIC1FjTj6H2MMwq46/NAI+NZxLZPZgxg==}
     engines: {node: '>=14.18.0'}
+    deprecated: 'Yuku is now one package with one core. Use "yuku" instead: https://yuku.fyi/javascript/. Existing installs keep working but get no more fixes.'
 
   zod@4.6.7:
     resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
