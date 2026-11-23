@@ -67,6 +67,16 @@ where they move.
   The contribution workflows have their own checklist below. Once CI runs the full suites,
   `check:changed` can go back to tests beside changes plus T3 Code's map of cross-file guards (it
   runs every test of the affected packages while it is the only gate).
+- **CI runners**: Blacksmith.sh runners (third-party, faster; T3 Code runs its CI on them). Trigger:
+  CI gets slow, since GitHub's standard runners cost nothing on a public repository. Self-hosted
+  runners, to check: on a public repository a fork PR could run code on that machine, so only with
+  such runs blocked or isolated.
+- **Shared remote build cache**: T3 Code shares `vp run` task results between machines and CI
+  through its own Cloudflare server (`infra/task-cache/`, deployed with Alchemy; 7 days, 64 GB;
+  it builds on an experimental Vite+ remote client). Trigger: many machines or agents, or slow CI.
+- **Forge mirror**: T3 Code keeps a two-way synced mirror on TanStack Source
+  (`source.tanstack.com`, CLI `src`), built for many agents at once; GitHub stays the source of
+  truth and PRs merge there. Trigger: many agents working on the repository at once.
 - **GitHub, with releases**: T3 Code's release patterns (`resolve_commit`, `concurrency` with
   queued runs, per-platform `workflow_call`, a release smoke job on pull requests).
 - **GitHub, with outside contributors**: a PR comment comparing `report:renders` with main, in the
@@ -193,7 +203,7 @@ Deliberately not planned; listed so nobody re-surveys them. Each is in T3 Code i
 
 - Connecting one client to several servers (environment registry and connection supervisor).
 - Product telemetry and runtime monitoring (event-loop stalls, heap attribution, resource monitor).
-- A remote task cache, test sharding and cached test runs.
+- Test sharding and cached test runs.
 - A replay provider for recorded runs (the fake runner covers free test runs today).
 - A shared dev login token across worktrees.
 - Attachments or an upload store.
