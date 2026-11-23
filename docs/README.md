@@ -12,7 +12,7 @@
 Start with the [development runbook](./operations/development.md) and [AGENTS.md](../AGENTS.md).
 To see what a server did, read its [trace file](./operations/observability.md).
 Outside contributions follow [CONTRIBUTING.md](../CONTRIBUTING.md). Deferred topics live in the
-[backlog](./backlog.md) until the repository has an issue tracker.
+[backlog](./backlog.md).
 
 Internal notes preserve architectural decisions, constraints, and implementation traps that the
 source alone does not explain. Most code changes do not need an internal documentation update.

@@ -1,8 +1,8 @@
 # Backlog
 
 Deferred topics and verification checklists, so any session, worktree or compacted context can
-pick them up. This file is a bridge until the repository is public on GitHub: at that push every
-entry moves into an issue (labels from `.github/labels.json`) and the file is deleted.
+pick them up. They stay in this file, also after the public push, until the maintainer decides
+where they move.
 
 - Only deferred work and checklists. No task status: work in progress lives in its thread.
 - Add an entry when something is deliberately deferred; remove it in the commit that lands it.
@@ -10,8 +10,8 @@ entry moves into an issue (labels from `.github/labels.json`) and the file is de
 
 ## Revisit later
 
-- **Move this backlog to GitHub Issues** at the first public push, then delete this file and point
-  AGENTS.md at the issues.
+- **Where the backlog lives**: the maintainer decides where it moves (GitHub Issues or another
+  approach); not tied to the public push. Until then, keep using this file.
 - **Desktop packaging**: electron-builder, signing and notarization, auto-update. `backend.ts`
   already expects the bundled server at `resources/server/bin.mjs`. Use the release
   [macOS PNG](../assets/prod/macos-1024.png), [Windows ICO](../assets/prod/windows.ico), and
