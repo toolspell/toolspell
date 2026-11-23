@@ -16,8 +16,17 @@ where they move.
   outside the repository, `.plans/` is only a gitignored safety net, and deferred work goes into
   this file. Options: outside the repository (invisible to worktree agents), `.plans/` in the main
   checkout (gitignored, not shared with worktrees), or committed docs or checklists (visible
-  everywhere). Example: the GitHub rollout plan, today a file next to the checkout
+  everywhere). Example: the GitHub rollout plan, today in a `plans/` folder next to the checkout
   (`toolspell-github-rollout-plan.html`).
+- **PR template** (the maintainer wants to revisit it): `.github/pull_request_template.md` is T3
+  Code's, with sections Problem, Change, Scope (bug fixes only, link the issue) and Verification,
+  ending with the model and harness. A guide only, nothing enforces it. Decide what ToolSpell asks
+  of a PR before outside contributions start.
+- **CONTRIBUTING.md rules** (the maintainer wants to revisit them): adapted from T3 Code: bug fixes
+  only unless agreed or vouched, one problem per PR, show that it works, model and harness named,
+  3 open PRs per person, keep the PR mergeable, closing after a 72-hour notice. Decide which fit
+  ToolSpell before outside contributions start (related: the triage-policy check under "Checks
+  after the first push").
 - **Desktop packaging**: electron-builder, signing and notarization, auto-update. `backend.ts`
   already expects the bundled server at `resources/server/bin.mjs`. Use the release
   [macOS PNG](../assets/prod/macos-1024.png), [Windows ICO](../assets/prod/windows.ico), and
