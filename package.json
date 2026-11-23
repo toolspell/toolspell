@@ -14,6 +14,7 @@
     "start": "vp run --filter toolspell start",
     "typecheck": "vp run -r --cache typecheck",
     "check:changed": "node scripts/check-changed.ts",
+    "check:naming": "node scripts/check-naming.ts",
     "report:renders": "node scripts/render-metrics.ts run",
     "ready": "vp fmt --check && vp lint && vp run knip && vp run -r --cache typecheck && vp run -r test",
     "lint": "vp lint --report-unused-disable-directives",

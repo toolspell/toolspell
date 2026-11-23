@@ -63,6 +63,7 @@ export default defineConfig({
     "{*,!(.repos)/**}": [
       "vp fmt --no-error-on-unmatched-pattern",
       "vp lint --no-error-on-unmatched-pattern",
+      "node scripts/check-naming.ts",
     ],
   },
   fmt: {

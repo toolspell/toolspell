@@ -59,6 +59,7 @@ jobs:
       - run: vp fmt --check
       - run: vp lint --report-unused-disable-directives
       - run: vp run knip
+      - run: vp run check:naming
 
   typecheck_build:
     needs: changes

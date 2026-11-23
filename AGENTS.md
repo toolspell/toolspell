@@ -18,7 +18,8 @@ reaches it the same way.
 - Performance is a feature. Watch what crosses the socket, what re-renders, and what animates.
 - The name is one word: Toolspell in text people read, `toolspell` in commands, packages,
   folders, and identifiers, never `TS`. The short form `tspell` only where
-  [Naming](docs/internals/naming.md) allows it; `scripts/naming.test.ts` rejects misspellings.
+  [Naming](docs/internals/naming.md) allows it, marked with `naming-allow: <reason>`;
+  `vp run check:naming` enforces it in the commit hook, `check:changed`, and CI.
 
 ## Glossary
 

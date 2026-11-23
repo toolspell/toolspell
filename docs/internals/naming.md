@@ -1,3 +1,5 @@
+<!-- naming-allow-file: this guideline lists the spellings it forbids -->
+
 # Naming
 
 The product name is one word. Agents and people search, type, and install by it, so one spelling
@@ -39,4 +41,12 @@ load personal shell aliases.
 - `ToolSpell`, `Tool Spell`, `tool-spell`, or `TOOL_SPELL_`.
 - `tspell` as a social handle, package name, environment variable prefix, or the command in docs.
 
-[`scripts/naming.test.ts`](../../scripts/naming.test.ts) rejects the misspellings in tracked files.
+## Intentional exceptions
+
+`vp run check:naming` ([`scripts/check-naming.ts`](../../scripts/check-naming.ts)) runs in the
+commit hook, in `check:changed`, and in CI. It rejects misspellings everywhere, the short form in
+code, and the short form as a command in Markdown. A deliberate use carries a reason:
+
+- `naming-allow: <reason>` on the line or the line above, in code;
+- `naming-allow-file: <reason>` in the first five lines, for a file that has to show the forbidden
+  forms, such as this guideline.

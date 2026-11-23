@@ -125,6 +125,9 @@ const main = async () => {
     ...(code.length > 0
       ? [{ name: "lint", command: ["vp", "lint", "--no-error-on-unmatched-pattern", ...code] }]
       : []),
+    ...(present.length > 0
+      ? [{ name: "naming", command: [process.execPath, "scripts/check-naming.ts", ...present] }]
+      : []),
     ...(code.length > 0 || files.some((file) => file.endsWith("package.json"))
       ? [{ name: "knip", command: ["vp", "run", "knip"] }]
       : []),
