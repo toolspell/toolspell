@@ -15,8 +15,8 @@ server shows up without a reload.
 ## One retry owner
 
 Effect's socket RPC client owns transport retries, with backoff. Views do not retry the transport;
-they only resubscribe once a dropped socket ends a stream. A denial or a server defect would fail
-the same way again, so it ends the view, and the page shows the failure in place of the data or
+they only resubscribe once a dropped socket ends a stream. A denial, a server defect, or protocol
+data the client cannot decode would fail the same way again, so it ends the view, and the page shows the failure in place of the data or
 over its last data, with a manual retry. A view's subscription runs while something reads it and
 is released once nothing does; the socket closes when no RPC-backed atom is read, such as after
 the device is unpaired.

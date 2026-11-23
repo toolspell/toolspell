@@ -6,13 +6,16 @@ import * as Exit from "effect/Exit";
 import * as Fiber from "effect/Fiber";
 import * as Stream from "effect/Stream";
 import * as TestClock from "effect/testing/TestClock";
-import { RpcClientError } from "effect/rpc/RpcClientError";
+import { RpcClientDefect, RpcClientError } from "effect/rpc/RpcClientError";
 import * as Socket from "effect/socket/Socket";
 
 import { resubscribeOnTransportFailure } from "./resubscribe.ts";
 
 const dropped = new RpcClientError({
   reason: new Socket.SocketCloseError({ code: 1006 }),
+});
+const undecodable = new RpcClientError({
+  reason: new RpcClientDefect({ message: "Unknown message", cause: null }),
 });
 const denied = new AuthorizationError({ message: "Not allowed", requiredScope: "read" });
 
@@ -40,6 +43,11 @@ describe("resubscribeOnTransportFailure", () => {
 
   it.effect.each([
     ["a denial", Exit.fail(denied), (cause: Cause.Cause<unknown>) => Cause.hasFails(cause)],
+    [
+      "undecodable protocol data",
+      Exit.fail(undecodable),
+      (cause: Cause.Cause<unknown>) => Cause.hasFails(cause),
+    ],
     [
       "a defect",
       Exit.die(new Error("boom")),
