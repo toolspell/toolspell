@@ -133,6 +133,11 @@ screenshots.
     `Deferred`, or queue item that marks the milestone. `it.effect` runs on a `TestClock`.
   - Web browser tests render with `await using screen = await render(...)`. Lint enforces the
     mechanical rules (`toolspell/*` test rules).
+- To enforce a rule mechanically, pick the guard by what it reads: a rule in
+  `oxlint-plugin-toolspell` for a pattern inside one JS or TS file; a script or test for a check
+  across several files, for files Oxlint does not read (Markdown, YAML, HTML, JSON), or for whether
+  files exist (`scripts/check-naming.ts`, `apps/web/src/optimizeDeps.test.ts`). A deliberate
+  exception always carries a written reason.
 - User-visible changes get one integrated pass in a real client: the
   [test-toolspell-app](.agents/skills/test-toolspell-app/SKILL.md) skill. The primary agent does
   this once after integrating. Subagents do not launch their own dev servers.
