@@ -1,4 +1,4 @@
-import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import { useAtomRefresh, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { CommandId, isJobSettled, JobId, WorkspaceId, type Job } from "@toolspell/contracts";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as Option from "effect/Option";
@@ -7,6 +7,7 @@ import { memo } from "react";
 
 import { InlineForm } from "~/components/InlineForm";
 import { ListSkeleton } from "~/components/ListSkeleton";
+import { LiveViewFailure } from "~/components/LiveViewFailure";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
@@ -71,8 +72,12 @@ const JobRow = memo(function JobRow({ job }: { readonly job: Job }) {
 
 function WorkspacePage() {
   const workspaceId = WorkspaceId.make(Route.useParams().workspaceId);
-  const workspaces = AsyncResult.value(useAtomValue(atoms.workspacesAtom));
-  const view = AsyncResult.value(useAtomValue(atoms.jobsAtom(workspaceId)));
+  const workspacesResult = useAtomValue(atoms.workspacesAtom);
+  const jobsResult = useAtomValue(atoms.jobsAtom(workspaceId));
+  const refreshWorkspaces = useAtomRefresh(atoms.workspacesAtom);
+  const refreshJobs = useAtomRefresh(atoms.jobsAtom(workspaceId));
+  const workspaces = AsyncResult.value(workspacesResult);
+  const view = AsyncResult.value(jobsResult);
   const dispatch = useAtomSet(atoms.dispatchAtom, { mode: "promise" });
   const workspace = Option.flatMapNullishOr(workspaces, ({ workspaces: all }) =>
     all.find((entry) => entry.id === workspaceId),
@@ -109,6 +114,16 @@ function WorkspacePage() {
     );
   }
 
+  // One notice for the page: the title comes from the workspace list, the rest from the jobs.
+  const failure = AsyncResult.isFailure(jobsResult)
+    ? jobsResult
+    : AsyncResult.isFailure(workspacesResult)
+      ? workspacesResult
+      : undefined;
+  const retry = () => {
+    if (AsyncResult.isFailure(jobsResult)) refreshJobs();
+    if (AsyncResult.isFailure(workspacesResult)) refreshWorkspaces();
+  };
   const jobs = Option.map(view, ({ jobs: all }) => all.toReversed());
   return (
     <section className="flex flex-col gap-4">
@@ -121,8 +136,9 @@ function WorkspacePage() {
         submitLabel="Start job"
         onSubmit={start}
       />
+      {failure && <LiveViewFailure failure={failure} onRetry={retry} />}
       {Option.isNone(jobs) ? (
-        <ListSkeleton />
+        !AsyncResult.isFailure(jobsResult) && <ListSkeleton />
       ) : jobs.value.length === 0 ? (
         <Empty>
           <EmptyHeader>

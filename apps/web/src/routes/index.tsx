@@ -1,4 +1,4 @@
-import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import { useAtomRefresh, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { CommandId, WorkspaceId } from "@toolspell/contracts";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as Option from "effect/Option";
@@ -6,6 +6,7 @@ import * as AsyncResult from "effect/reactivity/AsyncResult";
 
 import { InlineForm } from "~/components/InlineForm";
 import { ListSkeleton } from "~/components/ListSkeleton";
+import { LiveViewFailure } from "~/components/LiveViewFailure";
 import { Card } from "~/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "~/components/ui/empty";
 import { atoms, newId } from "~/client";
@@ -13,7 +14,9 @@ import { atoms, newId } from "~/client";
 export const Route = createFileRoute("/")({ component: WorkspacesPage });
 
 function WorkspacesPage() {
-  const view = AsyncResult.value(useAtomValue(atoms.workspacesAtom));
+  const result = useAtomValue(atoms.workspacesAtom);
+  const retry = useAtomRefresh(atoms.workspacesAtom);
+  const view = AsyncResult.value(result);
   const dispatch = useAtomSet(atoms.dispatchAtom, { mode: "promise" });
   const navigate = Route.useNavigate();
 
@@ -37,8 +40,9 @@ function WorkspacesPage() {
         submitLabel="Create"
         onSubmit={create}
       />
+      {AsyncResult.isFailure(result) && <LiveViewFailure failure={result} onRetry={retry} />}
       {Option.isNone(view) ? (
-        <ListSkeleton />
+        !AsyncResult.isFailure(result) && <ListSkeleton />
       ) : view.value.workspaces.length === 0 ? (
         <Empty>
           <EmptyHeader>
