@@ -100,9 +100,36 @@ export const ensureTool = async (name: ToolName): Promise<string> => {
   // bsdtar on macOS and Windows reads zip too; Linux assets are tar.gz.
   NodeChildProcess.execFileSync("tar", ["-xf", archivePath, "-C", staging]);
   NodeFS.rmSync(archivePath);
-  NodeFS.rmSync(dir, { recursive: true, force: true });
-  NodeFS.renameSync(staging, dir);
+  publish(staging, dir, binary);
   return binary;
+};
+
+/**
+ * Moves a verified staging directory into place. A copy another run published first is never
+ * deleted, since that run may already be using its binary; only an install missing its binary is
+ * replaced.
+ */
+export const publish = (staging: string, dir: string, binary: string) => {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      NodeFS.renameSync(staging, dir);
+      return;
+    } catch (error) {
+      if (!NodeFS.existsSync(dir)) throw error;
+    }
+    if (NodeFS.existsSync(binary)) {
+      NodeFS.rmSync(staging, { recursive: true, force: true });
+      return;
+    }
+    const broken = `${dir}.broken-${process.pid}`;
+    try {
+      NodeFS.renameSync(dir, broken);
+    } catch {
+      // Another run moved it first.
+    }
+    NodeFS.rmSync(broken, { recursive: true, force: true });
+  }
+  throw new Error(`Could not install ${binary}.`);
 };
 
 export const runTool = async (
