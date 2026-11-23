@@ -20,7 +20,7 @@ describe("ci:local arguments", () => {
 });
 
 describe("ci:local overlay", () => {
-  it("copies staged edits, additions and deletions onto a clone of HEAD", () => {
+  it("copies staged edits, additions, deletions and file-directory swaps onto a clone of HEAD", () => {
     const base = NodeFS.mkdtempSync(NodePath.join(NodeOS.tmpdir(), "toolspell-ci-local-"));
     try {
       const root = NodePath.join(base, "root");
@@ -35,6 +35,9 @@ describe("ci:local overlay", () => {
       git(root, "config", "user.name", "Test");
       NodeFS.writeFileSync(NodePath.join(root, "edited.ts"), "before");
       NodeFS.writeFileSync(NodePath.join(root, "deleted.ts"), "gone");
+      NodeFS.writeFileSync(NodePath.join(root, "becomes-dir"), "file");
+      NodeFS.mkdirSync(NodePath.join(root, "becomes-file"));
+      NodeFS.writeFileSync(NodePath.join(root, "becomes-file", "inner.ts"), "inner");
       git(root, "add", ".");
       git(root, "commit", "--quiet", "-m", "base");
       git(base, "clone", "--quiet", root, clone);
@@ -44,11 +47,19 @@ describe("ci:local overlay", () => {
       NodeFS.writeFileSync(NodePath.join(root, "new", "added.ts"), "added");
       git(root, "add", "edited.ts", "new/added.ts");
       git(root, "rm", "--quiet", "deleted.ts");
+      git(root, "rm", "--quiet", "becomes-dir");
+      NodeFS.mkdirSync(NodePath.join(root, "becomes-dir"));
+      NodeFS.writeFileSync(NodePath.join(root, "becomes-dir", "inner.ts"), "now a dir");
+      git(root, "rm", "--quiet", "-r", "becomes-file");
+      NodeFS.writeFileSync(NodePath.join(root, "becomes-file"), "now a file");
+      git(root, "add", "becomes-dir", "becomes-file");
       overlayChanges(root, clone);
 
       assert.strictEqual(read(clone, "edited.ts"), "after");
       assert.strictEqual(read(clone, "new/added.ts"), "added");
       assert.isFalse(NodeFS.existsSync(NodePath.join(clone, "deleted.ts")));
+      assert.strictEqual(read(clone, "becomes-dir/inner.ts"), "now a dir");
+      assert.strictEqual(read(clone, "becomes-file"), "now a file");
     } finally {
       NodeFS.rmSync(base, { recursive: true, force: true });
     }

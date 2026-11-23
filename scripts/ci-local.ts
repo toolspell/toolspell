@@ -45,15 +45,28 @@ const changedSinceHead = (root: string) =>
     ),
   ].sort();
 
-/** Copies each changed path from `root` into `dir`, removing those `root` no longer has. */
+const remove = (path: string) => {
+  try {
+    NodeFS.rmSync(path, { recursive: true, force: true });
+  } catch (error) {
+    // A parent became a file earlier in the overlay, so the path is gone already.
+    if ((error as NodeJS.ErrnoException).code !== "ENOTDIR") throw error;
+  }
+};
+
+/**
+ * Copies each changed file from `root` into `dir` and removes the paths `root` no longer has as
+ * files. A path that turned from a file into a directory, or back, is replaced, not copied over.
+ */
 export const overlayChanges = (root: string, dir: string) => {
   for (const file of changedSinceHead(root)) {
     const source = NodePath.join(root, file);
     const target = NodePath.join(dir, file);
-    if (!NodeFS.existsSync(source)) {
-      NodeFS.rmSync(target, { force: true });
+    if (!NodeFS.statSync(source, { throwIfNoEntry: false })?.isFile()) {
+      remove(target);
       continue;
     }
+    if (NodeFS.statSync(target, { throwIfNoEntry: false })?.isDirectory()) remove(target);
     NodeFS.mkdirSync(NodePath.dirname(target), { recursive: true });
     NodeFS.copyFileSync(source, target);
   }
