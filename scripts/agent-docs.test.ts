@@ -18,6 +18,17 @@ const tracked = NodeChildProcess.execFileSync(
   .filter((file) => file !== "" && NodeFS.existsSync(NodePath.join(root, file)));
 
 const read = (file: string) => NodeFS.readFileSync(NodePath.join(root, file), "utf8");
+const bytes = (text: string) => Buffer.byteLength(text, "utf8");
+
+// What loads in every session, in bytes (about 4 per token). CLAUDE.md only imports AGENTS.md.
+const measureAlwaysLoaded = () => ({
+  agentsMdBytes: bytes(read("AGENTS.md")),
+  skillDescriptionsBytes: tracked
+    .filter((file) => /^\.agents\/skills\/[^/]+\/SKILL\.md$/.test(file))
+    .map((file) => /^---\n([\s\S]*?)\n---/.exec(read(file))?.[1] ?? "")
+    .reduce((sum, frontmatter) => sum + bytes(frontmatter), 0),
+});
+const BUDGET = "scripts/agent-context-budget.json";
 
 const agentFiles = tracked.filter(
   (file) => file === "AGENTS.md" || file === "CLAUDE.md" || file.startsWith(".agents/"),
@@ -29,6 +40,13 @@ describe("agent docs", () => {
       .map((file) => ({ file, lines: read(file).split("\n").length }))
       .filter(({ lines }) => lines > MAX_AGENT_FILE_LINES);
     expect(tooLong, "Split or trim these files").toEqual([]);
+  });
+
+  it(`matches the always-loaded context recorded in ${BUDGET}`, () => {
+    expect(
+      measureAlwaysLoaded(),
+      `Update ${BUDGET} in the same commit; growth needs the maintainer's OK`,
+    ).toEqual(JSON.parse(read(BUDGET)));
   });
 
   it("uses no em dashes in markdown", () => {

@@ -157,6 +157,11 @@ screenshots.
 
 Most code changes do not need a documentation change. Agents can read the code.
 
+- `AGENTS.md` and the skill descriptions load in every session. Add a rule only if it changes
+  behavior often, and put details behind a link. Their size in bytes is budgeted in
+  `scripts/agent-context-budget.json`: a change updates it in the same commit, and growth needs the
+  maintainer's OK.
+
 - `docs/internals/` is for architectural decisions and their reasons, constraints that span
   components, and implementation traps that are hard to discover from the source. Before adding a
   paragraph, ask what a maintainer would get wrong without it. If reading the relevant code answers
