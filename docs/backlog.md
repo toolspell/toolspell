@@ -95,11 +95,9 @@ where they move.
 - **Third-party license notices** before the first web or desktop release: adapt T3 Code's build-time
   generator (its `docs/internals/open-source-licenses.md` and `third-party-licenses.config.json`),
   including a custom notice for T3 Code itself (today in `THIRD_PARTY_NOTICES.md`).
-- **Name, company, trademark**: before publishing, check "Toolspell" for name conflicts (DPMA,
-  EUIPO, USPTO). Once the company exists, the maintainer grants it exclusive usage rights (under
-  German law, § 29 UrhG, copyright itself cannot be transferred); then update the copyright line
-  in `LICENSE` and the README. Once the trademark is registered, a trademark policy replaces the
-  README line about the name and logo.
+- **Company and copyright**: once the company exists, the maintainer grants it exclusive usage
+  rights (under German law, § 29 UrhG, copyright itself cannot be transferred); then update the
+  copyright line in `LICENSE` and the README.
 - **Performance, later** (T3 Code has each; budgets pin today's values first): merge `job.progressed`
   per job in a short window (`ThreadLiveEventCoalescer`) once a runner reports often; bound each
   subscriber's queue and make it resume from its cursor (`LiveStreamBudget`); cap resume and send a
@@ -253,7 +251,7 @@ None of the contribution workflows can run before the repository is on GitHub.
 - **Before the push** (Sol, Opus): the issue chooser gets `contact_links` to the private advisory
   form; the CI lint job runs `actionlint` like `check:changed` does; the docs stop calling `ready`
   the same as CI (CI also builds and checks the built boot and the preload); `docs/user/install.md`
-  says there is no release yet and points to building from source; after the name check, grep the
+  says there is no release yet and points to building from source; grep the
   `toolspell/toolspell` slug in `CONTRIBUTING.md`, `SECURITY.md` and the issue templates.
 
 ## Checks for the Windows and Linux VMs
