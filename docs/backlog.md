@@ -13,11 +13,11 @@ entry moves into an issue (labels from `.github/labels.json`) and the file is de
 Rated "now" by the review council and left for the maintainer's review, most important first.
 Reviewers: Opus 5.5 and GPT 6.2 Sol (two lenses each), Fable 5.2 and GPT 6.2 Astra.
 
-- **Agent loop leftovers** (Sol, Opus): first-use downloads of `act` and `actionlint` race when
-  several worktrees start at once (`scripts/lib/tools.ts` replaces the shared directory); worktree
-  setup links a `.env` nothing reads; every worktree setup runs `sync:repos` although most changes
-  never read `.repos`; `ci:local`'s overlay aborts when a staged change turns a file into a
-  directory or back (Sol, round 2).
+- **Reference source on every worktree setup** (Sol): setup copies `.repos` (Effect and T3 Code
+  sources, 189 MB) from the main checkout into each new worktree before it reports done, and
+  downloads it when the main checkout has none, although most changes never read it. Option: finish
+  setup after the install and fetch `.repos` on demand (`vp run sync:repos`), with an AGENTS.md
+  line that agents sync before reading it. The maintainer looks at this first; do not act yet.
 
 ## Revisit later
 
