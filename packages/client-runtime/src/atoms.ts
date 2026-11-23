@@ -18,7 +18,6 @@ import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
-import * as Schedule from "effect/Schedule";
 import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
 import { FetchHttpClient, HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http";
@@ -37,6 +36,7 @@ import {
   type JobsView,
   type WorkspacesView,
 } from "./views.ts";
+import { resubscribeOnTransportFailure } from "./resubscribe.ts";
 
 /**
  * - `paired`: this browser has a session with these scopes and may connect.
@@ -62,8 +62,6 @@ const PairFailure = Schema.Struct({ message: Schema.String });
 class PairingError extends Schema.TaggedError<PairingError>()("PairingError", {
   message: Schema.String,
 }) {}
-
-const RESUBSCRIBE_DELAY = "1 second";
 
 /**
  * A view's subscription runs while something reads it and resumes from its cursor after a
@@ -152,8 +150,8 @@ export const makeToolSpellAtoms = (options: { readonly origin: string }) => {
               view = apply(view, item);
               return view;
             }),
-            // A dropped socket ends the stream; resubscribe from the cursor once it is back.
-            Stream.retry(Schedule.spaced(RESUBSCRIBE_DELAY)),
+            // After a dropped socket, resubscribes from the cursor; other failures end the view.
+            resubscribeOnTransportFailure,
             // A replay that changes nothing keeps the view, so readers do not re-render.
             Stream.changesWith((previous, next) => previous === next),
           );
