@@ -113,6 +113,9 @@ without one. Pass the server's `--home-dir` if it uses another home.
 | `vp run check:secrets` | gitleaks over the whole history; `--staged` is what the commit hook runs. |
 | `vp run ready`         | The full gate. The integrator runs it before landing on `main`.           |
 
+A secret that `check:secrets` finds in CI is already public: rotate it first, then clean up. CI logs
+show only the count; run `vp run check:secrets` locally to see where it is (values redacted).
+
 ## CI before GitHub
 
 Until the repository has GitHub Actions, `vp run ci:local` runs `.github/workflows/ci.yml` with

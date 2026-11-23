@@ -14,9 +14,23 @@ const mode = args.includes("--staged")
     ? ["git", "--log-opts", `${args[since + 1]}..HEAD`]
     : ["git"];
 
+// Locally, findings list file and line (values redacted) so they can be fixed. On public CI logs
+// only the count shows; a finding there is already public, so the log should not map it.
+const verbose = process.env.CI ? [] : ["--verbose"];
+
 process.exitCode = await runTool(
   "gitleaks",
-  [...mode, "--config", ".gitleaks.toml", "--redact", "--no-banner", "--exit-code", "1", "."],
+  [
+    ...mode,
+    ...verbose,
+    "--config",
+    ".gitleaks.toml",
+    "--redact",
+    "--no-banner",
+    "--exit-code",
+    "1",
+    ".",
+  ],
   process.env,
   root,
 );
