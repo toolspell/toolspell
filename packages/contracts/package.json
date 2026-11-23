@@ -12,6 +12,10 @@
     "./desktop": {
       "types": "./src/desktop.ts",
       "import": "./src/desktop.ts"
+    },
+    "./secretToken": {
+      "types": "./src/secretToken.ts",
+      "import": "./src/secretToken.ts"
     }
   },
   "scripts": {

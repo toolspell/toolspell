@@ -4,13 +4,17 @@ import {
   type AuthSession,
   type PairingGrant,
 } from "@toolspell/contracts";
+import {
+  formatSecretToken,
+  SECRET_TOKEN_BYTES,
+  type SecretTokenType,
+} from "@toolspell/contracts/secretToken";
 import * as Clock from "effect/Clock";
 import * as Context from "effect/Context";
 import * as Digest from "effect/crypto/Digest";
 import * as SecureRandom from "effect/crypto/SecureRandom";
 import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
-import * as Base64Url from "effect/encoding/Base64Url";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as PubSub from "effect/PubSub";
@@ -91,7 +95,10 @@ const make = Effect.gen(function* () {
   const digest = yield* Digest.Digest;
   const revocations = yield* PubSub.unbounded<AuthSessionId>();
 
-  const newToken = random.randomBytes(32).pipe(Effect.map(Base64Url.encode));
+  const newToken = (type: SecretTokenType) =>
+    random
+      .randomBytes(SECRET_TOKEN_BYTES)
+      .pipe(Effect.map((bytes) => formatSecretToken(type, bytes)));
   const hash = (token: string) => digest.digestHex(Digest.sha256, new TextEncoder().encode(token));
 
   const insertGrant = Effect.fn("AuthStore.insertGrant")(function* (
@@ -109,7 +116,7 @@ const make = Effect.gen(function* () {
 
   const pair = Effect.fn("AuthStore.pair")(function* (token: string, label: string) {
     const now = yield* Clock.currentTimeMillis;
-    const sessionToken = yield* newToken;
+    const sessionToken = yield* newToken("sess");
     const id = AuthSessionId.make(yield* random.uuidV4());
     const consumed = yield* sql.withTransaction(
       Effect.gen(function* () {
@@ -180,7 +187,7 @@ const make = Effect.gen(function* () {
   const createPairingGrant = Effect.fn("AuthStore.createPairingGrant")(function* (
     scopes: ReadonlyArray<AuthScope>,
   ) {
-    return yield* insertGrant(yield* newToken, scopes);
+    return yield* insertGrant(yield* newToken("pair"), scopes);
   });
 
   const registerPairingToken = Effect.fn("AuthStore.registerPairingToken")(function* (

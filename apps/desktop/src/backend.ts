@@ -5,6 +5,7 @@ import * as NodeCrypto from "node:crypto";
 import * as NodePath from "node:path";
 import * as NodeStream from "node:stream";
 
+import { formatSecretToken, SECRET_TOKEN_BYTES } from "@toolspell/contracts/secretToken";
 import { app } from "electron";
 
 import { LOOPBACK } from "./port.ts";
@@ -178,7 +179,7 @@ export class ServerSupervisor {
   }
 
   #spawn(): ServerRun {
-    const token = NodeCrypto.randomBytes(32).toString("base64url");
+    const token = formatSecretToken("pair", NodeCrypto.randomBytes(SECRET_TOKEN_BYTES));
     const child = NodeChildProcess.spawn(process.execPath, [serverEntry()], {
       env: {
         ...process.env,

@@ -20,6 +20,8 @@ describe("pairing", () => {
       const grant = yield* auth.createPairingGrant(STANDARD_AUTH_SCOPES);
       const paired = yield* auth.pair(grant.token, "Laptop");
       assert.deepStrictEqual(paired.session.scopes, STANDARD_AUTH_SCOPES);
+      assert.match(grant.token, /^tspell_pair_[0-9a-f]{64}$/); // naming-allow: the token format
+      assert.match(Redacted.value(paired.sessionToken), /^tspell_sess_[0-9a-f]{64}$/); // naming-allow: the token format
 
       const reused = yield* Effect.flip(auth.pair(grant.token, "Someone else"));
       assert.strictEqual(reused._tag, "PairingFailedError");
