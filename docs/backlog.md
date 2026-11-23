@@ -37,6 +37,9 @@ Reviewers: Opus 5.5 and GPT 6.2 Sol (two lenses each), Fable 5.2 and GPT 6.2 Ast
   rated critical: app requests are gated only until Electron sees the child exit, so a request in
   that window can reach whoever takes the port next (fix: the shell owns the origin and forwards to
   the current child).
+- **Desktop window revoked by another device**: it shows the pairing screen until a relaunch,
+  since only the shell can mint a new token (sign-out is hidden in the desktop app for the same
+  reason). Fix: the shell hands the window a fresh token on request. Trigger: desktop packaging.
 - **A packaged app launched with `--background`** still registers as a regular macOS app for a
   moment before `main.ts` makes it background only (the dev supervisor avoids that with an
   `LSBackgroundOnly` copy). Trigger: agents testing packaged builds.
