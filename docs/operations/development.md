@@ -120,12 +120,30 @@ show only the count; run `vp run check:secrets` locally to see where it is (valu
 ## CI before GitHub
 
 Until the repository has GitHub Actions, `vp run ci:local` runs `.github/workflows/ci.yml` with
-[act](https://github.com/nektos/act) in Docker; pass `-- -j <job>` for one job. It runs on the
-active Docker context in that engine's architecture, or on another engine with
-`--context <name>`, which copies the checkout into its containers. act and actionlint are pinned
-release binaries that `scripts/lib/tools.ts` downloads and verifies on first use;
-`check:changed` runs actionlint when a workflow changes. A green act run is evidence, not proof:
-images and caching differ from GitHub's runners.
+[act](https://github.com/nektos/act) in Docker; pass `-- -j <job>` for one job. act copies the
+checkout into its containers; from a worktree it sends a temporary clone with your uncommitted
+changes. act and actionlint are pinned release binaries that `scripts/lib/tools.ts` downloads and
+verifies on first use; `check:changed` runs actionlint when a workflow changes. A green act run is
+evidence, not proof: images and caching differ from GitHub's runners.
+
+### Another Docker engine
+
+The run uses the active Docker context in that engine's architecture. `--context <name>` picks
+another engine, for example an amd64 machine reached over SSH:
+
+```sh
+docker context create build-box --docker "host=ssh://user@build-box"
+vp run ci:local --context build-box -- -j lint
+```
+
+- **Linux containers** (a Linux host, or Docker in WSL2 on Windows): the same `ubuntu-24.04` image
+  runs in that engine's architecture. act's cache server stays off for another context, so caches
+  start cold.
+- **Windows containers**: every job runs on `ubuntu-24.04`, a Linux image, so such an engine cannot
+  run them. act's Windows support is experimental; a future Windows job will likely need a GitHub
+  Windows runner.
+- The engine runs the branch's workflow with whatever that host can reach. Never run it on an
+  unreviewed outside branch.
 
 Web browser tests (`*.browser.test.tsx`) run in Playwright's headless Chromium. Install it once
 with `vp exec playwright install chromium` from `apps/web`; CI caches it per Playwright version.

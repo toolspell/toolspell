@@ -53,14 +53,13 @@ where they move.
 - **Login-shell `PATH`** for apps launched from Finder or the Start menu; needed before the first
   real runner spawns tools (T3 Code: `apps/desktop/src/shell/DesktopShellEnvironment.ts`).
 - **Windows verification on VMs** rather than containers. Checklist below.
-- **`ci:local` and personal Docker contexts** (the maintainer looks closer first): the default is
-  the active Docker context, and `--context` picks another; the maintainer's own remote contexts
-  (reached over SSH) are named in this backlog and in a test. Decide what stays in the repository
-  and what moves to a gitignored local setting (for example in `.env`). Either way: never run it on
-  an unreviewed outside branch, since it runs that branch's workflows on the chosen Docker host.
-- **Windows CI job**: the maintainer's `windows-box` docker context (Windows Server, tested
-  over SSH; `docker cp` needs a directory destination) runs Windows containers, but act's Windows
-  support is experimental; a GitHub Windows runner is the likely route once the repo is on GitHub.
+- **`ci:local` default engine**: `--context` is documented in `docs/operations/development.md`.
+  Decide whether a gitignored local setting (for example in `.env`) should pick a default context.
+  Either way: never run it on an unreviewed outside branch, since it runs that branch's workflows
+  on the chosen Docker host.
+- **Windows CI job**: a Windows Docker engine runs Windows containers (there `docker cp` needs a
+  directory destination), but act's Windows support is experimental; a GitHub Windows runner is
+  the likely route once the repo is on GitHub.
 - **Desktop, later**: saved window position that survives display changes; Linux desktop entry,
   `setDesktopName` and Wayland flags; Windows AppUserModelId; deep links (scheme `toolspell://`); secret storage
   (`safeStorage`, Linux password store); killing child processes before exit in an AppImage;
