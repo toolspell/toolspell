@@ -67,6 +67,8 @@ where they move.
   The contribution workflows have their own checklist below. Once CI runs the full suites,
   `check:changed` can go back to tests beside changes plus T3 Code's map of cross-file guards (it
   runs every test of the affected packages while it is the only gate).
+- **Repository details on GitHub**: a description, topics and a website link for the repository
+  page. Skipped for the first push; set them once the maintainer decides the wording.
 - **CI runners**: Blacksmith.sh runners (third-party, faster; T3 Code runs its CI on them). Trigger:
   CI gets slow, since GitHub's standard runners cost nothing on a public repository. Self-hosted
   runners, to check: on a public repository a fork PR could run code on that machine, so only with
