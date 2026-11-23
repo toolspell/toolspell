@@ -13,10 +13,6 @@ entry moves into an issue (labels from `.github/labels.json`) and the file is de
 Rated "now" by the review council and left for the maintainer's review, most important first.
 Reviewers: Opus 5.5 and GPT 6.2 Sol (two lenses each), Fable 5.2 and GPT 6.2 Astra.
 
-- **A failed live view looks like loading or like fresh data** (Opus, Sol): `liveView` retries
-  every typed error, denials included, and a defect ends the view; the list routes read only the
-  value, so they show a skeleton forever or a stale list under a "connected" header. Retry
-  transport failures only; show an error with retry, or a "stopped updating" note over stale data.
 - **Agent loop leftovers** (Sol, Opus): first-use downloads of `act` and `actionlint` race when
   several worktrees start at once (`scripts/lib/tools.ts` replaces the shared directory); worktree
   setup links a `.env` nothing reads; every worktree setup runs `sync:repos` although most changes

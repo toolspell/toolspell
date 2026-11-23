@@ -55,6 +55,9 @@ stays in `useState`.
 - A button's mutation runs through [`useAction`](../../apps/web/src/hooks/useAction.ts): the
   control disables while it runs, a spinner appears only if it is slow, and a failure becomes a
   toast. An error that belongs to a field, as in `InlineForm`, stays inline.
+- A page that reads a live view renders
+  [`LiveViewFailure`](../../apps/web/src/components/LiveViewFailure.tsx) when the view's result is a
+  failure, and no skeleton then, so an ended view never looks like loading or like fresh data.
 - A destructive action asks first with `confirm()` from
   [`confirmDialog.ts`](../../apps/web/src/confirmDialog.ts), never `window.confirm`.
 - An indicator for work that is usually fast (a spinner, a skeleton, "Reconnecting…") waits for
