@@ -16,6 +16,9 @@ reaches it the same way.
 - You may be running inside a live Toolspell or T3 Code instance, controlled remotely. Be careful
   with data, dev servers, and processes that may belong to the session you run in.
 - Performance is a feature. Watch what crosses the socket, what re-renders, and what animates.
+- The name is one word: Toolspell in text people read, `toolspell` in commands, packages,
+  folders, and identifiers, never `TS`. The short form `tspell` only where
+  [Naming](docs/internals/naming.md) allows it; `scripts/naming.test.ts` rejects misspellings.
 
 ## Glossary
 

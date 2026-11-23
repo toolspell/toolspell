@@ -37,7 +37,9 @@ where they move.
   (Fable): the desktop origin (a custom app scheme instead of a loopback origin whose port can
   change, which loses device preferences; until then a fresh origin should start from the
   remembered desktop theme, Sol), a credential that is not an ambient cookie for a hosted web or
-  mobile client, and CORS for them. That decision also closes the last desktop readiness gap Sol
+  mobile client, and CORS for them. Before the first signed build or store listing, fix the app IDs
+  (a reversed domain such as `com.toolspell.desktop`, `.dev` for dev builds; see
+  [Naming](internals/naming.md)); they cannot change after the first publish. That decision also closes the last desktop readiness gap Sol
   rated critical: app requests are gated only until Electron sees the child exit, so a request in
   that window can reach whoever takes the port next (fix: the shell owns the origin and forwards to
   the current child).
@@ -55,7 +57,7 @@ where they move.
   over SSH; `docker cp` needs a directory destination) runs Windows containers, but act's Windows
   support is experimental; a GitHub Windows runner is the likely route once the repo is on GitHub.
 - **Desktop, later**: saved window position that survives display changes; Linux desktop entry,
-  `setDesktopName` and Wayland flags; Windows AppUserModelId; deep links; secret storage
+  `setDesktopName` and Wayland flags; Windows AppUserModelId; deep links (scheme `toolspell://`); secret storage
   (`safeStorage`, Linux password store); killing child processes before exit in an AppImage;
   clearing the GPU cache after an Electron upgrade; live theme switching on Linux.
 - **Platform, later**: a 1 s read timeout for the bootstrap fd, as T3 Code does (on macOS and
@@ -67,6 +69,13 @@ where they move.
   The contribution workflows have their own checklist below. Once CI runs the full suites,
   `check:changed` can go back to tests beside changes plus T3 Code's map of cross-file guards (it
   runs every test of the affected packages while it is the only gate).
+- **Second CLI command `tspell`**: once the CLI has commands people run daily, decide whether to
+  ship `tspell` as an installed alternative to `toolspell`: a real command, not a shell alias,
+  under a package name that is ours. Help output and docs keep `toolspell`.
+- **Prefixed secret tokens**: session tokens and pairing grants (`apps/server/src/auth/AuthStore.ts`)
+  use `tspell_<type>_` (for example `tspell_sess_`, `tspell_pair_`), a random part of letters and
+  digits only, and optionally a checksum, so secret scanners recognize leaked tokens. Trigger:
+  before the first release, since existing sessions would need a migration afterwards.
 - **Repository details on GitHub**: a description, topics and a website link for the repository
   page. Skipped for the first push; set them once the maintainer decides the wording.
 - **CI runners**: Blacksmith.sh runners (third-party, faster; T3 Code runs its CI on them). Trigger:

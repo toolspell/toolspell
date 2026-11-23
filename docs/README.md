@@ -26,4 +26,5 @@ Follow the [documentation rules](../AGENTS.md#documentation) before adding one.
 - [Runners](./internals/runners.md)
 - [Web UI](./internals/web-ui.md)
 - [Testing](./internals/testing.md)
+- [Naming](./internals/naming.md)
 - [Security model](../SECURITY.md)
