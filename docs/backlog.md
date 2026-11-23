@@ -36,18 +36,6 @@ Reviewers: Opus 5.5 and GPT 6.2 Sol (two lenses each), Fable 5.2 and GPT 6.2 Ast
   never read `.repos`; `ci:local`'s overlay aborts when a staged change turns a file into a
   directory or back (Sol, round 2).
 
-## Decided during the council review (confirm or revert)
-
-- **`dev:web` fails on a busy web port** instead of moving to the next one, so its pairing links do
-  not point at someone else's listener; a stale process on that port now stops it with a message.
-- **ID caps apply where a command creates an id** (workspace and job ids, command ids); references
-  stay uncapped so older records remain addressable (Sol, round 3).
-- **The setup-marker claim stays as is**: three setups racing on a dead marker can still both run
-  (Sol, round 3: fail on a stale marker instead; Opus: accept, T3 Code has no claim at all).
-- **Codex and T3 Code shells count as agents** for the desktop launch mode (`CODEX_THREAD_ID`,
-  `CODEX_SANDBOX`, `T3CODE_THREAD_ID`), so `dev:desktop` from T3 Code's terminal panel starts in
-  the background too; pass `--foreground` there.
-
 ## Revisit later
 
 - **Move this backlog to GitHub Issues** at the first public push, then delete this file and point
@@ -177,7 +165,8 @@ Reviewers: Opus 5.5 and GPT 6.2 Sol (two lenses each), Fable 5.2 and GPT 6.2 Ast
 - **`dev:desktop --host 0.0.0.0`** loads `localhost`, leaving one address family outside the dev
   readiness proof. Trigger: the first real use of `--host` with the desktop app.
 - **Setup-marker claim test**: the claim has no automated test because the script runs at top
-  level. Trigger: the first regression; then extract the claim and test it.
+  level, and three setups racing on a dead marker can still both run (accepted; T3 Code has no
+  claim at all). Trigger: the first regression; then extract the claim and test it.
 - **More contributors or cloud agents**: a devcontainer; a patch policy and unused-patch check at
   the first `pnpm patch`; `.env` loading at the first per-developer setting; a dev memory limit at
   the first leaking dev server.
