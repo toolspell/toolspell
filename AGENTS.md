@@ -119,53 +119,16 @@ screenshots.
   the repository root.
 - **Do not run repo-wide checks** (`vp run ready`, `vp run -r test`) unless asked. Until GitHub CI
   exists, the integrator runs `vp run ready` before landing on `main`.
-- Test behavior that can break: the decider, the event sink transaction, effect worker recovery,
-  subscriptions and resume, auth and scope guards, persistence and migrations, wire compatibility,
-  and the logic a bug fix changed. Leave out tests for what types already guarantee, trivial logic,
-  copy text, smoke runs, mock-call mirrors, callback wiring, and props rendered to static markup.
-- Extend before you add. When an existing test or table covers the behavior, add a row or an
-  assertion there. Write a new `it` only when no case fits.
-- A table is `it.each` or `it.effect.each`, never `it` inside a `for` loop. Effect tests run
-  through `@effect/vitest` and test layers, never `Effect.runPromise` or `ManagedRuntime.make`.
-  Lint enforces both: `toolspell/no-test-in-loop`, `toolspell/no-manual-effect-runtime-in-tests`.
-- Test at one layer: the lowest one that fails on `main`. Do not repeat the case in a wrapper test
-  or at each call site.
-- Write a browser test only for behavior that needs a real browser: layout and scrolling, focus
-  and pointer input, or a component wired to its hooks. Logic a component calls gets a unit test.
-- Backend behavior changes ship with focused tests for that behavior.
-- A logic, data, state, or protocol bug gets a failing test first, then the fix. A purely visual
-  bug gets before and after captures and no test. A server-only fix with no visible surface ships
-  the test plus a short runtime transcript.
-- The server is event-sourced, and side effects run after the command commits. In tests, drain the
-  effect worker (`EffectWorker.drain`) or await the specific event, `Deferred`, or queue item that
-  marks the milestone. Never wait on sleeps or polling. A test that needs a timeout to pass is
-  wrong. Concretely:
-  - `it.effect` runs on a `TestClock`; `Effect.sleep` only advances through `TestClock.adjust`.
-    `it.live` is wall-clock and only for subprocess or network fixtures.
-  - No `yieldNow` or `sleep` polling loops. Await the `Deferred`, take from the `Queue`, or drain
-    the worker.
-  - No per-test timeout argument or `retry`. Flaky tests are fixed, not retried.
-  - No `performance.now()` or `Date.now()` deltas. Assert on events and counts, not elapsed time.
-  - Browser tests assert through `expect.element` or `vi.waitFor`, never `requestAnimationFrame`
-    or `transitionend`.
-  - `it.skip` and friends need a tracking issue on the line above: `// quarantine: #1234 <why>`.
-  - Lint enforces this: `toolspell/no-test-timeout-or-unreasoned-skip`,
-    `toolspell/no-frame-waits-in-browser-tests`, `toolspell/no-wall-clock-in-tests`,
-    `toolspell/no-real-time-wait-in-tests`, `toolspell/no-polling-loop-in-tests`.
-- Web browser tests are `*.browser.test.{ts,tsx}` and render with
-  `await using screen = await render(...)` from `apps/web/test/render.tsx`, inside a fresh atom
-  registry (`screen.registry`). `toolspell/require-disposable-render` errors on other patterns.
-  - Acquire what the test drives after mounting (fake timers it advances, spies it sets up after
-    mounting) after the render, so it disposes before the unmount. Anything the first render
-    reads comes before it.
-  - A helper that renders and then waits or clicks puts the screen in an `AsyncDisposableStack`
-    and `move()`s it out only on success, so a failed wait still unmounts.
-  - `rerender` needs a fresh element on every call.
-  - No lifecycle hooks and no module-level mutable state. Shared mock state that `vi.mock`
-    factories read is reset by a `setup()` call at the top of the test.
-  - `router` is on by default. Pass `router: false` only with a one-line comment saying why.
-- [Testing](docs/internals/testing.md) carries these rules plus review guidance. Change both
-  together.
+- Before you write or review a test, read [Testing](docs/internals/testing.md). It is the one
+  home of the test rules; the short version:
+  - Test behavior that can break, at the lowest layer that fails on `main`. Extend an existing case
+    or table before you add one. Backend behavior changes ship with focused tests.
+  - A logic, data, state, or protocol bug gets a failing test first; a purely visual bug gets
+    before and after captures instead.
+  - Never wait on sleeps, polling, or timeouts: drain the effect worker or await the event,
+    `Deferred`, or queue item that marks the milestone. `it.effect` runs on a `TestClock`.
+  - Web browser tests render with `await using screen = await render(...)`. Lint enforces the
+    mechanical rules (`toolspell/*` test rules).
 - User-visible changes get one integrated pass in a real client: the
   [test-toolspell-app](.agents/skills/test-toolspell-app/SKILL.md) skill. The primary agent does
   this once after integrating. Subagents do not launch their own dev servers.

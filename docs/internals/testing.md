@@ -1,7 +1,7 @@
 # Testing
 
-Rules for writing tests, and for asking for them in review. AGENTS.md carries the same writing
-rules under Verifying; change both together. Review bots read this page too: the
+Rules for writing tests, and for asking for them in review. This page is their one home;
+AGENTS.md only summarizes them under Verifying and links here. Review bots read this page too: the
 [Test Signal](../../.macroscope/check-run-agents/test-signal.md) check cites `## What to test` by
 name, so renaming that heading means updating the check.
 
@@ -86,4 +86,5 @@ name, so renaming that heading means updating the check.
 
 - A dependency Vite first meets mid-run reloads the page, which can fail the run or load React
   twice. When a new browser test or route imports a package the others do not, add it to
-  `optimizeDeps.include` in [`apps/web/vite.config.ts`](../../apps/web/vite.config.ts).
+  `optimizeDeps.include` in [`apps/web/vite.config.ts`](../../apps/web/vite.config.ts);
+  [`optimizeDeps.test.ts`](../../apps/web/src/optimizeDeps.test.ts) fails until you do.

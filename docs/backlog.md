@@ -35,35 +35,9 @@ Reviewers: Opus 5.5 and GPT 6.2 Sol (two lenses each), Fable 5.2 and GPT 6.2 Ast
   setup links a `.env` nothing reads; every worktree setup runs `sync:repos` although most changes
   never read `.repos`; `ci:local`'s overlay aborts when a staged change turns a file into a
   directory or back (Sol, round 2).
-- **AGENTS.md repeats the testing rules** (Sol, Opus): it and `docs/internals/testing.md` carry the
-  same rules and have started to drift, and AGENTS.md is near its line cap. Keep the rules that
-  protect live data and the test-at-one-layer rule, point to `testing.md` for the rest. T3 Code
-  keeps both copies.
 
 ## Decided during the council review (confirm or revert)
 
-- **Contribution tooling stays** (vouch, PR limits, PR size, stale, the triage skill, review-bot
-  configs). All four reviewers who looked recommended removing or parking it until outside PRs
-  arrive (about 1.800 lines that cannot run before the push). Kept because the maintainer asked for
-  it; enforcement stays off. Alternatives: delete and restore from git history at the trigger, or
-  park it on a branch. Open either way: the triage skill closes at once when enforcement is off,
-  while `CONTRIBUTING.md` promises 72 hours.
-- **`check:changed` runs every test of the affected packages** until GitHub CI exists (Fable).
-  Alternative: T3 Code's tests beside changes plus a map of cross-file guards (Sol, Opus). A web
-  change now takes about 3 s instead of 1,5 s.
-- **The outbox fix landed now** despite a split vote (Astra, Sol: critical; Fable, Opus: with the
-  real runner): lost accepted work in the template every side effect copies. Failed rows and final
-  job reports retry until they succeed, at most 10 s apart. Today only storage errors can fail a
-  handler, so retrying is the right answer. At the first handler that can fail on every try, cap
-  its execution attempts and settle the job as failed (`job.fail`), but keep retrying the terminal
-  write until it persists before marking the row done, as T3 Code does (Opus, Sol, rounds 2 and 3).
-- **Desktop readiness landed now**, reversing the first triage: another OS user's process could
-  take the released port and receive the one-time admin token (`SECURITY.md` boundaries 5 and 7).
-  The server signals its origin on fd 4; the shell loads only that, blocks app requests while no
-  run is ready, and guards redirects; in `dev:desktop` Vite binds `127.0.0.1` and answers an HMAC
-  challenge (dev window origin is now `127.0.0.1`). Sol still rates the gap between the child's exit
-  and Electron noticing it critical (fix: the shell owns the origin and forwards to the current
-  child); deferred to the desktop-origin decision under "Desktop packaging". Opus: sound as is.
 - **`dev:web` fails on a busy web port** instead of moving to the next one, so its pairing links do
   not point at someone else's listener; a stale process on that port now stops it with a message.
 - **ID caps apply where a command creates an id** (workspace and job ids, command ids); references
@@ -88,7 +62,10 @@ Reviewers: Opus 5.5 and GPT 6.2 Sol (two lenses each), Fable 5.2 and GPT 6.2 Ast
   (Fable): the desktop origin (a custom app scheme instead of a loopback origin whose port can
   change, which loses device preferences; until then a fresh origin should start from the
   remembered desktop theme, Sol), a credential that is not an ambient cookie for a hosted web or
-  mobile client, and CORS for them.
+  mobile client, and CORS for them. That decision also closes the last desktop readiness gap Sol
+  rated critical: app requests are gated only until Electron sees the child exit, so a request in
+  that window can reach whoever takes the port next (fix: the shell owns the origin and forwards to
+  the current child).
 - **A packaged app launched with `--background`** still registers as a regular macOS app for a
   moment before `main.ts` makes it background only (the dev supervisor avoids that with an
   `LSBackgroundOnly` copy). Trigger: agents testing packaged builds.
@@ -109,7 +86,9 @@ Reviewers: Opus 5.5 and GPT 6.2 Sol (two lenses each), Fable 5.2 and GPT 6.2 Ast
   missing fd as "no token"; Cmd versus Ctrl helpers once the web app has shortcuts.
 - **GitHub, once pushed**: Dependabot for `github-actions` only, to keep the SHA pins fresh; a
   `~/.vite-plus` and pnpm store cache saved only on main (T3 Code `.github/actions/setup-ci-deps`).
-  The contribution workflows have their own checklist below.
+  The contribution workflows have their own checklist below. Once CI runs the full suites,
+  `check:changed` can go back to tests beside changes plus T3 Code's map of cross-file guards (it
+  runs every test of the affected packages while it is the only gate).
 - **GitHub, with releases**: T3 Code's release patterns (`resolve_commit`, `concurrency` with
   queued runs, per-platform `workflow_call`, a release smoke job on pull requests).
 - **GitHub, with outside contributors**: a PR comment comparing `report:renders` with main, in the
@@ -178,7 +157,10 @@ Reviewers: Opus 5.5 and GPT 6.2 Sol (two lenses each), Fable 5.2 and GPT 6.2 Ast
   job id as idempotency key where the outside system takes one; Sol); a retried submission reuses
   its command id, so a lost acknowledgement cannot start a second job (Astra); a progress report
   that fails mid-run fails the job as "runner stopped unexpectedly"; the `job.run` outbox row stores
-  the input a second time (store the tag and job id; Sol).
+  the input a second time (store the tag and job id; Sol). At the first outbox handler that can
+  fail on every try, cap its attempts and settle the job as failed, but keep retrying the terminal
+  write until it persists before marking the row done, as T3 Code does (today every handler retries
+  forever, since only storage errors can fail one).
 - **With the real domain, or the first bug that spans server and browser**: a CLI that sends one
   contract command and reads one view of the running server; scenario proofs that fail on the base
   commit and pass on the fix in the real app (T3 Code `scripts/prove-scenario.ts`); a guarded
@@ -266,6 +248,8 @@ None of the contribution workflows can run before the repository is on GitHub.
   (`requires: Check`), and does not auto-approve a change under `apps/server/src/auth/`. If a bot
   ignores its config file, fix that before relying on its reviews.
 - **PR assets**: a test PR that commits a file under `.github/pr-assets/` fails the lint job.
+- **Triage policy**: the contribution-triage skill closes at once when PR-limit enforcement is off,
+  while `CONTRIBUTING.md` promises 72 hours; align them before the first outside PR.
 - **Before the push** (Sol, Opus): the issue chooser gets `contact_links` to the private advisory
   form; the CI lint job runs `actionlint` like `check:changed` does; the docs stop calling `ready`
   the same as CI (CI also builds and checks the built boot and the preload); `docs/user/install.md`
