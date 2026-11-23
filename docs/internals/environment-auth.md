@@ -8,8 +8,9 @@ client label or device metadata, has an authorization role.
 A pairing grant is a one-time token that expires after 10 minutes. Exchanging it opens a session
 with the grant's scopes and sets the session as an HttpOnly, SameSite=Strict cookie, so browser
 JavaScript never holds the credential. Both tokens are stored only as SHA-256 hashes; a copied
-database cannot be used to sign in. Consuming a grant is one statement, so two racing requests
-cannot both pair. See [`AuthStore.ts`](../../apps/server/src/auth/AuthStore.ts).
+database cannot be used to sign in. They read `tspell_pair_` or `tspell_sess_` plus 256 random bits
+in hex, so a scanner recognizes a leaked one; authorization never reads the prefix. Consuming a
+grant is one statement, so two racing requests cannot both pair. See [`AuthStore.ts`](../../apps/server/src/auth/AuthStore.ts).
 
 Cookies do not isolate ports, so SameSite alone does not stop a page on another localhost port
 from riding the session. The socket upgrade and pairing refuse browser requests whose `Origin` is

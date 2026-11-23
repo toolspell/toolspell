@@ -72,10 +72,6 @@ where they move.
 - **Second CLI command `tspell`**: once the CLI has commands people run daily, decide whether to
   ship `tspell` as an installed alternative to `toolspell`: a real command, not a shell alias,
   under a package name that is ours. Help output and docs keep `toolspell`.
-- **Prefixed secret tokens**: session tokens and pairing grants (`apps/server/src/auth/AuthStore.ts`)
-  use `tspell_<type>_` (for example `tspell_sess_`, `tspell_pair_`), a random part of letters and
-  digits only, and optionally a checksum, so secret scanners recognize leaked tokens. Trigger:
-  before the first release, since existing sessions would need a migration afterwards.
 - **Repository details on GitHub**: a description, topics and a website link for the repository
   page. Skipped for the first push; set them once the maintainer decides the wording.
 - **CI runners**: Blacksmith.sh runners (third-party, faster; T3 Code runs its CI on them). Trigger:

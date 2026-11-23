@@ -29,8 +29,10 @@ load personal shell aliases.
 
 ## The short form `tspell`
 
-- Recommended as the prefix of secret tokens: `tspell_<type>_…`, so secret scanners and people
-  recognize a leaked token and its kind.
+- The prefix of secret tokens: `tspell_<type>_…`, so secret scanners and people recognize a leaked
+  token and its kind. In use: `tspell_pair_` for pairing grants (the desktop bootstrap token
+  included) and `tspell_sess_` for sessions, both formatted by
+  [`secretToken.ts`](../../packages/contracts/src/secretToken.ts).
 - Allowed by deliberate choice where `toolspell` does not fit: service users and process names
   with length limits, short links and slugs, non-secret ID prefixes, a personal shell alias.
   Explain it once next to `toolspell` wherever people or agents read it.
