@@ -45,7 +45,12 @@ record type makes a new method without a scope a type error.
 ## Revocation holds
 
 Revoking a session stops future requests and closes that session's open sockets. A client whose
-session was revoked lands on the pairing screen at its next check.
+session was revoked lands on the pairing screen at its next check. Revoking another session needs
+`admin`; any session may end itself with `auth.signOut`, which takes the session from the socket's
+authentication and has no payload, so it cannot reach another session.
+
+The desktop window pairs once per launch with the one-time bootstrap token, so the web client
+offers no self sign-out there: a signed-out window could not pair again until a relaunch.
 
 ## Compatibility
 

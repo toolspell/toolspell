@@ -51,7 +51,7 @@ function RootScreen() {
     }
     return <Centered>Connecting…</Centered>;
   }
-  if (current.value === "incompatible") {
+  if (current.value.status === "incompatible") {
     return (
       <Centered>
         <h1 className="text-lg font-semibold">This app is out of date</h1>
@@ -59,13 +59,13 @@ function RootScreen() {
       </Centered>
     );
   }
-  if (current.value === "unpaired") {
+  if (current.value.status === "unpaired") {
     return (
       <Centered>
         <h1 className="text-lg font-semibold">Pair this browser</h1>
         {pairError && <p className="text-destructive">{pairError}</p>}
         <p className="text-muted-foreground">
-          Open a pairing link from a device that is already paired (Settings → Devices), or run{" "}
+          Open a pairing link from a paired device with admin (Settings → Devices), or run{" "}
           <code className="rounded bg-muted px-1">toolspell pair</code> on the server.
         </p>
       </Centered>

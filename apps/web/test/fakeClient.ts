@@ -3,6 +3,7 @@
 import type { Access, ConnectionStatus } from "@toolspell/client-runtime/atoms";
 import type { JobsView, WorkspacesView } from "@toolspell/client-runtime/views";
 import {
+  ALL_AUTH_SCOPES,
   EventSequence,
   JobId,
   WorkspaceId,
@@ -75,7 +76,7 @@ export const jobsAtom = Atom.make(AsyncResult.success(initialJobs));
 export const workspacesAtom = Atom.make(AsyncResult.success(initialWorkspaces));
 
 export const atoms = {
-  accessAtom: Atom.make(AsyncResult.success<Access>("paired")),
+  accessAtom: Atom.make(AsyncResult.success<Access>({ status: "paired", scopes: ALL_AUTH_SCOPES })),
   connectionAtom: Atom.make<ConnectionStatus>("connected"),
   workspacesAtom,
   jobsAtom: (_workspaceId: WorkspaceId) => jobsAtom,

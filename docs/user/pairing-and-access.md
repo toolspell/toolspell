@@ -5,8 +5,8 @@ that it stays signed in until you sign it out or revoke it.
 
 ## Pair another device
 
-- From a paired device: open **Settings → Devices** and choose **Create pairing link**. Open the
-  link on the new device.
+- From a paired device with the admin permission: open **Settings → Devices** and choose
+  **Create pairing link**. Open the link on the new device.
 - From the server's machine, while the server runs: run `toolspell pair`, with the same
   `--home-dir` if the server uses one. Add `--admin` to let the new device manage access too.
 
@@ -19,16 +19,20 @@ itself.
 | ---------- | -------------------------------------------------------------- |
 | read       | Seeing workspaces and jobs as they change.                     |
 | operate    | Creating and renaming workspaces, starting and canceling jobs. |
-| admin      | Pairing devices and revoking sessions.                         |
+| admin      | Seeing paired devices, pairing new ones, and revoking them.    |
 
 Links from **Settings → Devices** grant read and operate. The desktop app and the link the server
-prints at startup grant all three.
+prints at startup grant all three. **Settings → Devices** appears only on devices with admin; every
+device can sign itself out.
 
-## Revoke a device
+## Sign out or revoke a device
 
-Open **Settings → Devices** and choose **Revoke** next to the device, or **Sign out** for the one
-you are using, then confirm. A revoked device is disconnected right away and shows the pairing
-screen.
+- To sign out the browser you are using, open **Settings → This browser** and choose **Sign out**.
+  The desktop app has no sign-out: it signs itself in each time it starts.
+- To revoke another device, open **Settings → Devices** on a device with admin and choose
+  **Revoke** next to it.
+
+Confirm, and the device is disconnected right away and shows the pairing screen.
 
 ## If a link does not work
 

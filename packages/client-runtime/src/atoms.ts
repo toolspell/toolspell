@@ -1,5 +1,6 @@
 import {
   AUTH_HTTP_PATHS,
+  canCall,
   PairRequest,
   PROTOCOL_QUERY_PARAM,
   PROTOCOL_VERSION,
@@ -10,15 +11,18 @@ import {
   type AuthSessionId,
   type ClientCommand,
   type EventSequence,
+  type RpcMethod,
   type WorkspaceId,
 } from "@toolspell/contracts";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
 import * as Schedule from "effect/Schedule";
 import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
 import { FetchHttpClient, HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http";
+import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import * as AtomRegistry from "effect/reactivity/AtomRegistry";
 import * as RpcClient from "effect/rpc/RpcClient";
@@ -35,11 +39,14 @@ import {
 } from "./views.ts";
 
 /**
- * - `paired`: this browser has a session and may connect.
+ * - `paired`: this browser has a session with these scopes and may connect.
  * - `unpaired`: it needs a pairing link first.
  * - `incompatible`: the server speaks another protocol version; update the client.
  */
-export type Access = "paired" | "unpaired" | "incompatible";
+export type Access =
+  | { readonly status: "paired"; readonly scopes: ReadonlyArray<AuthScope> }
+  | { readonly status: "unpaired" }
+  | { readonly status: "incompatible" };
 export type ConnectionStatus = "connecting" | "connected" | "reconnecting";
 
 const makeRpc = RpcClient.make(ToolSpellRpcs, { flatten: true });
@@ -78,12 +85,30 @@ export const makeToolSpellAtoms = (options: { readonly origin: string }) => {
     .atom(
       Effect.gen(function* () {
         const health = yield* getJson("/health", Health);
-        if (health.protocolVersion !== PROTOCOL_VERSION) return "incompatible" as Access;
+        if (health.protocolVersion !== PROTOCOL_VERSION) {
+          return { status: "incompatible" } as Access;
+        }
         const session = yield* getJson(AUTH_HTTP_PATHS.session, SessionStatus);
-        return (session.authenticated ? "paired" : "unpaired") as Access;
+        return (
+          session.authenticated
+            ? { status: "paired", scopes: session.scopes }
+            : { status: "unpaired" }
+        ) as Access;
       }),
     )
     .pipe(Atom.keepAlive);
+
+  /** Whether this session may call a method, from the server's scope table. It only hides UI. */
+  const permissionAtom = Atom.family((method: RpcMethod) =>
+    Atom.make((get) => {
+      const access = AsyncResult.value(get(accessAtom));
+      return (
+        Option.isSome(access) &&
+        access.value.status === "paired" &&
+        canCall(access.value.scopes, method)
+      );
+    }),
+  );
 
   const connectionAtom = Atom.make<ConnectionStatus>("connecting").pipe(Atom.keepAlive);
 
@@ -187,6 +212,16 @@ export const makeToolSpellAtoms = (options: { readonly origin: string }) => {
     }),
   );
 
+  /** Ends this browser's own session. Its socket closes, and the pairing screen follows. */
+  const signOutAtom = rpc.fn(
+    Effect.fn("ToolSpell.signOut")(function* () {
+      const call = yield* RpcConnection;
+      yield* call("auth.signOut", undefined);
+      const registry = yield* AtomRegistry.AtomRegistry;
+      registry.refresh(accessAtom);
+    }),
+  );
+
   /** Exchanges a pairing token for a session cookie. */
   const pair = Effect.fn("ToolSpell.pair")(function* (token: string) {
     const request = yield* HttpClientRequest.post(`${origin}${AUTH_HTTP_PATHS.pair}`).pipe(
@@ -205,6 +240,7 @@ export const makeToolSpellAtoms = (options: { readonly origin: string }) => {
 
   return {
     accessAtom,
+    permissionAtom,
     connectionAtom,
     workspacesAtom,
     jobsAtom,
@@ -212,6 +248,7 @@ export const makeToolSpellAtoms = (options: { readonly origin: string }) => {
     dispatchAtom,
     createPairingGrantAtom,
     revokeSessionAtom,
+    signOutAtom,
     pair,
   };
 };

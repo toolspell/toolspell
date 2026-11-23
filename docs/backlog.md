@@ -13,15 +13,6 @@ entry moves into an issue (labels from `.github/labels.json`) and the file is de
 Rated "now" by the review council and left for the maintainer's review, most important first.
 Reviewers: Opus 5.5 and GPT 6.2 Sol (two lenses each), Fable 5.2 and GPT 6.2 Astra.
 
-- **Permissions in the client** (Opus, Sol, Astra): the client drops the session's scopes, so a
-  device paired from Settings (read and operate) sees a Devices section that only errors and a
-  pairing button that fails, and it cannot sign itself out because listing and revoking sessions
-  need `admin`. Keep the scopes in `accessAtom`, show Devices to admins only, add a self sign-out
-  that takes the session from authentication, and say in the pairing guide which actions need admin
-  (T3 Code `ConnectionsSettings.tsx`).
-- **Desktop sign-out strands the window** (Opus): signing out the current session in the desktop
-  app leaves "pair this browser" until a relaunch, since the bootstrap token is used up. Hide that
-  button in the desktop app, or tell desktop users to relaunch.
 - **A failed live view looks like loading or like fresh data** (Opus, Sol): `liveView` retries
   every typed error, denials included, and a defect ends the view; the list routes read only the
   value, so they show a skeleton forever or a stale list under a "connected" header. Retry
