@@ -56,10 +56,11 @@ describe("pairing", () => {
 });
 
 describe("RPC scopes", () => {
-  it("access management needs admin, and unknown methods fail closed", () => {
+  it("access management needs admin, signing out does not, and unknown methods fail closed", () => {
     assert.strictEqual(requiredScopeFor(RPC_METHODS.workspacesSubscribe), "read");
     assert.strictEqual(requiredScopeFor(RPC_METHODS.commandsDispatch), "operate");
     assert.strictEqual(requiredScopeFor(RPC_METHODS.authRevokeSession), "admin");
+    assert.strictEqual(requiredScopeFor(RPC_METHODS.authSignOut), "read");
     assert.strictEqual(requiredScopeFor("server.somethingNew"), "admin");
   });
 });

@@ -39,7 +39,8 @@ boundary.
 
 1. An unauthenticated request reaches anything beyond the web client's static files, `/health`, the
    session check, and pairing.
-2. A session calls an RPC its scopes do not allow, or a device grants more than it holds.
+2. A session calls an RPC its scopes do not allow, ends another session without `admin`, or a
+   device grants more than it holds.
 3. A pairing token works twice, after expiry, or is recoverable from stored data.
 4. A session keeps working after revocation, including an already open socket.
 5. A credential leaks into logs, URLs sent to the server, process listings, or child environments.

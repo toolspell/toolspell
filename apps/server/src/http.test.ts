@@ -280,6 +280,27 @@ describe("transport guards", () => {
       }).pipe(Effect.scoped),
     );
 
+    it.effect("a standard session signs itself out, and its socket closes", () =>
+      Effect.gen(function* () {
+        const auth = yield* AuthStore;
+        const admin = yield* pairSession(ALL_AUTH_SCOPES);
+        const session = yield* pairSession(STANDARD_AUTH_SCOPES);
+        const { closed } = yield* openSocket(session.cookie);
+        const standard = yield* rpcClient(session.cookie);
+
+        const denied = yield* standard("auth.revokeSession", { sessionId: admin.id }).pipe(
+          Effect.flip,
+        );
+        assert.deepInclude(denied, { _tag: "AuthorizationError", requiredScope: "admin" });
+
+        yield* standard("auth.signOut", undefined);
+        yield* closed;
+        const remaining = (yield* auth.list(admin.id)).map(({ id }) => id);
+        assert.include(remaining, admin.id);
+        assert.notInclude(remaining, session.id);
+      }).pipe(Effect.scoped),
+    );
+
     it.effect("a socket message over the cap closes the socket with 1009", () =>
       Effect.gen(function* () {
         const { socket, closed } = yield* openSocket(

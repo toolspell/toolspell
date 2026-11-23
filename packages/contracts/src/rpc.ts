@@ -93,6 +93,7 @@ export const RPC_METHODS = {
   authCreatePairingGrant: "auth.createPairingGrant",
   authListSessions: "auth.listSessions",
   authRevokeSession: "auth.revokeSession",
+  authSignOut: "auth.signOut",
 } as const;
 
 const ServerGetInfoRpc = Rpc.make(RPC_METHODS.serverGetInfo, {
@@ -137,6 +138,9 @@ const AuthRevokeSessionRpc = Rpc.make(RPC_METHODS.authRevokeSession, {
   payload: Schema.Struct({ sessionId: AuthSessionId }),
 });
 
+/** Ends the caller's own session; the session comes from authentication, never the payload. */
+const AuthSignOutRpc = Rpc.make(RPC_METHODS.authSignOut, { defect: ServerDefect });
+
 export const ToolSpellRpcs = RpcGroup.make(
   ServerGetInfoRpc,
   CommandsDispatchRpc,
@@ -145,6 +149,7 @@ export const ToolSpellRpcs = RpcGroup.make(
   AuthCreatePairingGrantRpc,
   AuthListSessionsRpc,
   AuthRevokeSessionRpc,
+  AuthSignOutRpc,
 ).middleware(RpcAuthorization);
 
 export type RpcMethod = (typeof RPC_METHODS)[keyof typeof RPC_METHODS];
@@ -158,4 +163,10 @@ export const RPC_REQUIRED_SCOPES: Record<RpcMethod, AuthScopeType> = {
   [RPC_METHODS.authCreatePairingGrant]: "admin",
   [RPC_METHODS.authListSessions]: "admin",
   [RPC_METHODS.authRevokeSession]: "admin",
+  // Every session has `read`, so every session can end itself.
+  [RPC_METHODS.authSignOut]: "read",
 };
+
+/** Whether a session with these scopes may call a method. It only hides UI; the server decides. */
+export const canCall = (scopes: ReadonlyArray<AuthScopeType>, method: RpcMethod) =>
+  scopes.includes(RPC_REQUIRED_SCOPES[method]);

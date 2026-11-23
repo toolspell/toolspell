@@ -49,6 +49,7 @@ const handlersFor = (session: AuthenticatedSession) =>
             .pipe(Effect.orDie),
         "auth.listSessions": () => auth.list(session.id).pipe(Effect.orDie),
         "auth.revokeSession": ({ sessionId }) => auth.revoke(sessionId).pipe(Effect.orDie),
+        "auth.signOut": () => auth.revoke(session.id).pipe(Effect.orDie),
       });
     }),
   ).pipe(
