@@ -173,13 +173,3 @@ for (const file of ENV_FILES) {
   if (existing) NodeFS.rmSync(target);
   linkEnvFile(source, target);
 }
-
-// Reference source is a convenience for agents; a failed sync must not fail setup.
-const repos = NodeChildProcess.spawnSync(process.execPath, ["scripts/sync-repos.ts"], {
-  cwd: worktree,
-  env: { ...process.env, T3CODE_PROJECT_ROOT: projectRoot },
-  stdio: "inherit",
-});
-if (repos.status !== 0) {
-  process.stderr.write("WARNING: could not sync .repos; run `vp run sync:repos` later.\n");
-}

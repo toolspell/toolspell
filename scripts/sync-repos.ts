@@ -1,5 +1,6 @@
-// Keeps .repos/<id> as a gitignored, read-only copy of upstream source at the installed version,
-// for agents to read. Run `vp run sync:repos` after bumping the catalog version.
+// Read-only upstream source for agents. `vp run sync:repos` refreshes the committed dependency
+// sources in .repos/<id> at the installed version; commit them with the bump.
+// `vp run sync:repos --app <id>` fetches a gitignored reference app into .reference-apps/<id>.
 // Adapted from T3 Code's scripts/sync-reference-repos.ts (MIT).
 import * as NodeChildProcess from "node:child_process";
 import * as NodeFS from "node:fs";
@@ -42,7 +43,7 @@ const REFERENCE_BINARY_EXTENSIONS = [
   "ndjson",
 ];
 
-const REPOS: ReadonlyArray<ReferenceRepo> = [
+export const REPOS: ReadonlyArray<ReferenceRepo> = [
   {
     id: "effect",
     repository: "https://github.com/Effect-TS/effect.git",
@@ -50,7 +51,7 @@ const REPOS: ReadonlyArray<ReferenceRepo> = [
     tagPrefix: "effect@",
   },
   {
-    // A reference for problems T3 Code already solved, not a template. See AGENTS.md.
+    // A reference for problems T3 Code already solved, not a template. See its reference-t3code skill.
     id: "t3code",
     repository: "https://github.com/pingdotgg/t3code.git",
     commit: "11224f63d2a3d444ca1fd1f67cd3ff21c1f5f8a1",
@@ -93,6 +94,17 @@ const git = (args: ReadonlyArray<string>) =>
     stdio: "inherit",
   });
 
+// T3 Code names the main checkout; otherwise git's shared directory sits inside it.
+const mainCheckout = () =>
+  process.env.T3CODE_PROJECT_ROOT ||
+  NodePath.dirname(
+    NodeChildProcess.execFileSync(
+      "git",
+      ["rev-parse", "--path-format=absolute", "--git-common-dir"],
+      { cwd: root, encoding: "utf8" },
+    ).trim(),
+  );
+
 const download = (repo: ReferenceRepo, ref: string, staging: string) => {
   if (!("commit" in repo)) {
     git(["clone", "--quiet", "--depth", "1", "--branch", ref, repo.repository, staging]);
@@ -123,22 +135,37 @@ const download = (repo: ReferenceRepo, ref: string, staging: string) => {
   git(["-C", staging, "checkout", "--quiet", "FETCH_HEAD"]);
 };
 
+export const dirFor = (repo: ReferenceRepo) => ("commit" in repo ? ".reference-apps" : ".repos");
+
+/** The repos one run syncs: every dependency source, or the one app `--app <id>` names. */
+export const select = (
+  repos: ReadonlyArray<ReferenceRepo>,
+  args: ReadonlyArray<string>,
+): ReadonlyArray<ReferenceRepo> => {
+  if (args.length === 0) return repos.filter((repo) => !("commit" in repo));
+  const apps = repos.filter((repo) => "commit" in repo);
+  const app = apps.find((repo) => args[0] === "--app" && args.length === 2 && repo.id === args[1]);
+  if (app === undefined) {
+    throw new Error(`Usage: sync:repos [--app <${apps.map((repo) => repo.id).join("|")}>]`);
+  }
+  return [app];
+};
+
 const sync = (repo: ReferenceRepo) => {
   const ref = refFor(repo);
-  const target = NodePath.join(root, ".repos", repo.id);
+  const dir = dirFor(repo);
+  const target = NodePath.join(root, dir, repo.id);
   if (refOf(target) === ref) {
-    process.stdout.write(`.repos/${repo.id} is at ${ref}.\n`);
+    process.stdout.write(`${dir}/${repo.id} is at ${ref}.\n`);
     return;
   }
 
-  const staging = NodePath.join(root, ".repos", `.staging-${repo.id}`);
+  const staging = NodePath.join(root, dir, `.staging-${repo.id}`);
   NodeFS.rmSync(staging, { recursive: true, force: true });
   NodeFS.mkdirSync(NodePath.dirname(staging), { recursive: true });
   // A worktree copies the main checkout's copy instead of downloading it again.
-  const mainCopy = process.env.T3CODE_PROJECT_ROOT
-    ? NodePath.join(process.env.T3CODE_PROJECT_ROOT, ".repos", repo.id)
-    : undefined;
-  if (mainCopy !== undefined && mainCopy !== target && refOf(mainCopy) === ref) {
+  const mainCopy = NodePath.join(mainCheckout(), dir, repo.id);
+  if (mainCopy !== target && refOf(mainCopy) === ref) {
     NodeFS.cpSync(mainCopy, staging, { recursive: true });
   } else {
     process.stdout.write(`Downloading ${repo.repository} at ${ref}...\n`);
@@ -146,9 +173,11 @@ const sync = (repo: ReferenceRepo) => {
     NodeFS.rmSync(NodePath.join(staging, ".git"), { recursive: true, force: true });
     NodeFS.writeFileSync(NodePath.join(staging, MARKER), `${ref}\n`);
   }
+  // Upstream's ignore rules would hide the marker and force-added files from this repo's index.
+  NodeFS.rmSync(NodePath.join(staging, ".gitignore"), { force: true });
   NodeFS.rmSync(target, { recursive: true, force: true });
   NodeFS.renameSync(staging, target);
-  process.stdout.write(`.repos/${repo.id} synced to ${ref}.\n`);
+  process.stdout.write(`${dir}/${repo.id} synced to ${ref}.\n`);
 };
 
-if (import.meta.main) for (const repo of REPOS) sync(repo);
+if (import.meta.main) for (const repo of select(REPOS, process.argv.slice(2))) sync(repo);
