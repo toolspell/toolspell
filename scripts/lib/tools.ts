@@ -36,6 +36,14 @@ export const TOOLS = {
       `act_${{ darwin: "Darwin", linux: "Linux", windows: "Windows" }[os]}_${arch === "amd64" ? "x86_64" : "arm64"}.${archive(os)}`,
     checksums: "checksums.txt",
   },
+  gitleaks: {
+    repo: "gitleaks/gitleaks",
+    version: "8.30.1",
+    tag: "v8.30.1",
+    asset: (os, arch) =>
+      `gitleaks_8.30.1_${os}_${arch === "amd64" ? "x64" : "arm64"}.${archive(os)}`,
+    checksums: "gitleaks_8.30.1_checksums.txt",
+  },
 } satisfies Record<string, Tool>;
 
 export type ToolName = keyof typeof TOOLS;

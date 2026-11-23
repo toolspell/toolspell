@@ -133,6 +133,8 @@ screenshots.
     `Deferred`, or queue item that marks the milestone. `it.effect` runs on a `TestClock`.
   - Web browser tests render with `await using screen = await render(...)`. Lint enforces the
     mechanical rules (`toolspell/*` test rules).
+- Never commit a secret. The commit hook and CI scan with gitleaks (`vp run check:secrets`, rules in
+  `.gitleaks.toml`); a deliberate fake secret carries `gitleaks:allow` on its line, with the reason.
 - To enforce a rule mechanically, pick the guard by what it reads: a rule in
   `oxlint-plugin-toolspell` for a pattern inside one JS or TS file; a script or test for a check
   across several files, for files Oxlint does not read (Markdown, YAML, HTML, JSON), or for whether

@@ -1,0 +1,18 @@
+# Secret scanning for the commit hook and CI (scripts/check-secrets.ts). A deliberate fake secret
+# carries a `gitleaks:allow` comment on its line, with the reason next to it.
+[extend]
+useDefault = true
+
+[[rules]]
+id = "toolspell-secret-token"
+description = "Toolspell pairing or session token"
+regex = '''tspell_(?:pair|sess)_[0-9a-f]{64}''' # naming-allow: the secret token format
+keywords = ["tspell_"] # naming-allow: the secret token prefix
+
+[[allowlists]]
+description = "Committed dependency sources: upstream code with its own test keys and fixtures"
+paths = ['''^\.repos/''']
+
+[[allowlists]]
+description = "The sample Sec-WebSocket-Key from RFC 6455, base64 for 'the sample nonce'"
+regexes = ['''dGhlIHNhbXBsZSBub25jZQ==''']

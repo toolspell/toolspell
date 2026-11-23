@@ -103,13 +103,15 @@ without one. Pass the server's `--home-dir` if it uses another home.
 
 ## Checks
 
-| Command                | Runs                                                                     |
-| ---------------------- | ------------------------------------------------------------------------ |
-| `vp run check:changed` | Checks and tests for what a change affects (see below). Run before push. |
-| `vp test run <files>`  | The given test files, each with its package's config, from the root.     |
-| `vp run typecheck`     | `effect-tsgo` per package, cached.                                       |
-| `vp run knip`          | Unused files, exports, and dependencies.                                 |
-| `vp run ready`         | The full gate. The integrator runs it before landing on `main`.          |
+| Command                | Runs                                                                      |
+| ---------------------- | ------------------------------------------------------------------------- |
+| `vp run check:changed` | Checks and tests for what a change affects (see below). Run before push.  |
+| `vp test run <files>`  | The given test files, each with its package's config, from the root.      |
+| `vp run typecheck`     | `effect-tsgo` per package, cached.                                        |
+| `vp run knip`          | Unused files, exports, and dependencies.                                  |
+| `vp run check:naming`  | The naming rules in `docs/internals/naming.md`, on every tracked file.    |
+| `vp run check:secrets` | gitleaks over the whole history; `--staged` is what the commit hook runs. |
+| `vp run ready`         | The full gate. The integrator runs it before landing on `main`.           |
 
 ## CI before GitHub
 

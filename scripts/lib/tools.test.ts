@@ -23,6 +23,11 @@ describe("pinned tools", () => {
       TOOLS.actionlint.asset("darwin", "arm64"),
       "actionlint_1.7.12_darwin_arm64.tar.gz",
     );
+    assert.strictEqual(TOOLS.gitleaks.asset("windows", "amd64"), "gitleaks_8.30.1_windows_x64.zip");
+    assert.strictEqual(
+      TOOLS.gitleaks.asset("linux", "arm64"),
+      "gitleaks_8.30.1_linux_arm64.tar.gz",
+    );
   });
 });
 
