@@ -128,6 +128,9 @@ const main = async () => {
     ...(present.length > 0
       ? [{ name: "naming", command: [process.execPath, "scripts/check-naming.ts", ...present] }]
       : []),
+    ...(files.some((file) => file.endsWith("package.json") || file === "pnpm-workspace.yaml")
+      ? [{ name: "pinned", command: [process.execPath, "scripts/check-pinned.ts"] }]
+      : []),
     ...(code.length > 0 || files.some((file) => file.endsWith("package.json"))
       ? [{ name: "knip", command: ["vp", "run", "knip"] }]
       : []),

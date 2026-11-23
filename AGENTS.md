@@ -133,6 +133,9 @@ screenshots.
     `Deferred`, or queue item that marks the milestone. `it.effect` runs on a `TestClock`.
   - Web browser tests render with `await using screen = await render(...)`. Lint enforces the
     mechanical rules (`toolspell/*` test rules).
+- Dependencies use exact versions (`1.2.3`, never `^` or `~`); shared ones live in the pnpm
+  catalog. `pnpm add` saves them exact, `vp run check:pinned` enforces it, and pnpm installs a
+  version only once it is a day old.
 - Never commit a secret. The commit hook and CI scan with gitleaks (`vp run check:secrets`, rules in
   `.gitleaks.toml`); a deliberate fake secret carries `gitleaks:allow` on its line, with the reason.
 - To enforce a rule mechanically, pick the guard by what it reads: a rule in

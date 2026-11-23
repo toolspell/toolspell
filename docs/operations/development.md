@@ -109,6 +109,7 @@ without one. Pass the server's `--home-dir` if it uses another home.
 | `vp test run <files>`  | The given test files, each with its package's config, from the root.      |
 | `vp run typecheck`     | `effect-tsgo` per package, cached.                                        |
 | `vp run knip`          | Unused files, exports, and dependencies.                                  |
+| `vp run check:pinned`  | Exact versions in every `package.json`, the catalog, and overrides.       |
 | `vp run check:naming`  | The naming rules in `docs/internals/naming.md`, on every tracked file.    |
 | `vp run check:secrets` | gitleaks over the whole history; `--staged` is what the commit hook runs. |
 | `vp run ready`         | The full gate. The integrator runs it before landing on `main`.           |

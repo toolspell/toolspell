@@ -64,6 +64,7 @@ export default defineConfig({
       "vp fmt --no-error-on-unmatched-pattern",
       "vp lint --no-error-on-unmatched-pattern",
       "node scripts/check-naming.ts",
+      "node scripts/check-pinned.ts",
       "node scripts/check-secrets.ts --staged",
     ],
   },
