@@ -12,6 +12,12 @@ where they move.
 
 - **Where the backlog lives**: the maintainer decides where it moves (GitHub Issues or another
   approach); not tied to the public push. Until then, keep using this file.
+- **Where plans live** (the maintainer wants to revisit this): today plans and research notes stay
+  outside the repository, `.plans/` is only a gitignored safety net, and deferred work goes into
+  this file. Options: outside the repository (invisible to worktree agents), `.plans/` in the main
+  checkout (gitignored, not shared with worktrees), or committed docs or checklists (visible
+  everywhere). Example: the GitHub rollout plan, today a file next to the checkout
+  (`toolspell-github-rollout-plan.html`).
 - **Desktop packaging**: electron-builder, signing and notarization, auto-update. `backend.ts`
   already expects the bundled server at `resources/server/bin.mjs`. Use the release
   [macOS PNG](../assets/prod/macos-1024.png), [Windows ICO](../assets/prod/windows.ico), and
