@@ -3,6 +3,10 @@
 Toolspell runs as a server on your machine. You use it from the desktop app, or from a browser on
 the same machine or another device.
 
+There is no release yet, so neither the app nor the `toolspell` command can be downloaded. Until
+then, build it from source as [First checkout](../operations/development.md#first-checkout)
+describes: `vp run dev` starts the server and the web app, `vp run dev:desktop` the desktop app.
+
 ## Desktop
 
 Open the Toolspell app. It starts its own server and signs itself in; there is nothing to set up.

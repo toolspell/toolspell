@@ -39,7 +39,7 @@ jobs:
       - id: changes
         env:
           BASE: ${{ github.event_name == 'pull_request' && 'HEAD^1' || '' }}
-        run: node scripts/ci-changes.ts $BASE
+        run: node scripts/ci-changes.ts ${BASE:+"$BASE"}
 
   lint:
     runs-on: ubuntu-24.04
@@ -64,6 +64,7 @@ jobs:
       - run: vp run check:naming
       - run: vp run check:pinned
       - run: vp run check:secrets
+      - run: vp run actionlint
 
   typecheck_build:
     needs: changes

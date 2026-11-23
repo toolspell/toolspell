@@ -205,6 +205,9 @@ where they move.
   Background mode and CDP cover the focus problem on macOS; the trigger is Windows and Linux desktop
   checks, or tests that must not touch the maintainer's machine. (Opus suggested moving this to
   "consider later".)
+- **shellcheck for local actionlint**: GitHub's runners have shellcheck, so CI's actionlint also
+  checks `run:` scripts; `check:changed` does that only where shellcheck is installed. A pinned
+  shellcheck in `scripts/lib/tools.ts` would close the gap.
 
 ## Consider later if then relevant
 
@@ -248,11 +251,6 @@ None of the contribution workflows can run before the repository is on GitHub.
 - **PR assets**: a test PR that commits a file under `.github/pr-assets/` fails the lint job.
 - **Triage policy**: the contribution-triage skill closes at once when PR-limit enforcement is off,
   while `CONTRIBUTING.md` promises 72 hours; align them before the first outside PR.
-- **Before the push** (Sol, Opus): the issue chooser gets `contact_links` to the private advisory
-  form; the CI lint job runs `actionlint` like `check:changed` does; the docs stop calling `ready`
-  the same as CI (CI also builds and checks the built boot and the preload); `docs/user/install.md`
-  says there is no release yet and points to building from source; grep the
-  `toolspell/toolspell` slug in `CONTRIBUTING.md`, `SECURITY.md` and the issue templates.
 
 ## Checks for the Windows and Linux VMs
 
