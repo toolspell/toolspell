@@ -121,8 +121,8 @@ screenshots.
   TypeScript checker with Effect's diagnostics built in.
 - Run `node -e` snippets from `apps/server` or the owning package. `effect` does not resolve from
   the repository root.
-- **Do not run repo-wide checks** (`vp run ready`, `vp run -r test`) unless asked. Until GitHub CI
-  exists, the integrator runs `vp run ready` before landing on `main`.
+- **Do not run repo-wide checks** (`vp run ready`, `vp run -r test`) unless asked. CI runs the
+  full suites on every PR; `main` changes only through a squash-merged PR.
 - Before you write or review a test, read [Testing](docs/internals/testing.md). It is the one
   home of the test rules; the short version:
   - Test behavior that can break, at the lowest layer that fails on `main`. Extend an existing case
