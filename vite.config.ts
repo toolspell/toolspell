@@ -39,6 +39,10 @@ export default defineConfig({
   test: {
     environment: "node",
     exclude: TEST_EXCLUDE,
+    // The project ceiling, as in T3 Code. GitHub's runners run every package's tests side by side
+    // and can be 20 times slower than a dev machine; a hang still fails here.
+    hookTimeout: 60_000,
+    testTimeout: 60_000,
     allowOnly: !process.env.CI,
     // Flaky tests are fixed, not retried.
     retry: 0,
