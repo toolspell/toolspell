@@ -5,9 +5,20 @@ import * as NodePath from "node:path";
 
 import { assert, describe, it } from "@effect/vitest";
 
-import { overlayChanges, parseArgs } from "./ci-local.ts";
+import { actArguments, overlayChanges, parseArgs } from "./ci-local.ts";
 
 describe("ci:local arguments", () => {
+  it("runs only ci.yml and gives act no token, env, secrets or vars from this machine", () => {
+    const args = actArguments("linux/arm64", false, ["-j", "lint"]);
+    const value = (flag: string) => args[args.indexOf(flag) + 1];
+    assert.strictEqual(value("--workflows"), ".github/workflows/ci.yml");
+    assert.strictEqual(value("--secret"), "GITHUB_TOKEN=");
+    for (const flag of ["--env-file", "--secret-file", "--var-file"]) {
+      assert.strictEqual(value(flag), NodeOS.devNull);
+    }
+    assert.deepStrictEqual(args.slice(-2), ["-j", "lint"]);
+  });
+
   it("passes act arguments only after --, so a typo never starts a run", () => {
     assert.deepStrictEqual(parseArgs(["--context", "build-box", "--", "-j", "lint"]), {
       context: "build-box",
