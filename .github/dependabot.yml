@@ -1,0 +1,21 @@
+# Keeps the commit-hash pins of GitHub Actions fresh. npm updates are deferred (docs/backlog.md).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    # "/" covers only .github/workflows; the local composite actions pin actions too.
+    directories: ["/", "/.github/actions/*"]
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+    # A compromised release is usually pulled within days; take none younger than a week.
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 3
+    # The PR title check needs a Conventional Commit subject: "chore(deps): bump ...".
+    commit-message:
+      prefix: chore
+      include: scope
+    # Labels come from .github/labels.json; without this Dependabot creates its own.
+    labels: []

@@ -193,7 +193,9 @@ and `SECURITY.md`; change a rule and the bot file that repeats it together.
 ## GitHub workflows
 
 `main` accepts only squash-merged PRs that are up to date and pass `Check`, `PR title` and
-`Agent context budget`. Every workflow that runs on PRs must also work for
+`Agent context budget`. Bring a Dependabot PR up to date with a `@dependabot rebase` comment, not
+"Update branch": Dependabot stops rebasing a PR once someone else pushed to it. Every workflow that
+runs on PRs must also work for
 [stacked pull requests](https://docs.github.com/en/pull-requests/get-started/about-stacked-prs):
 
 - A `pull_request` workflow runs for every layer of a stack, as if the layer targeted `main`.
