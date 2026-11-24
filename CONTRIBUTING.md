@@ -6,6 +6,9 @@ Toolspell has very little review capacity. Reviewing a PR usually takes more eff
 one, so these rules keep review possible. The most useful contributions are bug reports with a
 good repro and focused fixes for bugs you hit yourself.
 
+**Not open yet:** for now only maintainers can open issues and pull requests. This guide applies
+once that changes. Security reports already work, as [SECURITY.md](SECURITY.md) describes.
+
 ## Before you write code
 
 - **Bugs** go in [issues](https://github.com/toolspell/toolspell/issues/new/choose), one problem
@@ -110,7 +113,8 @@ links the old one.
    `vp run dev`.
 2. Before you push, run `vp run check:changed`. Maintainers run the full suites before merging.
 3. Use a conventional commit title in plain language, such as
-   `fix(web): job list no longer flickers on reconnect`, and fill in the PR template.
+   `fix(web): job list no longer flickers on reconnect`, and fill in the PR template. PRs are
+   squash merged, so the title becomes the commit on `main`; a check enforces its format.
 
 The [architecture overview](docs/internals/overview.md) explains how Toolspell works, and
 [testing](docs/internals/testing.md) says what a good test covers.

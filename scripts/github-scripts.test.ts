@@ -20,6 +20,7 @@ import {
   sizeLabel,
   sumNumstat,
 } from "../.github/scripts/pr-size.cjs";
+import { titleProblem } from "../.github/scripts/pr-title.cjs";
 import {
   LABELS,
   closesOnOpen,
@@ -324,5 +325,25 @@ diff --git a/apps/web/src/Panel.tsx b/apps/web/src/Panel.tsx
     expect(render(countTestDelta(diff), "toolspell/toolspell")).toMatch(
       /New browser test files: `apps\/web\/src\/Panel\.browser\.test\.tsx`/,
     );
+  });
+});
+
+describe("pr-title", () => {
+  it.each([
+    ["fix: crash on reconnect", true],
+    ["feat(web): job list", true],
+    ["chore(web,desktop): trim comments", true],
+    ["feat(server)!: drop the v1 API", true],
+    ["chore(deps): bump vite from 8.0.1 to 8.0.2", true],
+    ["Fix: crash on reconnect", false],
+    ["fix crash on reconnect", false],
+    ["fix:crash on reconnect", false],
+    ["fix(): crash on reconnect", false],
+    ["fix(web, desktop): crash", false],
+    ["wip(web): crash", false],
+    ["Bump vite from 8.0.1 to 8.0.2", false],
+    ['Revert "fix: crash on reconnect"', false],
+  ])("%s passes: %s", (title, passes) => {
+    expect(titleProblem(title) === undefined).toBe(passes);
   });
 });

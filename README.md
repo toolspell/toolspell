@@ -4,6 +4,8 @@ A server that owns state and execution, with web and desktop clients that contro
 authenticated WebSocket RPC. Run it on your machine and use it from the desktop app, a browser, or
 another device.
 
+Toolspell is early and has no release yet; run it from source as [Develop](#develop) shows.
+
 ## Stack
 
 - **Server** ([`apps/server`](apps/server)): Node with Effect 4, WebSocket RPC, SQLite. An
@@ -16,6 +18,9 @@ another device.
   uses.
 
 ## Develop
+
+Install [Vite+](https://viteplus.dev/guide/), which provides the `vp` command and the pinned Node
+version. Then, in a clone of this repository:
 
 ```bash
 vp i
@@ -30,7 +35,8 @@ Open the `pairingUrl:` the server prints. Before you push, run `vp run check:cha
 
 ## Contributing
 
-Review capacity is small, so focused bug fixes are the most likely to land. Read
+Issues and pull requests from others are not open yet. Review capacity is small, so once they are,
+focused bug fixes are the most likely to land. Read
 [CONTRIBUTING.md](CONTRIBUTING.md) before you open an issue or a pull request. Report
 vulnerabilities privately, as [SECURITY.md](SECURITY.md#report-a-vulnerability) describes.
 

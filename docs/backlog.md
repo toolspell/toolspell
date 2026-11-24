@@ -222,13 +222,16 @@ Deliberately not planned; listed so nobody re-surveys them. Each is in T3 Code i
 
 ## Checks after the first push to GitHub
 
-None of the contribution workflows can run before the repository is on GitHub.
+The first push starts nothing: Actions stays off until CI goes on, and each other workflow is then
+switched on (`gh workflow enable <file>`) and checked on its own.
 
-- **Settings**: enable private vulnerability reporting (Security, Advisories); require the `Check`
-  status on `main`; keep the default workflow token read-only and approval for first-time
-  contributors' workflow runs (Actions, General).
-- **Labels**: the push runs `labels.yml`; if it did not, `gh workflow run labels.yml`. Then
-  `gh label list` shows every name in `.github/labels.json`.
+- **Settings**: private vulnerability reporting on (Security, Advisories); the required checks
+  `Check` and `PR title` on `main`; the default workflow token read-only and approval for all
+  outside contributors' workflow runs (Actions, General).
+- **PR title**: on a test PR, an invalid title fails `PR title`, a valid one passes, and editing
+  the title does not rerun CI.
+- **Labels**: `gh workflow enable labels.yml`, then `gh workflow run labels.yml`; `gh label list`
+  shows every name in `.github/labels.json`.
 - **Vouch**: from an account without write access, open an issue and a PR; the PR gets
   `vouch:unvouched`, the issue no label, a maintainer PR `vouch:trusted`. Denounce a test account
   in `VOUCHED.td` and check that its next issue and PR close with the ban comment, then remove it.
@@ -236,13 +239,14 @@ None of the contribution workflows can run before the repository is on GitHub.
 - **PR size**: a fork PR gets one `size:*` label that changes after a push; a PR adding 20 or more
   test cases gets the test delta comment, which goes away when the cases are removed.
 - **PR limits**: with `PR_LIMITS_ENFORCE` unset, a fourth PR from the test account logs "would
-  close"; `gh workflow run pr-limits.yml` logs the sweep. Then
-  `gh variable set PR_LIMITS_ENFORCE --body true` and watch one real run.
+  close"; `gh workflow run pr-limits.yml` logs the sweep. Enforce it
+  (`gh variable set PR_LIMITS_ENFORCE --body true`) only once outside PRs are open, and watch one
+  real run.
 - **Stale**: label a test issue `needs-more-info`; a comment removes the label, and 7 days
   without one close it (`gh workflow run stale-needs-more-info.yml` runs the check now).
-- **Templates**: the issue chooser shows the bug and feature forms and the security policy link,
-  and a new PR starts from the template.
-- **Review bots**: install the Macroscope and CodeRabbit GitHub apps on the repository. On a test
+- **Templates**: the issue chooser shows the bug and feature forms and the link to private
+  vulnerability reporting, and a new PR starts from the template.
+- **Review bots** (each optional): once the Macroscope or CodeRabbit app is installed, on a test
   PR that touches server code, a web component, and a test: CodeRabbit reviews without a summary
   or status comment and cites the `docs/internals` page for each path; Macroscope skips the files
   in `.macroscope/ignore.md`, starts its three check-run agents only after `Check` passes
