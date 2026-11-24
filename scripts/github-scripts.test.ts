@@ -60,6 +60,9 @@ describe("labels.json", () => {
     const budget = /labels\.\*\.name, '([\w-]+)'\)/.exec(
       read(".github/workflows/agent-context-budget.yml"),
     );
+    const dependabot = [
+      ...read(".github/dependabot.yml").matchAll(/^\s+labels: (\[.*\])$/gm),
+    ].flatMap((m) => JSON.parse(m[1]!) as ReadonlyArray<string>);
     const docs = ["CONTRIBUTING.md", ".agents/skills/contribution-triage/SKILL.md"].flatMap(
       (file) =>
         [...read(file).matchAll(/`((?:vouch|triage|size):[\w-]+|needs-[\w-]+)`/g)].map(
@@ -75,10 +78,12 @@ describe("labels.json", () => {
       ...templates,
       stale?.[1],
       budget?.[1],
+      ...dependabot,
       ...docs,
     ];
     expect(templates).toContain("needs-triage");
     expect(budget?.[1]).toBe("agent-context-increase");
+    expect(dependabot).toContain("dependencies");
     expect(applied.filter((name) => !defined.includes(name!))).toEqual([]);
   });
 });

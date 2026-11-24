@@ -17,5 +17,5 @@ updates:
     commit-message:
       prefix: chore
       include: scope
-    # Labels come from .github/labels.json; without this Dependabot creates its own.
-    labels: []
+    # Replaces the default labels Dependabot creates outside .github/labels.json; it ignores `[]`.
+    labels: ["dependencies"]
