@@ -190,6 +190,20 @@ Review bots: Macroscope reads [`.macroscope/`](../../.macroscope) and CodeRabbit
 [`.coderabbit.config.ts`](../../.coderabbit.config.ts). Both point at the rules in `docs/internals`
 and `SECURITY.md`; change a rule and the bot file that repeats it together.
 
+## GitHub workflows
+
+`main` accepts only squash-merged PRs that are up to date and pass `Check`, `PR title` and
+`Agent context budget`. Every workflow that runs on PRs must also work for
+[stacked pull requests](https://docs.github.com/en/pull-requests/get-started/about-stacked-prs):
+
+- A `pull_request` workflow runs for every layer of a stack, as if the layer targeted `main`.
+- A layer's base is the branch below it, not `main`. Compare with the merge commit's first parent
+  (`HEAD^1`) or `pull_request.base.sha`, never a freshly fetched `main`, so each layer is judged on
+  its own change.
+- `github.event.pull_request.stack` exists only for stacked PRs; guard it with `!= null`.
+- Merging a stack through the API needs the asynchronous merge endpoint.
+- Stacks cannot span forks, so only people with write access stack.
+
 ## Production build
 
 `vp run build` builds every app. The server build depends on the web build and copies it to

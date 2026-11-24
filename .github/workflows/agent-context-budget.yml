@@ -1,5 +1,5 @@
-# Fails when a PR raises a value in scripts/agent-context-budget.json above main's. agent-docs.test.ts
-# keeps that file equal to the measured context, so the context cannot grow by editing the file.
+# Fails when a PR raises a value in scripts/agent-context-budget.json above its base branch's (main,
+# or the layer below in a stack). agent-docs.test.ts keeps that file equal to the measured context, so the context cannot grow by editing the file.
 # To accept growth on purpose, a maintainer adds the agent-context-increase label.
 # Adapted from T3 Code's agent-context-budget.yml (MIT).
 name: Agent context budget
@@ -28,28 +28,29 @@ jobs:
           fetch-depth: 2
           persist-credentials: false
 
-      # HEAD is the PR merged onto main, and its first parent is the main it was built on. A freshly
-      # fetched main can hold lower values the PR never saw, which would read as growth.
-      - name: Compare with main
+      # HEAD is the PR merged onto its base, and its first parent is the base it was built on. A freshly
+      # fetched main can hold lower values the PR never saw, and in a stack it would count the lower
+      # layers' growth as this layer's.
+      - name: Compare with the base branch
         run: |
           if ! git cat-file -e "HEAD^1:$BUDGET" 2>/dev/null; then
-            echo "main has no agent context budget yet."
+            echo "The base branch has no agent context budget yet."
             exit 0
           fi
-          git show "HEAD^1:$BUDGET" > "$RUNNER_TEMP/main.json"
-          grown=$(jq -r --slurpfile main "$RUNNER_TEMP/main.json" '
+          git show "HEAD^1:$BUDGET" > "$RUNNER_TEMP/base.json"
+          grown=$(jq -r --slurpfile base "$RUNNER_TEMP/base.json" '
             to_entries[]
-            | select($main[0][.key] != null and .value > $main[0][.key])
-            | "\(.key): \($main[0][.key]) -> \(.value) (+\(.value - $main[0][.key]))"
+            | select($base[0][.key] != null and .value > $base[0][.key])
+            | "\(.key): \($base[0][.key]) -> \(.value) (+\(.value - $base[0][.key]))"
           ' "$BUDGET")
           if [ -z "$grown" ]; then
-            echo "Agent context is not larger than main."
+            echo "Agent context is not larger than on the base branch."
             exit 0
           fi
-          printf 'Agent context grew compared to main:\n%s\n' "$grown"
+          printf 'Agent context grew compared to the base branch:\n%s\n' "$grown"
           if [ "$ALLOW_INCREASE" = "true" ]; then
             echo "Accepted by the agent-context-increase label."
             exit 0
           fi
-          echo "::error file=$BUDGET::Agent context grew compared to main. Cut the added text, or ask a maintainer to add the agent-context-increase label."
+          echo "::error file=$BUDGET::Agent context grew compared to the base branch. Cut the added text, or ask a maintainer to add the agent-context-increase label."
           exit 1
