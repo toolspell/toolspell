@@ -242,8 +242,6 @@ The settings, the PR title check and the labels are checked. Each workflow below
   close"; `gh workflow run pr-limits.yml` logs the sweep. Enforce it
   (`gh variable set PR_LIMITS_ENFORCE --body true`) only once outside PRs are open, and watch one
   real run.
-- **Stale**: label a test issue `needs-more-info`; a comment removes the label, and 7 days
-  without one close it (`gh workflow run stale-needs-more-info.yml` runs the check now).
 - **Templates**: the issue chooser shows the bug and feature forms and the link to private
   vulnerability reporting, and a new PR starts from the template.
 - **Review bots** (each optional): once the Macroscope or CodeRabbit app is installed, on a test

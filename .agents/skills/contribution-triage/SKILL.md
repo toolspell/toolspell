@@ -10,8 +10,9 @@ description: Enforce Toolspell's PR contribution policy by closing ineligible su
 Enforce [CONTRIBUTING.md](../../../CONTRIBUTING.md), the authoritative eligibility policy: close
 PRs with established violations and mark eligible PRs ready for maintainer review. Carry out
 authorized moderation through completion, without per-PR approval requests. This skill does not
-define automatic closure rules for issues; [vouch.yml](../../../.github/workflows/vouch.yml) and
-[stale-needs-more-info.yml](../../../.github/workflows/stale-needs-more-info.yml) own those.
+close issues: [vouch.yml](../../../.github/workflows/vouch.yml) closes those of denounced authors,
+and [stale-needs-more-info.yml](../../../.github/workflows/stale-needs-more-info.yml) only labels
+unanswered ones `stale`.
 
 ## Determine invocation mode and scope
 
