@@ -57,6 +57,9 @@ describe("labels.json", () => {
     const stale = /only-issue-labels: (.+)/.exec(
       read(".github/workflows/stale-needs-more-info.yml"),
     );
+    const budget = /labels\.\*\.name, '([\w-]+)'\)/.exec(
+      read(".github/workflows/agent-context-budget.yml"),
+    );
     const docs = ["CONTRIBUTING.md", ".agents/skills/contribution-triage/SKILL.md"].flatMap(
       (file) =>
         [...read(file).matchAll(/`((?:vouch|triage|size):[\w-]+|needs-[\w-]+)`/g)].map(
@@ -71,9 +74,11 @@ describe("labels.json", () => {
       ...SIZES.map((size) => size.label),
       ...templates,
       stale?.[1],
+      budget?.[1],
       ...docs,
     ];
     expect(templates).toContain("needs-triage");
+    expect(budget?.[1]).toBe("agent-context-increase");
     expect(applied.filter((name) => !defined.includes(name!))).toEqual([]);
   });
 });

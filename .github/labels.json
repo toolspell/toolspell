@@ -83,5 +83,10 @@
     "name": "size:XXL",
     "color": "b60205",
     "description": "1,000+ effective changed lines (test files excluded in mixed PRs)."
+  },
+  {
+    "name": "agent-context-increase",
+    "color": "5319e7",
+    "description": "A maintainer accepts that this PR grows the context every agent session loads."
   }
 ]
