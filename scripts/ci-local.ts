@@ -89,6 +89,35 @@ const standaloneCheckout = (root: string) => {
   return { dir, cleanup: () => NodeFS.rmSync(dir, { recursive: true, force: true }) };
 };
 
+/**
+ * Only ci.yml runs: act would also start the push workflows that write to GitHub. With no token
+ * given, act borrows the `gh` login, so the token stays empty, and the checkout's .env, .secrets
+ * and .vars stay out of the containers too.
+ */
+export const actArguments = (
+  architecture: string,
+  remote: boolean,
+  passthrough: ReadonlyArray<string>,
+) => [
+  "--workflows",
+  ".github/workflows/ci.yml",
+  "--secret",
+  "GITHUB_TOKEN=",
+  "--env-file",
+  NodeOS.devNull,
+  "--secret-file",
+  NodeOS.devNull,
+  "--var-file",
+  NodeOS.devNull,
+  "--container-architecture",
+  architecture,
+  "-P",
+  `ubuntu-24.04=${UBUNTU_IMAGE}`,
+  // The artifact and cache server would listen on this machine, which a remote engine cannot reach.
+  ...(remote ? ["--no-cache-server"] : []),
+  ...passthrough,
+];
+
 const dockerOutput = (args: ReadonlyArray<string>) =>
   NodeChildProcess.execFileSync("docker", args, { encoding: "utf8" }).trim();
 
@@ -116,15 +145,7 @@ const main = async () => {
   const checkout = standaloneCheckout(NodePath.dirname(import.meta.dirname));
   process.exitCode = await runTool(
     "act",
-    [
-      "--container-architecture",
-      architecture,
-      "-P",
-      `ubuntu-24.04=${UBUNTU_IMAGE}`,
-      // The artifact and cache server would listen on this machine, which a remote engine cannot reach.
-      ...(context === undefined ? [] : ["--no-cache-server"]),
-      ...passthrough,
-    ],
+    actArguments(architecture, context !== undefined, passthrough),
     env,
     checkout.dir,
   ).finally(checkout.cleanup);

@@ -122,8 +122,10 @@ show only the count; run `vp run check:secrets` locally to see where it is (valu
 
 ## CI before GitHub
 
-Until the repository has GitHub Actions, `vp run ci:local` runs `.github/workflows/ci.yml` with
-[act](https://github.com/nektos/act) in Docker; pass `-- -j <job>` for one job. act copies the
+`vp run ci:local` runs `.github/workflows/ci.yml` with [act](https://github.com/nektos/act) in
+Docker before you push; pass `-- -j <job>` for one job. It runs no other workflow and gives act no
+GitHub token (act would borrow your `gh` login) and none of the checkout's `.env`, `.secrets` or
+`.vars`. act copies the
 checkout into its containers; from a worktree it sends a temporary clone with your uncommitted
 changes. act and actionlint are pinned release binaries that `scripts/lib/tools.ts` downloads and
 verifies on first use; `check:changed` runs actionlint when a workflow changes. A green act run is
