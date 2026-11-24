@@ -229,16 +229,9 @@ Deliberately not planned; listed so nobody re-surveys them. Each is in T3 Code i
 
 ## Checks after the first push to GitHub
 
-The first push starts nothing: Actions stays off until CI goes on, and each other workflow is then
-switched on (`gh workflow enable <file>`) and checked on its own.
+The settings, the PR title check and the labels are checked. Each workflow below is switched on
+(`gh workflow enable <file>`) and checked on its own.
 
-- **Settings**: private vulnerability reporting on (Security, Advisories); the required checks
-  `Check` and `PR title` on `main`; the default workflow token read-only and approval for all
-  outside contributors' workflow runs (Actions, General).
-- **PR title**: on a test PR, an invalid title fails `PR title`, a valid one passes, and editing
-  the title does not rerun CI.
-- **Labels**: `gh workflow enable labels.yml`, then `gh workflow run labels.yml`; `gh label list`
-  shows every name in `.github/labels.json`.
 - **Vouch**: from an account without write access, open an issue and a PR; the PR gets
   `vouch:unvouched`, the issue no label, a maintainer PR `vouch:trusted`. Denounce a test account
   in `VOUCHED.td` and check that its next issue and PR close with the ban comment, then remove it.
