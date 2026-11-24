@@ -112,7 +112,7 @@ without one. Pass the server's `--home-dir` if it uses another home.
 | `vp run check:pinned`  | Exact versions in every `package.json`, the catalog, and overrides.       |
 | `vp run check:naming`  | The naming rules in `docs/internals/naming.md`, on every tracked file.    |
 | `vp run check:secrets` | gitleaks over the whole history; `--staged` is what the commit hook runs. |
-| `vp run ready`         | Format, lint, knip, every typecheck and test. Run before landing on main. |
+| `vp run ready`         | Format, lint, knip, every typecheck and test.                             |
 
 `ready` is less than CI: CI also runs the naming, pinned, secrets and workflow checks, builds the
 apps, and checks the built web boot and the desktop preload. `vp run ci:local` runs CI itself.
