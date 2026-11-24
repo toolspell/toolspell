@@ -67,6 +67,8 @@ Before calling work done, say which of these applied:
   stays authoritative; a client check only hides UI.
 - **Reverse states.** If you added a way in, add the way out and the way to see it. Pairing needs
   revoking. A one-way door is a bug.
+- **Stacked PRs.** A GitHub workflow or check on PRs runs for every layer of a stack. Follow
+  [GitHub workflows](docs/operations/development.md#github-workflows).
 - **Docs.** Check whether the change makes existing guidance inaccurate. Apply the
   [documentation rules](#documentation) before adding anything.
 
