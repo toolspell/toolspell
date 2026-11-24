@@ -22,8 +22,8 @@ The cheapest help is closing things: link the original of a duplicate, say when 
 happens on `main`, and link what superseded a dead PR. A test report on an existing PR beats a
 second PR for the same bug.
 
-An issue labeled `needs-more-info` waits on the reporter. A reply removes the label; without one,
-the issue closes after 7 days.
+An issue labeled `needs-more-info` waits on the reporter. Without a reply in 7 days it gets the
+`stale` label, and a maintainer decides whether to close it.
 
 ## Rules for a PR
 

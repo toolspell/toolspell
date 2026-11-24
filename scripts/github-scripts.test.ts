@@ -54,9 +54,11 @@ describe("labels.json", () => {
         const block = /^labels:\n((?:\s+- .+\n)+)/m.exec(read(`.github/ISSUE_TEMPLATE/${file}`));
         return [...(block?.[1] ?? "").matchAll(/- (.+)/g)].map((match) => match[1]!.trim());
       });
-    const stale = /only-issue-labels: (.+)/.exec(
-      read(".github/workflows/stale-needs-more-info.yml"),
-    );
+    const stale = [
+      ...read(".github/workflows/stale-needs-more-info.yml").matchAll(
+        /(?:only-issue-labels|stale-issue-label): (.+)/g,
+      ),
+    ].map((m) => m[1]!);
     const budget = /labels\.\*\.name, '([\w-]+)'\)/.exec(
       read(".github/workflows/agent-context-budget.yml"),
     );
@@ -76,12 +78,13 @@ describe("labels.json", () => {
       REBASE_LABEL,
       ...SIZES.map((size) => size.label),
       ...templates,
-      stale?.[1],
+      ...stale,
       budget?.[1],
       ...dependabot,
       ...docs,
     ];
     expect(templates).toContain("needs-triage");
+    expect(stale).toEqual(["needs-more-info", "stale"]);
     expect(budget?.[1]).toBe("agent-context-increase");
     expect(dependabot).toContain("dependencies");
     expect(applied.filter((name) => !defined.includes(name!))).toEqual([]);

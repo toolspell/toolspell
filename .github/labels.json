@@ -17,7 +17,12 @@
   {
     "name": "needs-more-info",
     "color": "d4c5f9",
-    "description": "Waiting on the reporter. Closes after 7 days without a reply."
+    "description": "Waiting on the reporter. Gets stale after 7 days without a reply."
+  },
+  {
+    "name": "stale",
+    "color": "cfd3d7",
+    "description": "Waited 7 days on the reporter without a reply. A maintainer decides whether to close."
   },
   {
     "name": "vouch:trusted",
