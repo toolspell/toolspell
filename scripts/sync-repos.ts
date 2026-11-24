@@ -71,7 +71,7 @@ const MARKER = ".toolspell-ref";
 const root = NodePath.dirname(import.meta.dirname);
 
 export const catalogVersion = (workspaceYaml: string, key: string): string | undefined =>
-  workspaceYaml.match(new RegExp(`^  "?${key.replace(/[/@]/g, "\\$&")}"?: (\\S+)$`, "m"))?.[1];
+  workspaceYaml.match(new RegExp(`^  "?${RegExp.escape(key)}"?: (\\S+)$`, "m"))?.[1];
 
 const refOf = (dir: string) => {
   try {
