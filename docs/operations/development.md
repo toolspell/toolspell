@@ -120,7 +120,7 @@ apps, and checks the built web boot and the desktop preload. `vp run ci:local` r
 A secret that `check:secrets` finds in CI is already public: rotate it first, then clean up. CI logs
 show only the count; run `vp run check:secrets` locally to see where it is (values redacted).
 
-## CI before GitHub
+## CI
 
 `vp run ci:local` runs `.github/workflows/ci.yml` with [act](https://github.com/nektos/act) in
 Docker before you push; pass `-- -j <job>` for one job. It runs no other workflow and gives act no
