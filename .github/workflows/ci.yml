@@ -78,7 +78,10 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           persist-credentials: false
+      # The lint job saves the setup caches on main; one upload per run is enough.
       - uses: ./.github/actions/setup
+        with:
+          save-cache: "false"
       - name: Typecheck
         env:
           ALL: ${{ needs.changes.outputs.all }}
@@ -112,6 +115,8 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup
+        with:
+          save-cache: "false"
       # The web package's browser tests and render budgets (test/*.renders.tsx) run in headless Chromium.
       - if: env.WEB == 'true'
         uses: ./.github/actions/chromium
