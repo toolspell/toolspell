@@ -68,11 +68,11 @@ where they move.
   Linux a stray `TOOLSPELL_BOOTSTRAP_FD` hits one of Node's own fds); no copy-on-write for the
   state directory on btrfs; warn when the pnpm store is on another filesystem; a bootstrap-fd read that treats a
   missing fd as "no token"; Cmd versus Ctrl helpers once the web app has shortcuts.
-- **GitHub, once pushed**: Dependabot for `github-actions` only, to keep the SHA pins fresh; a
-  `~/.vite-plus` and pnpm store cache saved only on main (T3 Code `.github/actions/setup-ci-deps`).
-  The contribution workflows have their own checklist below. Once CI runs the full suites,
-  `check:changed` can go back to tests beside changes plus T3 Code's map of cross-file guards (it
-  runs every test of the affected packages while it is the only gate).
+- **Dependabot npm updates**: version updates need a `cooldown` of at least a day (pnpm's
+  `minimumReleaseAge`) and must keep exact versions; check how they handle the pnpm catalog first.
+- **GitHub, once pushed**: the contribution workflows have their own checklist below. Once CI runs
+  the full suites, `check:changed` can go back to tests beside changes plus T3 Code's map of
+  cross-file guards (it runs every test of the affected packages while it is the only gate).
 - **Second CLI command `tspell`**: once the CLI has commands people run daily, decide whether to
   ship `tspell` as an installed alternative to `toolspell`: a real command, not a shell alias,
   under a package name that is ours. Help output and docs keep `toolspell`.
