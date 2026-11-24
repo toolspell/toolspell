@@ -208,6 +208,9 @@ where they move.
 - **shellcheck for local actionlint**: GitHub's runners have shellcheck, so CI's actionlint also
   checks `run:` scripts; `check:changed` does that only where shellcheck is installed. A pinned
   shellcheck in `scripts/lib/tools.ts` would close the gap.
+- **Required approvals once a second maintainer exists**: the `main` ruleset requires 0 approvals,
+  because every PR is opened under the only maintainer's account and GitHub does not let an author
+  approve their own PR. With a second person with write access, require 1 approval.
 
 ## Consider later if then relevant
 
