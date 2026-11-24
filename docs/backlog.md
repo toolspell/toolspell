@@ -211,6 +211,10 @@ where they move.
 - **Required approvals once a second maintainer exists**: the `main` ruleset requires 0 approvals,
   because every PR is opened under the only maintainer's account and GitHub does not let an author
   approve their own PR. With a second person with write access, require 1 approval.
+- **Merge queue** (likely once agents open many PRs in parallel): GitHub tests each queued PR
+  together with `main` and the PRs ahead of it, and merges only if that is green. It replaces the
+  manual "Update branch" the up-to-date rule needs today. The required workflows then also need a
+  `merge_group` trigger, and CI runs twice per PR. A stack enters the queue as one group.
 
 ## Consider later if then relevant
 
