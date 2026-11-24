@@ -88,5 +88,10 @@
     "name": "agent-context-increase",
     "color": "5319e7",
     "description": "A maintainer accepts that this PR grows the context every agent session loads."
+  },
+  {
+    "name": "dependencies",
+    "color": "0366d6",
+    "description": "Dependency update opened by Dependabot."
   }
 ]
