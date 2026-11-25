@@ -87,7 +87,9 @@ jobs:
           ALL: ${{ needs.changes.outputs.all }}
           PACKAGES: ${{ needs.changes.outputs.packages }}
         run: |
-          if [[ "$ALL" == "true" ]]; then vp run -r --cache typecheck; exit; fi
+          # A full run also covers the root project (vite.config.ts, .coderabbit.config.ts), which
+          # belongs to no package; a change to it always triggers a full run.
+          if [[ "$ALL" == "true" ]]; then vp run typecheck; exit; fi
           filters=(); for p in $PACKAGES; do filters+=(--filter "$p"); done
           vp run --cache --parallel "${filters[@]}" typecheck
       - run: vp run build

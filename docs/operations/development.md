@@ -107,7 +107,7 @@ without one. Pass the server's `--home-dir` if it uses another home.
 | ---------------------- | ------------------------------------------------------------------------- |
 | `vp run check:changed` | Checks and tests for what a change affects (see below). Run before push.  |
 | `vp test run <files>`  | The given test files, each with its package's config, from the root.      |
-| `vp run typecheck`     | `effect-tsgo` per package, cached.                                        |
+| `vp run typecheck`     | `effect-tsgo` per package, cached, then the root config files.            |
 | `vp run knip`          | Unused files, exports, and dependencies.                                  |
 | `vp run check:pinned`  | Exact versions in every `package.json`, the catalog, and overrides.       |
 | `vp run check:naming`  | The naming rules in `docs/internals/naming.md`, on every tracked file.    |

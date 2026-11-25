@@ -11,6 +11,12 @@ Any pull request that changes one of these is not auto-approvable and requires h
 - `apps/server/src/auth/**`, or the `RpcAuthorization` middleware it implements, declared in
   `packages/contracts/src/auth.ts`. Pairing, sessions, and per-call scopes are the security
   boundaries `SECURITY.md` lists.
+- The other enforcement points `SECURITY.md` lists under "Where enforcement lives":
+  `apps/server/src/{http,ws}.ts` (pairing, socket admission, Content Security Policy) and
+  `apps/desktop/src/{window,ipc,preload,readiness,main}.ts` (desktop window isolation, and the
+  window loading only its own server).
+- `apps/server/src/core/**`: the command decisions, event sink, effect worker, and projections
+  that "Durable intent and side effects" in `docs/internals/overview.md` constrains.
 - `PROTOCOL_VERSION` in `packages/contracts/src/rpc.ts`. Clients and servers update
   independently; see "Wire compatibility" in `docs/internals/overview.md`.
 - `packages/contracts/src/events.ts`. Stored events must stay decodable on replay; see

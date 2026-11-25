@@ -4,7 +4,13 @@ import { defineConfig, type CodeRabbitContext } from "@coderabbitai/config";
 const UNGATED_AUTHORS = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
 const isGated = ({ pr }: CodeRabbitContext) => !UNGATED_AUTHORS.has(pr?.authorAssociation ?? "");
 
-const AUTH_PATHS = ["apps/server/src/auth/**", "packages/contracts/src/{auth,rpc}.ts"];
+// The enforcement points SECURITY.md lists under "Where enforcement lives"; change both together.
+const AUTH_PATHS = [
+  "apps/server/src/auth/**",
+  "apps/server/src/{http,ws}.ts",
+  "packages/contracts/src/{auth,rpc}.ts",
+  "apps/desktop/src/{window,ipc,preload,readiness,main}.ts",
+];
 const AUTH_DOCS = ["SECURITY.md", "docs/internals/environment-auth.md"];
 
 // A summary of SECURITY.md; change both together.
@@ -83,6 +89,11 @@ export default defineConfig((ctx) => ({
           "Hold changed contracts to the constraints in docs/internals/overview.md, especially wire compatibility and replayable events.",
       },
       {
+        path: "apps/server/src/{core,persistence}/**",
+        instructions:
+          "Hold changed code to the constraints in docs/internals/overview.md, especially replayable events, migrations, and no external I/O in a command decision or the event sink's transaction.",
+      },
+      {
         path: "packages/client-runtime/**",
         instructions: "Hold changed code to the rules in docs/internals/connection-runtime.md.",
       },
@@ -103,6 +114,7 @@ export default defineConfig((ctx) => ({
         ...AUTH_DOCS.flatMap((files) => AUTH_PATHS.map((applyTo) => ({ files, applyTo }))),
         { files: "docs/internals/runners.md", applyTo: "apps/server/src/runners/**" },
         { files: "docs/internals/overview.md", applyTo: "packages/contracts/src/**" },
+        { files: "docs/internals/overview.md", applyTo: "apps/server/src/{core,persistence}/**" },
         { files: "docs/internals/connection-runtime.md", applyTo: "packages/client-runtime/**" },
       ],
     },
