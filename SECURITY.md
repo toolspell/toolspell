@@ -81,5 +81,5 @@ boundary.
   and read proofs of concept before running anything.
 - Fix a confirmed finding in the advisory's temporary private fork, not in a public PR. Keep
   advisory details out of public commits until the fix ships.
-- When a boundary here changes, update this file and the internal doc that explains it in the same
-  change.
+- When a boundary here changes, update this file, the internal doc that explains it, and the
+  summary in [`.coderabbit.config.ts`](.coderabbit.config.ts) in the same change.
