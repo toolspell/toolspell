@@ -18,6 +18,7 @@ import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as Redacted from "effect/Redacted";
 import * as Stream from "effect/Stream";
+import * as TestClock from "effect/testing/TestClock";
 import {
   FetchHttpClient,
   HttpClient,
@@ -39,6 +40,7 @@ import { MAX_REQUEST_BYTES, routes, staticRoutes } from "./http.ts";
 import * as FakeRunner from "./runners/FakeRunner.ts";
 import { layerHttpServer, layerServing } from "./server.ts";
 import { layerServicesTest } from "./testkit.ts";
+import { KEEPALIVE_INTERVAL } from "./ws.ts";
 
 describe("static client routes", () => {
   it("send a security policy with pages, and cache only hashed assets", async () => {
@@ -334,6 +336,27 @@ describe("transport guards", () => {
           assert.match(cookie ?? "", /;\s*SameSite=Strict/i);
         }
       }),
+    );
+  });
+});
+
+describe("socket keepalive", () => {
+  // This server runs on the test clock, so a test moves its keepalive timer forward.
+  it.layer(layerLoopback)((it) => {
+    it.effect("a silent client still gets a frame each interval, so a proxy keeps it open", () =>
+      Effect.gen(function* () {
+        const { socket, closed } = yield* openSocket(
+          (yield* pairSession(STANDARD_AUTH_SCOPES)).cookie,
+        );
+        const frames: Array<unknown> = [];
+        socket.addEventListener("message", (event) => frames.push(JSON.parse(String(event.data))));
+        yield* TestClock.adjust(KEEPALIVE_INTERVAL);
+        yield* TestClock.adjust(KEEPALIVE_INTERVAL);
+        // Frames the server sent before the close handshake arrive before the close.
+        socket.close();
+        yield* closed;
+        assert.deepStrictEqual(frames, [{ _tag: "Pong" }, { _tag: "Pong" }]);
+      }).pipe(Effect.scoped),
     );
   });
 });
