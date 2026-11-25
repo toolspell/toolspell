@@ -160,6 +160,16 @@ screenshots.
 - UI changes need before and after images; motion or timing needs a short video. Upload evidence to
   the PR; never commit PR-only screenshots or assets.
 
+## Code Review Rules
+
+Review each changed file against the doc that owns its rules, and read that doc first:
+
+- TypeScript in `apps/` and `packages/`: `docs/internals/effect-services.md`
+- Components and CSS in `apps/web/src`: `docs/internals/web-ui.md`
+- Contracts and stored events: `docs/internals/overview.md` (wire compatibility, replayable events)
+- Tests: `docs/internals/testing.md`; ask for a test only as it allows.
+- Auth, pairing, and RPC scopes: the trust model in `SECURITY.md`
+
 ## Documentation
 
 Most code changes do not need a documentation change. Agents can read the code.
