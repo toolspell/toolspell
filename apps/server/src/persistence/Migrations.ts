@@ -44,6 +44,7 @@ export const migrations = {
         id TEXT PRIMARY KEY,
         workspace_id TEXT NOT NULL REFERENCES workspaces (id),
         status TEXT NOT NULL,
+        priority INTEGER NOT NULL DEFAULT 0,
         created_at INTEGER NOT NULL,
         data TEXT NOT NULL
       )

@@ -166,6 +166,8 @@ export const createMainWindow = ({
       return;
     }
     if (isAppUrl(url)) return;
+    // Local docs and dev pages open in the window instead of the system browser.
+    if (new URL(url).hostname === "localhost") return;
     event.preventDefault();
     const external = parseExternalUrl(url);
     if (external !== undefined) openExternal(external);

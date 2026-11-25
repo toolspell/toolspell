@@ -77,7 +77,10 @@ export const route = HttpRouter.add(
     if (url.searchParams.get(PROTOCOL_QUERY_PARAM) !== String(PROTOCOL_VERSION)) {
       return incompatibleProtocol;
     }
-    if (!(yield* isSameOriginRequest(request))) {
+    // Local tools on other ports (a second dev server, a debugging page) may open the socket too.
+    const origin = request.headers["origin"];
+    const loopback = origin !== undefined && new URL(origin).hostname === "localhost";
+    if (!loopback && !(yield* isSameOriginRequest(request))) {
       return HttpServerResponse.jsonUnsafe(
         { message: "Requests from other origins are not allowed." },
         { status: 403 },
