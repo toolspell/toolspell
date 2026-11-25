@@ -14,6 +14,7 @@ import packageJson from "../package.json" with { type: "json" };
 import { AuthStore } from "./auth/AuthStore.ts";
 import { announceReady, readBootstrapToken } from "./bootstrap.ts";
 import * as ServerConfig from "./config.ts";
+import { endWithLauncher } from "./lifeline.ts";
 import * as RuntimeState from "./persistence/RuntimeState.ts";
 import * as FakeRunner from "./runners/FakeRunner.ts";
 import * as Server from "./server.ts";
@@ -123,17 +124,6 @@ const LAUNCHER_ENV = [
   "TOOLSPELL_EXIT_WITH_STDIN",
 ];
 
-/**
- * A launcher such as the desktop app holds stdin open as a lifeline; its end closes when the
- * launcher dies, even by SIGKILL. The server then ends its program so finalizers run, which no
- * signal does on Windows.
- */
-const launcherGone = Effect.callback<void>((resume) => {
-  const gone = () => resume(Effect.void);
-  process.stdin.once("end", gone).once("close", gone).once("error", gone).resume();
-  return Effect.sync(() => process.stdin.pause());
-}).pipe(Effect.andThen(Effect.logInfo("The launcher closed stdin; shutting down.")));
-
 const serverCommand = Command.make(
   "toolspell",
   { homeDir: homeDirFlag, webOrigin: webOriginFlag, port: portFlag, host: hostFlag },
@@ -148,7 +138,7 @@ const serverCommand = Command.make(
       const server = Layer.launch(
         Server.layer(FakeRunner.layer(), announceReady(readyFd)).pipe(Layer.provide(config)),
       );
-      return yield* exitWithStdin ? Effect.raceFirst(server, launcherGone) : server;
+      return yield* exitWithStdin ? endWithLauncher(server) : server;
     }),
 ).pipe(
   Command.withDescription("Run the Toolspell server."),
@@ -160,9 +150,10 @@ const serverCommand = Command.make(
 process.stdout.on("error", () => {});
 process.stderr.on("error", () => {});
 
-// Exit codes: 0 when the launcher closed stdin, 130 after a signal, 1 on a failure, and
-// SERVER_EXIT_CODE_HOME_IN_USE (78, in @toolspell/contracts/desktop) when another server holds the
-// home. Restarting cannot fix 78, so launchers such as the desktop app report it instead.
+// Exit codes: 0 when the launcher closed stdin, 130 after a signal, 1 on a failure or a hung
+// shutdown after stdin closed, and SERVER_EXIT_CODE_HOME_IN_USE (78, in
+// @toolspell/contracts/desktop) when another server holds the home. Restarting cannot fix 78, so
+// launchers such as the desktop app report it instead.
 Command.run(serverCommand, { version: packageJson.version }).pipe(
   Effect.provide(NodeServices.layer),
   NodeRuntime.runMain,

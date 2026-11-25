@@ -95,6 +95,8 @@ fresh challenge with a secret the dev runner gives it and the app
 
 The server's stdin is the app's lifeline: closing it is how quit asks the server to stop, and it
 closes by itself when the app dies, even by SIGKILL, so finalizers run and the home lock is
-released. A server that dies on its own is restarted on the same port, so the window keeps its
-origin and session and the client reconnects. Exit code 78 (`SERVER_EXIT_CODE_HOME_IN_USE`) means
+released. No app is left then to kill a shutdown that hangs, so the server exits with 1 after the
+app's 5 s grace ([`lifeline.ts`](../../apps/server/src/lifeline.ts)). A server that dies on its
+own is restarted on the same port, so the window keeps its origin and session and the client
+reconnects. Exit code 78 (`SERVER_EXIT_CODE_HOME_IN_USE`) means
 another server holds the home; the app reports it instead of retrying.
