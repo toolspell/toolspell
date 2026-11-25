@@ -41,18 +41,29 @@ const listenerOrigin = (host: string, port: number) => {
   return `http://${reachable.includes(":") ? `[${reachable}]` : reachable}:${port}`;
 };
 
+/** Signal 0 only probes; EPERM means the process exists under another user. */
+const isProcessAlive = (pid: number) => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error instanceof Error && "code" in error && error.code === "EPERM";
+  }
+};
+
 /**
- * The server that holds this home, from the file it writes while running. A killed server leaves
- * its file behind, and after a restart another process can have its PID, so a record counts only
- * while a server holds the home lock.
+ * The server that holds this home, from the file it writes while running. A record counts only
+ * while its process lives and a server holds the home lock: a dead server's PID can be reused, and
+ * a new server holds the lock before it replaces the record, or all run if writing it failed.
  */
 export const findRunning = Effect.fn("RuntimeState.findRunning")(function* () {
   const config = yield* ServerConfig;
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
   const text = yield* fs.readFileString(path.join(config.stateDir, FILE_NAME)).pipe(Effect.option);
-  const running = Option.filter(Option.flatMap(text, decodeRunningServer), () =>
-    HomeLock.isHeld(config.stateDir),
+  const running = Option.filter(
+    Option.flatMap(text, decodeRunningServer),
+    (server) => server.pid > 0 && isProcessAlive(server.pid) && HomeLock.isHeld(config.stateDir),
   );
   if (Option.isNone(running)) return yield* new NoRunningServerError({ homeDir: config.homeDir });
   return running.value;

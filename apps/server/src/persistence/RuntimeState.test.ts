@@ -1,3 +1,4 @@
+// @effect-diagnostics nodeBuiltinImport:off - a finished child process supplies a PID that is gone.
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { assert, describe, it } from "@effect/vitest";
 import * as Effect from "effect/Effect";
@@ -6,6 +7,7 @@ import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
 import * as Path from "effect/Path";
 import * as Scope from "effect/Scope";
+import * as NodeChildProcess from "node:child_process";
 
 import * as ServerConfig from "../config.ts";
 import * as HomeLock from "./HomeLock.ts";
@@ -51,6 +53,12 @@ describe("runtime state", () => {
         [found.pid, found.origin, found.webOrigin],
         [process.pid, "http://127.0.0.1:25780", "http://localhost:29780"],
       );
+
+      // A crashed server's record while a new server holds the lock: before the new server
+      // replaces it, or for its whole run if writing its own failed.
+      const dead = NodeChildProcess.spawnSync(process.execPath, ["-e", ""]).pid;
+      yield* fs.writeFileString(recordFile, JSON.stringify({ ...stale, pid: dead }));
+      assert.strictEqual((yield* Effect.flip(find))._tag, "NoRunningServerError");
 
       yield* Scope.close(running, Exit.void);
       assert.strictEqual((yield* Effect.flip(find))._tag, "NoRunningServerError");
