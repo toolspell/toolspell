@@ -1,5 +1,11 @@
 # Web UI
 
+Rules for building the web client, and for reviewing it. Review bots read this page too:
+CodeRabbit through [`.coderabbit.config.ts`](../../.coderabbit.config.ts), and Macroscope's
+[UI Consistency](../../.macroscope/check-run-agents/ui-consistency.md) check cites the
+`## Primitives`, `## Styles`, `## Motion`, and `## In review` headings by name, so renaming one
+means updating the check.
+
 ## Primitives
 
 Controls come from [`components/ui`](../../apps/web/src/components/ui): shadcn components on Base
@@ -11,16 +17,19 @@ margin, position) belong on the parent. The shadcn lint rules (`no-restyle`, `no
 `no-arbitrary-values`, `require-static-classes`, `no-unknown-classes`) enforce this outside
 `components/ui`.
 
-Don't style a raw `<button>` or `<input>` to look like a control a primitive provides. Raw elements
-are right when the element isn't that control.
+Don't style a raw `<button>`, `<input>`, `<select>`, or `<textarea>`, or a `<div>` or `<span>`, to
+look like a control a primitive provides. Raw elements are right when the element isn't that
+control: semantic rows, tabs, resize handles, swatches, editor surfaces, or anything whose behavior
+or geometry differs by design.
 
 ## Styles
 
 Style with Tailwind classes and the theme tokens (`bg-muted`, `text-muted-foreground`,
-`text-destructive`) in the component that renders the element. Global CSS in
-[`styles.css`](../../apps/web/src/styles.css) is only for what classes can't express: theme
-variables, generated markup, and browser or Electron integration. No `style={{ ... }}` for static
-values a class covers; values computed at runtime are fine.
+`text-destructive`) in the component that renders the element. Global CSS, in
+[`styles.css`](../../apps/web/src/styles.css) or any other `.css` file, is only for what classes
+can't express: theme variables, generated markup, and browser or Electron integration. No
+`style={{ ... }}` or inline `<style>` block for static values a class covers; values computed at
+runtime are fine.
 
 ## Themes
 
@@ -78,7 +87,9 @@ stops makes the GPU draw every frame. Motion is budgeted like rendering:
   cycle. Tailwind's `animate-pulse`, `animate-ping`, and `animate-bounce` change every frame.
 - Transitions name their properties (`transition-colors`, `transition-[box-shadow,translate]`).
   `transition-all` also animates layout and theme switches. Layout properties such as width do
-  not transition; a progress bar jumps to its value.
+  not transition; a progress bar jumps to its value. Nor does a value that updates often, such as
+  a transform or a number fed by live events: when updates come faster than the transition, it
+  never settles. One-shot transitions on hover, focus, press, open, and close are fine.
 - No fixed full-viewport layer that stays mounted, such as a noise or vignette overlay: the
   compositor blends it again on every frame anything below it changes. Put a texture in the
   surface's own background. A dialog backdrop is fine; it exists only while the dialog is open.
@@ -87,7 +98,7 @@ stops makes the GPU draw every frame. Motion is budgeted like rendering:
 
 `toolspell/no-costly-motion` enforces the class rules in `apps/web/src`, including in shadcn
 output, which ships `transition-all` and `animate-pulse`. Rules in `styles.css` follow them by
-review.
+review; a new `infinite` animation there loops too.
 
 ## React Compiler
 
@@ -108,3 +119,10 @@ with `.then(onSuccess, onFailure)` and continue after the `await`.
 React effects are for synchronizing with something outside React. Derive in render and act in
 handlers instead of syncing state. Work that must happen before the first render, such as
 exchanging a pairing token, runs in [`main.tsx`](../../apps/web/src/main.tsx), not in an effect.
+
+## In review
+
+- Hold only the changed lines to these rules. Class order, aesthetic preference, and untouched
+  older code are not findings, and a pull request owes no cleanup beyond its scope.
+- Lint already enforces the shadcn rules and `toolspell/no-costly-motion`; don't report those
+  again.
