@@ -27,6 +27,26 @@ where they move.
   3 open PRs per person, keep the PR mergeable, closing after a 72-hour notice. Decide which fit
   Toolspell before outside contributions start (related: the triage-policy check under "Checks
   after the first push").
+- **Merge queue** (the maintainer wants to revisit this early, right after the GitHub rollout):
+  most work will run through agents, several on PRs at once, and under the up-to-date rule every
+  merge sends the other open PRs back to "Update branch" and a CI rerun. GitHub's merge queue tests
+  each queued PR together with `main` and the PRs ahead of it, and merges only if that is green.
+  The required workflows then also need a `merge_group` trigger, and CI runs twice per PR. A stack
+  enters the queue as one group.
+- **CodeRabbit Triage, Pull Request Automations** (the maintainer wants to revisit this): Triage
+  ranks open PRs in one queue by what each needs next; its rules can fix failed CI, address review
+  feedback, merge low-risk changes, and close stale PRs after notice. Free for open-source
+  organizations on public repositories. Every rule writes to PRs, while `.coderabbit.config.ts`
+  keeps CodeRabbit to reviews and the vouch, stale and PR-limit workflows already label or close;
+  decide which rules fit before turning any on.
+- **CodeRabbit, other features** (the maintainer wants to revisit these): the Context7 MCP source,
+  if it still helps agents (`knowledge_base.mcp.usage` defaults to `auto`, which turns MCP off on
+  public repositories); reports and the automations around GitHub issues, including issue planning
+  (on by default, early preview) and issue enrichment; the CodeRabbit CLI for local reviews before
+  a push (the config can tell CLI runs apart through `ctx.invocation.source`); its own linters
+  (`reviews.tools`), turning off those that duplicate or contradict the repository's lint after a
+  few reviews; and Verify, which tests a PR in a sandbox against the running app, free during its
+  beta and started on public repositories only by an `@coderabbitai verify` comment.
 - **Desktop packaging**: electron-builder, signing and notarization, auto-update. `backend.ts`
   already expects the bundled server at `resources/server/bin.mjs`. Use the release
   [macOS PNG](../assets/prod/macos-1024.png), [Windows ICO](../assets/prod/windows.ico), and
@@ -91,7 +111,9 @@ where they move.
 - **GitHub, with releases**: T3 Code's release patterns (`resolve_commit`, `concurrency` with
   queued runs, per-platform `workflow_call`, a release smoke job on pull requests).
 - **GitHub, with outside contributors**: a PR comment comparing `report:renders` with main, in the
-  pattern of the test delta comment in `.github/scripts/pr-size.cjs`.
+  pattern of the test delta comment in `.github/scripts/pr-size.cjs`. CodeRabbit: whether outsiders
+  may chat with it again (`chat.allow_non_org_members` is off), and a label for its slop detection
+  (`reviews.slop_detection.label`; today it only warns in the walkthrough).
 - **Third-party license notices** before the first web or desktop release: adapt T3 Code's build-time
   generator (its `docs/internals/open-source-licenses.md` and `third-party-licenses.config.json`),
   including a custom notice for T3 Code itself (today in `THIRD_PARTY_NOTICES.md`).
@@ -210,11 +232,8 @@ where they move.
   shellcheck in `scripts/lib/tools.ts` would close the gap.
 - **Required approvals once a second maintainer exists**: the `main` ruleset requires 0 approvals,
   because every PR is opened under the only maintainer's account and GitHub does not let an author
-  approve their own PR. With a second person with write access, require 1 approval.
-- **Merge queue** (likely once agents open many PRs in parallel): GitHub tests each queued PR
-  together with `main` and the PRs ahead of it, and merges only if that is green. It replaces the
-  manual "Update branch" the up-to-date rule needs today. The required workflows then also need a
-  `merge_group` trigger, and CI runs twice per PR. A stack enters the queue as one group.
+  approve their own PR. With a second person with write access, require 1 approval. Decide
+  CodeRabbit's automatic approvals (`reviews.auto_approvals`, off) at the same time.
 
 ## Consider later if then relevant
 
@@ -222,6 +241,7 @@ Deliberately not planned; listed so nobody re-surveys them. Each is in T3 Code i
 
 - Connecting one client to several servers (environment registry and connection supervisor).
 - Product telemetry and runtime monitoring (event-loop stalls, heap attribution, resource monitor).
+  PostHog is a candidate; CodeRabbit can also read it as an MCP source.
 - Test sharding and cached test runs.
 - A replay provider for recorded runs (the fake runner covers free test runs today).
 - A shared dev login token across worktrees.
