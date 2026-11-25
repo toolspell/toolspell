@@ -1,15 +1,19 @@
+// Socket keepalive adapted from T3 Code (MIT): apps/server/src/socketHeartbeat.ts.
 import {
   PROTOCOL_QUERY_PARAM,
   PROTOCOL_VERSION,
   ToolspellRpcs,
   WS_PATH,
 } from "@toolspell/contracts";
+import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import { HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/http";
+import * as RpcMessage from "effect/rpc/RpcMessage";
 import * as RpcSerialization from "effect/rpc/RpcSerialization";
 import * as RpcServer from "effect/rpc/RpcServer";
+import * as Socket from "effect/socket/Socket";
 import * as Stream from "effect/Stream";
 
 import { AuthStore, type AuthenticatedSession } from "./auth/AuthStore.ts";
@@ -68,6 +72,22 @@ const incompatibleProtocol = HttpServerResponse.jsonUnsafe(
   { status: 426 },
 );
 
+// A proxy closes a socket after about 60 s without bytes from the server (nginx, AWS ALB), and a
+// hidden tab or a sleeping machine stops the client's pings.
+export const KEEPALIVE_INTERVAL = Duration.seconds(20);
+// The RPC client counts any frame as a sign of life and drops a pong it did not ask for.
+const KEEPALIVE_FRAME = JSON.stringify(RpcMessage.constPong);
+
+const keepAlive = (socket: Socket.Socket) =>
+  Socket.make({
+    reader: socket.reader,
+    writer: Effect.tap(socket.writer, (writer) =>
+      writer
+        .write(KEEPALIVE_FRAME)
+        .pipe(Effect.delay(KEEPALIVE_INTERVAL), Effect.forever, Effect.ignore, Effect.forkScoped),
+    ),
+  });
+
 export const route = HttpRouter.add(
   "GET",
   WS_PATH,
@@ -97,9 +117,16 @@ export const route = HttpRouter.add(
       ),
       Effect.forkScoped,
     );
+    // The RPC server upgrades the request itself, so its socket is wrapped through the request.
+    const keptAlive = httpEffect.pipe(
+      Effect.provideService(
+        HttpServerRequest.HttpServerRequest,
+        Object.create(request, { upgrade: { value: Effect.map(request.upgrade, keepAlive) } }),
+      ),
+    );
     // Revoking the session closes its open sockets too, not only future ones.
     return yield* Effect.raceFirst(
-      httpEffect,
+      keptAlive,
       awaitRevocation(session.value.id).pipe(Effect.as(HttpServerResponse.empty())),
     );
   }).pipe(Effect.provide(RpcSerialization.layerJson)),

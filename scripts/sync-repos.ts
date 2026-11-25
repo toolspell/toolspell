@@ -54,7 +54,7 @@ export const REPOS: ReadonlyArray<ReferenceRepo> = [
     // A reference for problems T3 Code already solved, not a template. See its reference-t3code skill.
     id: "t3code",
     repository: "https://github.com/pingdotgg/t3code.git",
-    commit: "11224f63d2a3d444ca1fd1f67cd3ff21c1f5f8a1",
+    commit: "1c3f0ee88fc75440e173704cf45eae4d15f2cf95",
     // Only readable source: no nested references, dependency patches, vendored native code,
     // media, binaries or recorded fixtures.
     exclude: [
