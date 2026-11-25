@@ -33,6 +33,12 @@ where they move.
   each queued PR together with `main` and the PRs ahead of it, and merges only if that is green.
   The required workflows then also need a `merge_group` trigger, and CI runs twice per PR. A stack
   enters the queue as one group.
+- **CodeRabbit Triage, Pull Request Automations** (the maintainer wants to revisit this): Triage
+  ranks open PRs in one queue by what each needs next; its rules can fix failed CI, address review
+  feedback, merge low-risk changes, and close stale PRs after notice. Free for open-source
+  organizations on public repositories. Every rule writes to PRs, while `.coderabbit.config.ts`
+  keeps CodeRabbit to reviews and the vouch, stale and PR-limit workflows already label or close;
+  decide which rules fit before turning any on.
 - **Desktop packaging**: electron-builder, signing and notarization, auto-update. `backend.ts`
   already expects the bundled server at `resources/server/bin.mjs`. Use the release
   [macOS PNG](../assets/prod/macos-1024.png), [Windows ICO](../assets/prod/windows.ico), and
