@@ -2,6 +2,7 @@ import * as Cause from "effect/Cause";
 import * as Option from "effect/Option";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import { CircleAlertIcon } from "lucide-react";
+import { useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -28,6 +29,7 @@ export function LiveViewFailure({
   readonly onRetry: () => void;
 }) {
   const slow = useDelayedStatus(failure.waiting);
+  const [dismissed, setDismissed] = useState(false);
   const retry = (
     <Button variant="outline" size="sm" disabled={failure.waiting} onClick={onRetry}>
       {slow && <Spinner data-icon="inline-start" />}
@@ -35,11 +37,23 @@ export function LiveViewFailure({
     </Button>
   );
   if (Option.isSome(failure.previousSuccess)) {
+    if (dismissed) return null;
     return (
-      <div role="status" className="flex items-center gap-3 text-sm text-muted-foreground">
+      <div
+        role="status"
+        className="flex items-center gap-3 text-sm text-muted-foreground"
+        style={{ maxWidth: 640 }}
+      >
         <CircleAlertIcon className="size-4 shrink-0 text-destructive" />
         <span className="min-w-0 flex-1">This list stopped updating.</span>
         {retry}
+        <button
+          type="button"
+          className="h-8 rounded-md px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
+          onClick={() => setDismissed(true)}
+        >
+          Dismiss
+        </button>
       </div>
     );
   }

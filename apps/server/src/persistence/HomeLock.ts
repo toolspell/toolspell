@@ -26,7 +26,8 @@ class HomeLockError extends Schema.TaggedError<HomeLockError>()("HomeLockError",
   cause: Schema.Defect(),
 }) {
   override get message() {
-    return `Could not open the home lock at ${this.lockPath}.`;
+    const reason = this.cause instanceof Error ? this.cause.message : String(this.cause);
+    return `Could not open the home lock at ${this.lockPath}: ${reason}`;
   }
 }
 
