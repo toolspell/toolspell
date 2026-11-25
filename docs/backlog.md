@@ -39,6 +39,14 @@ where they move.
   organizations on public repositories. Every rule writes to PRs, while `.coderabbit.config.ts`
   keeps CodeRabbit to reviews and the vouch, stale and PR-limit workflows already label or close;
   decide which rules fit before turning any on.
+- **CodeRabbit, other features** (the maintainer wants to revisit these): the Context7 MCP source,
+  if it still helps agents (`knowledge_base.mcp.usage` defaults to `auto`, which turns MCP off on
+  public repositories); reports and the automations around GitHub issues, including issue planning
+  (on by default, early preview) and issue enrichment; the CodeRabbit CLI for local reviews before
+  a push (the config can tell CLI runs apart through `ctx.invocation.source`); its own linters
+  (`reviews.tools`), turning off those that duplicate or contradict the repository's lint after a
+  few reviews; and Verify, which tests a PR in a sandbox against the running app, free during its
+  beta and started on public repositories only by an `@coderabbitai verify` comment.
 - **Desktop packaging**: electron-builder, signing and notarization, auto-update. `backend.ts`
   already expects the bundled server at `resources/server/bin.mjs`. Use the release
   [macOS PNG](../assets/prod/macos-1024.png), [Windows ICO](../assets/prod/windows.ico), and
@@ -103,7 +111,9 @@ where they move.
 - **GitHub, with releases**: T3 Code's release patterns (`resolve_commit`, `concurrency` with
   queued runs, per-platform `workflow_call`, a release smoke job on pull requests).
 - **GitHub, with outside contributors**: a PR comment comparing `report:renders` with main, in the
-  pattern of the test delta comment in `.github/scripts/pr-size.cjs`.
+  pattern of the test delta comment in `.github/scripts/pr-size.cjs`. CodeRabbit: whether outsiders
+  may chat with it again (`chat.allow_non_org_members` is off), and a label for its slop detection
+  (`reviews.slop_detection.label`; today it only warns in the walkthrough).
 - **Third-party license notices** before the first web or desktop release: adapt T3 Code's build-time
   generator (its `docs/internals/open-source-licenses.md` and `third-party-licenses.config.json`),
   including a custom notice for T3 Code itself (today in `THIRD_PARTY_NOTICES.md`).
@@ -222,7 +232,8 @@ where they move.
   shellcheck in `scripts/lib/tools.ts` would close the gap.
 - **Required approvals once a second maintainer exists**: the `main` ruleset requires 0 approvals,
   because every PR is opened under the only maintainer's account and GitHub does not let an author
-  approve their own PR. With a second person with write access, require 1 approval.
+  approve their own PR. With a second person with write access, require 1 approval. Decide
+  CodeRabbit's automatic approvals (`reviews.auto_approvals`, off) at the same time.
 
 ## Consider later if then relevant
 
@@ -230,6 +241,7 @@ Deliberately not planned; listed so nobody re-surveys them. Each is in T3 Code i
 
 - Connecting one client to several servers (environment registry and connection supervisor).
 - Product telemetry and runtime monitoring (event-loop stalls, heap attribution, resource monitor).
+  PostHog is a candidate; CodeRabbit can also read it as an MCP source.
 - Test sharding and cached test runs.
 - A replay provider for recorded runs (the fake runner covers free test runs today).
 - A shared dev login token across worktrees.
