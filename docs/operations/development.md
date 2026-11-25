@@ -186,9 +186,10 @@ CI ([`ci.yml`](../../.github/workflows/ci.yml)) first decides which packages a c
 runs lint, typecheck with build, and tests side by side. One required `Check` job rolls them up, so
 skipped jobs for unaffected packages still count as passing.
 
-Review bots: Macroscope reads [`.macroscope/`](../../.macroscope) and CodeRabbit reads
-[`.coderabbit.config.ts`](../../.coderabbit.config.ts). Both point at the rules in `docs/internals`
-and `SECURITY.md`; change a rule and the bot file that repeats it together.
+Review bots: Macroscope reads [`.macroscope/`](../../.macroscope), CodeRabbit reads
+[`.coderabbit.config.ts`](../../.coderabbit.config.ts), and Codex reads the `## Code Review Rules`
+section of [AGENTS.md](../../AGENTS.md). All three point at the rules in `docs/internals` and
+`SECURITY.md`; change a rule and the bot file that repeats it together.
 
 ## GitHub workflows
 

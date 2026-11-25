@@ -159,6 +159,19 @@ screenshots.
   that did the work.
 - UI changes need before and after images; motion or timing needs a short video. Upload evidence to
   the PR; never commit PR-only screenshots or assets.
+- Ask Codex for a second review (`@codex review`) only after a significant change since its last
+  review: new behavior, a redesign of reviewed logic, or a new change to auth, stored formats, or
+  the wire protocol. Not for fixes of review findings, rebases, docs, tests, or formatting.
+
+## Code Review Rules
+
+Review each changed file against the doc that owns its rules, and read that doc first:
+
+- TypeScript in `apps/` and `packages/`: `docs/internals/effect-services.md`
+- Components and CSS in `apps/web/src`: `docs/internals/web-ui.md`
+- Contracts and stored events: `docs/internals/overview.md` (wire compatibility, replayable events)
+- Tests: `docs/internals/testing.md`; ask for a test only as it allows.
+- Auth, pairing, and RPC scopes: the trust model in `SECURITY.md`
 
 ## Documentation
 

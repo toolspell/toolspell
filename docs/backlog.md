@@ -39,6 +39,14 @@ where they move.
   organizations on public repositories. Every rule writes to PRs, while `.coderabbit.config.ts`
   keeps CodeRabbit to reviews and the vouch, stale and PR-limit workflows already label or close;
   decide which rules fit before turning any on.
+- **Codex Security Review** (the maintainer wants to revisit this; needs ChatGPT Pro or a business
+  plan, not Plus): a deeper security pass on PRs (research preview), by `@codex security review` or
+  automatically, with the checked-in `SECURITY.md` as its threat model. Its findings are public on
+  public PRs, against the private reporting in `SECURITY.md`, so run it manually at most. The full
+  report lives only in the Codex task; the app-server protocol has no method to read it
+  (codex-cli 0.172). Until then, a local review runs on Plus and stays private; the prompt carries
+  the base, since `--base` and a prompt conflict: `codex review "Review this branch's changes
+  against main for security, by the trust model in SECURITY.md"`.
 - **CodeRabbit, other features** (the maintainer wants to revisit these): the Context7 MCP source,
   if it still helps agents (`knowledge_base.mcp.usage` defaults to `auto`, which turns MCP off on
   public repositories); reports and the automations around GitHub issues, including issue planning
@@ -264,12 +272,15 @@ The settings, the PR title check and the labels are checked. Each workflow below
   real run.
 - **Templates**: the issue chooser shows the bug and feature forms and the link to private
   vulnerability reporting, and a new PR starts from the template.
-- **Review bots** (each optional): once the Macroscope or CodeRabbit app is installed, on a test
-  PR that touches server code, a web component, and a test: CodeRabbit reviews without a summary
-  or status comment and cites the `docs/internals` page for each path; Macroscope skips the files
-  in `.macroscope/ignore.md`, starts its three check-run agents only after `Check` passes
+- **Review bots** (each optional): once a review bot app is installed, on a test PR that touches
+  server code, a web component, and a test: CodeRabbit reviews without a summary or status comment
+  and cites the `docs/internals` page for each path; Codex flags only P0 and P1 issues and follows
+  the docs its `## Code Review Rules` point to; Macroscope skips the files in
+  `.macroscope/ignore.md`, starts its three check-run agents only after `Check` passes
   (`requires: Check`), and does not auto-approve a change under `apps/server/src/auth/`. If a bot
-  ignores its config file, fix that before relying on its reviews.
+  ignores its config file, fix that before relying on its reviews. From the test account, comment
+  `@codex review` and a non-review mention such as `@codex fix this` on a PR: whether either runs,
+  whose Codex usage it counts against, and how a fork PR behaves are not documented.
 - **PR assets**: a test PR that commits a file under `.github/pr-assets/` fails the lint job.
 - **Triage policy**: the contribution-triage skill closes at once when PR-limit enforcement is off,
   while `CONTRIBUTING.md` promises 72 hours; align them before the first outside PR.
