@@ -11,6 +11,13 @@ on:
 
 permissions: {}
 
+# Run level, not job level: a run joins the group when its event arrives, so a newer push always
+# supersedes an older one. A job joins only when it is queued, a second or two later and not
+# always in event order, so an older push's job could cancel the newer one's and label a stale diff.
+concurrency:
+  group: pr-size-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   label:
     name: Label PR size
@@ -20,9 +27,6 @@ jobs:
       contents: read
       issues: read
       pull-requests: write
-    concurrency:
-      group: pr-size-${{ github.event.pull_request.number }}
-      cancel-in-progress: true
     steps:
       # Full history for the merge base. Without persisted credentials the PR head is fetched
       # anonymously, which works because the repository is public.
