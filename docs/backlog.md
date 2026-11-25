@@ -152,8 +152,7 @@ where they move.
   below the retained range gets a snapshot (Astra). Trigger: the first real runner, or resume time
   in the budgets.
 - **Server, other**: seeding dev state from the live install (trigger: desktop packaging); sharing
-  a dev server over the tailnet; `pair` probing the recorded origin, not only the PID, once a
-  reused PID ever yields a dead link (T3 Code `cli/pair.ts`).
+  a dev server over the tailnet.
 - **Server SQL** (from the budget tests): `id` in the `jobs_workspace` index removes the snapshot's
   temporary sort; each job command reads the job twice (decide, then project); an index on the
   events `type` would make a workspaces resume a direct lookup but costs a write per event; cheaper:

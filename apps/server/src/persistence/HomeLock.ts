@@ -38,6 +38,25 @@ const isBusy = (cause: unknown) =>
   "errcode" in cause &&
   cause.errcode === SQLITE_BUSY;
 
+const lockFile = (stateDir: string) => NodePath.join(stateDir, "server.lock.sqlite");
+
+/**
+ * Whether a server holds this home's lock. The read-only open never creates the file, and the
+ * handle closes before this returns, so probing never keeps a server from starting.
+ */
+export const isHeld = (stateDir: string) => {
+  let db: NodeSqlite.DatabaseSync | undefined;
+  try {
+    db = new NodeSqlite.DatabaseSync(lockFile(stateDir), { readOnly: true });
+    db.exec("SELECT 1 FROM sqlite_schema");
+    return false;
+  } catch (cause) {
+    return isBusy(cause);
+  } finally {
+    db?.close();
+  }
+};
+
 /**
  * One server per home. Two would both run the outbox and start every job twice. The lock is an
  * exclusive transaction on a file that holds no data: the OS releases it when the process exits,
@@ -48,7 +67,7 @@ export const layer = Layer.effectDiscard(
   Effect.gen(function* () {
     const config = yield* ServerConfig;
     if (config.databasePath === ":memory:") return;
-    const lockPath = NodePath.join(config.stateDir, "server.lock.sqlite");
+    const lockPath = lockFile(config.stateDir);
     yield* Effect.acquireRelease(
       Effect.try({
         try: () => {

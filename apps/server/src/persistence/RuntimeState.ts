@@ -8,6 +8,7 @@ import * as Path from "effect/Path";
 import * as Schema from "effect/Schema";
 
 import { ServerConfig } from "../config.ts";
+import * as HomeLock from "./HomeLock.ts";
 
 const RunningServer = Schema.Struct({
   version: Schema.Literal(1),
@@ -40,27 +41,18 @@ const listenerOrigin = (host: string, port: number) => {
   return `http://${reachable.includes(":") ? `[${reachable}]` : reachable}:${port}`;
 };
 
-/** Signal 0 only probes; EPERM means the process exists under another user. */
-const isProcessAlive = (pid: number) => {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch (error) {
-    return error instanceof Error && "code" in error && error.code === "EPERM";
-  }
-};
-
 /**
  * The server that holds this home, from the file it writes while running. A killed server leaves
- * its file behind, so a record whose process is gone does not count.
+ * its file behind, and after a restart another process can have its PID, so a record counts only
+ * while a server holds the home lock.
  */
 export const findRunning = Effect.fn("RuntimeState.findRunning")(function* () {
   const config = yield* ServerConfig;
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
   const text = yield* fs.readFileString(path.join(config.stateDir, FILE_NAME)).pipe(Effect.option);
-  const running = Option.flatMap(text, decodeRunningServer).pipe(
-    Option.filter((server) => server.pid > 0 && isProcessAlive(server.pid)),
+  const running = Option.filter(Option.flatMap(text, decodeRunningServer), () =>
+    HomeLock.isHeld(config.stateDir),
   );
   if (Option.isNone(running)) return yield* new NoRunningServerError({ homeDir: config.homeDir });
   return running.value;
