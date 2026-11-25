@@ -27,6 +27,12 @@ where they move.
   3 open PRs per person, keep the PR mergeable, closing after a 72-hour notice. Decide which fit
   Toolspell before outside contributions start (related: the triage-policy check under "Checks
   after the first push").
+- **Merge queue** (the maintainer wants to revisit this early, right after the GitHub rollout):
+  most work will run through agents, several on PRs at once, and under the up-to-date rule every
+  merge sends the other open PRs back to "Update branch" and a CI rerun. GitHub's merge queue tests
+  each queued PR together with `main` and the PRs ahead of it, and merges only if that is green.
+  The required workflows then also need a `merge_group` trigger, and CI runs twice per PR. A stack
+  enters the queue as one group.
 - **Desktop packaging**: electron-builder, signing and notarization, auto-update. `backend.ts`
   already expects the bundled server at `resources/server/bin.mjs`. Use the release
   [macOS PNG](../assets/prod/macos-1024.png), [Windows ICO](../assets/prod/windows.ico), and
@@ -211,10 +217,6 @@ where they move.
 - **Required approvals once a second maintainer exists**: the `main` ruleset requires 0 approvals,
   because every PR is opened under the only maintainer's account and GitHub does not let an author
   approve their own PR. With a second person with write access, require 1 approval.
-- **Merge queue** (likely once agents open many PRs in parallel): GitHub tests each queued PR
-  together with `main` and the PRs ahead of it, and merges only if that is green. It replaces the
-  manual "Update branch" the up-to-date rule needs today. The required workflows then also need a
-  `merge_group` trigger, and CI runs twice per PR. A stack enters the queue as one group.
 
 ## Consider later if then relevant
 
