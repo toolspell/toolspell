@@ -159,6 +159,9 @@ screenshots.
   that did the work.
 - UI changes need before and after images; motion or timing needs a short video. Upload evidence to
   the PR; never commit PR-only screenshots or assets.
+- Ask Codex for a second review (`@codex review`) only after a significant change since its last
+  review: new behavior, a redesign of reviewed logic, or a new change to auth, stored formats, or
+  the wire protocol. Not for fixes of review findings, rebases, docs, tests, or formatting.
 
 ## Code Review Rules
 
