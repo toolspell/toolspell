@@ -44,8 +44,9 @@ where they move.
   automatically, with the checked-in `SECURITY.md` as its threat model. Its findings are public on
   public PRs, against the private reporting in `SECURITY.md`, so run it manually at most. The full
   report lives only in the Codex task; the app-server protocol has no method to read it
-  (codex-cli 0.172). Until then, `codex review --base main` with a security prompt runs locally on
-  Plus and stays private.
+  (codex-cli 0.172). Until then, a local review runs on Plus and stays private; the prompt carries
+  the base, since `--base` and a prompt conflict: `codex review "Review this branch's changes
+  against main for security, by the trust model in SECURITY.md"`.
 - **CodeRabbit, other features** (the maintainer wants to revisit these): the Context7 MCP source,
   if it still helps agents (`knowledge_base.mcp.usage` defaults to `auto`, which turns MCP off on
   public repositories); reports and the automations around GitHub issues, including issue planning
