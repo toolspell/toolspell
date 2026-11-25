@@ -55,6 +55,15 @@ where they move.
   (`reviews.tools`), turning off those that duplicate or contradict the repository's lint after a
   few reviews; and Verify, which tests a PR in a sandbox against the running app, free during its
   beta and started on public repositories only by an `@coderabbitai verify` comment.
+- **Open Code Review for local reviews** (the maintainer wants to revisit this): Alibaba's `ocr`
+  CLI (Apache 2.0) as a review before a push, not in CI. Its delegate skill lets Codex CLI or
+  Claude Code do the review on their own login while `ocr` picks the files and rules; one
+  committed `.opencodereview/rule.json` would point at `## Code Review Rules` in `AGENTS.md`
+  instead of copying rules. CI is out: the Action takes only an API URL and token, and OpenAI's CI
+  guide rules out a ChatGPT login on public or open-source repositories. Seen at v1.14.3: results
+  differ from run to run, comments can land on the wrong line, a failed merge-base reviews an empty
+  diff as "Looks good", token use runs into the millions per review, and the npm build updates
+  itself (`OCR_NO_UPDATE=1`, or install with Homebrew).
 - **Desktop packaging**: electron-builder, signing and notarization, auto-update. `backend.ts`
   already expects the bundled server at `resources/server/bin.mjs`. Use the release
   [macOS PNG](../assets/prod/macos-1024.png), [Windows ICO](../assets/prod/windows.ico), and
