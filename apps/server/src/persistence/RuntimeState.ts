@@ -8,6 +8,7 @@ import * as Path from "effect/Path";
 import * as Schema from "effect/Schema";
 
 import { ServerConfig } from "../config.ts";
+import * as HomeLock from "./HomeLock.ts";
 
 const RunningServer = Schema.Struct({
   version: Schema.Literal(1),
@@ -51,16 +52,18 @@ const isProcessAlive = (pid: number) => {
 };
 
 /**
- * The server that holds this home, from the file it writes while running. A killed server leaves
- * its file behind, so a record whose process is gone does not count.
+ * The server that holds this home, from the file it writes while running. A record counts only
+ * while its process lives and a server holds the home lock: a dead server's PID can be reused, and
+ * a new server holds the lock before it replaces the record, or all run if writing it failed.
  */
 export const findRunning = Effect.fn("RuntimeState.findRunning")(function* () {
   const config = yield* ServerConfig;
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
   const text = yield* fs.readFileString(path.join(config.stateDir, FILE_NAME)).pipe(Effect.option);
-  const running = Option.flatMap(text, decodeRunningServer).pipe(
-    Option.filter((server) => server.pid > 0 && isProcessAlive(server.pid)),
+  const running = Option.filter(
+    Option.flatMap(text, decodeRunningServer),
+    (server) => server.pid > 0 && isProcessAlive(server.pid) && HomeLock.isHeld(config.stateDir),
   );
   if (Option.isNone(running)) return yield* new NoRunningServerError({ homeDir: config.homeDir });
   return running.value;

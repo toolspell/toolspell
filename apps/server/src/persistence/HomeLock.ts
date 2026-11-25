@@ -38,6 +38,29 @@ const isBusy = (cause: unknown) =>
   "errcode" in cause &&
   cause.errcode === SQLITE_BUSY;
 
+const lockFile = (stateDir: string) => NodePath.join(stateDir, "server.lock.sqlite");
+
+// How long taking the lock waits for a passing reader such as `isHeld`. A server that holds the
+// lock never lets go, so a second server still fails, just this much later.
+const BUSY_WAIT_MS = 1000;
+
+/**
+ * Whether a server holds this home's lock. The read-only open never creates the file, and its read
+ * lock lasts one statement; a server starting in that moment waits it out (`BUSY_WAIT_MS`).
+ */
+export const isHeld = (stateDir: string) => {
+  let db: NodeSqlite.DatabaseSync | undefined;
+  try {
+    db = new NodeSqlite.DatabaseSync(lockFile(stateDir), { readOnly: true });
+    db.exec("SELECT 1 FROM sqlite_schema");
+    return false;
+  } catch (cause) {
+    return isBusy(cause);
+  } finally {
+    db?.close();
+  }
+};
+
 /**
  * One server per home. Two would both run the outbox and start every job twice. The lock is an
  * exclusive transaction on a file that holds no data: the OS releases it when the process exits,
@@ -48,12 +71,12 @@ export const layer = Layer.effectDiscard(
   Effect.gen(function* () {
     const config = yield* ServerConfig;
     if (config.databasePath === ":memory:") return;
-    const lockPath = NodePath.join(config.stateDir, "server.lock.sqlite");
+    const lockPath = lockFile(config.stateDir);
     yield* Effect.acquireRelease(
       Effect.try({
         try: () => {
           NodeFS.mkdirSync(config.stateDir, { recursive: true });
-          const db = new NodeSqlite.DatabaseSync(lockPath);
+          const db = new NodeSqlite.DatabaseSync(lockPath, { timeout: BUSY_WAIT_MS });
           try {
             db.exec("BEGIN EXCLUSIVE");
             return db;
