@@ -150,6 +150,11 @@ const main = async () => {
           },
         ]
       : []),
+    // The root project (vite.config.ts, .coderabbit.config.ts) belongs to no package, so a change
+    // to it is always a full run.
+    ...(affected === undefined
+      ? [{ name: "typecheck (root)", command: ["vp", "run", "typecheck:root"] }]
+      : []),
   ];
   // From the repo root, the root vite.config.ts hands each file to its package's config.
   const tests = testFilters(workspace, affected);
