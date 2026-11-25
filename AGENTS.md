@@ -95,9 +95,9 @@ Before calling work done, say which of these applied:
 - The server prints a `pairingUrl:` line with admin scopes at startup. Open the full URL once in an
   unpaired browser. For a fresh link, run `node apps/server/src/bin.ts pair --admin` while the dev
   server runs; it finds the server through its home and prints a link for its web origin.
-- Stop what you started, by the PID or task you tracked (rule 1). `vp` does not pass SIGTERM on, so
-  signalling the `vp run dev` PID alone leaves Vite and the server running; the dev runner signals
-  its whole process group.
+- When you are done, stop what you started, by the PID or task you tracked (rule 1). `vp` does not
+  pass SIGTERM on, so signalling the `vp run dev` PID alone leaves Vite and the server running; the
+  dev runner signals its whole process group.
 - Run dev servers and builds from your own shell so they end with your session. Do not detach them
   with `nohup`, `setsid`, `tmux`, or `systemd-run` unless the user asks. Detached servers run for
   weeks and fill memory.
@@ -232,8 +232,9 @@ Architecture and its constraints: [overview](docs/internals/overview.md).
   habits that changed in 4, `packages/*/test` for real API usage). Never edit or import from it.
 - `.reference-apps/<app>`: other products to learn from, gitignored. Before designing something
   another product has likely solved, use that app's `reference-<app>` skill, and fetch an app
-  only when the task needs it. Adopt an approach when it fits Toolspell's size, never the app's
-  feature scope or names, and credit adapted files.
+  only when the task needs it. Read it there, never from another checkout of it on this machine,
+  which may be a fork or at another commit. Adopt an approach when it fits Toolspell's size, never
+  the app's feature scope or names, and credit adapted files.
 
 ## Taste
 
