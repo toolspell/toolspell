@@ -16,6 +16,15 @@ export default defineConfig((ctx) => ({
     auto_review: {
       enabled: true,
     },
+    // Reviews only: CodeRabbit offers none of the actions that write code to a branch or a PR.
+    finishing_touches: {
+      docstrings: { enabled: false },
+      unit_tests: { enabled: false },
+      simplify: { enabled: false },
+      autofix: { enabled: false },
+      fix_ci: { enabled: false },
+      resolve_merge_conflict: { enabled: false },
+    },
     pre_merge_checks: {
       // The factory overload of defineConfig widens this literal to string otherwise.
       docstrings: { mode: "off" as const },
