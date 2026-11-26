@@ -23,6 +23,7 @@ const files = NodeChildProcess.execFileSync(
   );
 
 const mdLinkPattern = /\]\(<?([^)\s>]+)>?(?:\s+"[^"]*")?\)/g;
+const refDefinitionPattern = /^ {0,3}\[[^\]]+\]:\s*<?([^\s>]+)>?/;
 const inlineCodePattern = /`[^`]*`/g;
 const ownUrlPattern = /https:\/\/github\.com\/toolspell\/toolspell[^\s"'`)<>\]]*/g;
 const schemePattern = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
@@ -35,7 +36,33 @@ const guideLinkCallPattern = /guideLink\(context, "([^"]+)"\)/g;
 // Repository pages GitHub serves that no file in the tree backs, linked on purpose.
 const GITHUB_PAGES = new Set(["/issues/new/choose", "/security/advisories/new", ".git"]);
 
-const isFence = (line: string) => /^\s*(```|~~~)/.test(line);
+// Returns whether each line belongs to a fenced code block. A fence closes only on a bare run of
+// its own character at least as long as the opener, so a longer fence can quote a shorter one.
+const fenceTracker = () => {
+  let open: string | undefined;
+  return (line: string) => {
+    const fence = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
+    if (open === undefined) {
+      open = fence?.[1];
+      return open !== undefined;
+    }
+    const [, run = "", rest = ""] = fence ?? [];
+    if (run[0] === open[0] && run.length >= open.length && rest.trim() === "") open = undefined;
+    return true;
+  };
+};
+
+const markdownLinks = (text: string) => {
+  const inFence = fenceTracker();
+  return text.split("\n").flatMap((line, index) => {
+    if (inFence(line)) return [];
+    const prose = line.replaceAll(inlineCodePattern, "");
+    const targets = [...prose.matchAll(mdLinkPattern)].map(([, target = ""]) => target);
+    const definition = refDefinitionPattern.exec(prose)?.[1];
+    if (definition !== undefined) targets.push(definition);
+    return targets.map((target) => ({ line: index + 1, target }));
+  });
+};
 const read = (file: string) => NodeFS.readFileSync(NodePath.join(root, file), "utf8");
 
 // GitHub's rule: lowercase, keep letters, digits, '-' and '_', turn each space into '-'.
@@ -52,10 +79,9 @@ const headingAnchors = (file: string) => {
   if (cached) return cached;
   const anchors = new Set<string>();
   const seen = new Map<string, number>();
-  let inFence = false;
+  const inFence = fenceTracker();
   for (const line of read(file).split("\n")) {
-    if (isFence(line)) inFence = !inFence;
-    if (inFence) continue;
+    if (inFence(line)) continue;
     // CONTRIBUTING.md pins anchors the bot comments link to, so a heading can be reworded.
     for (const [, id = ""] of line.matchAll(htmlAnchorPattern)) anchors.add(id);
     const match = headingPattern.exec(line);
@@ -99,7 +125,13 @@ const checkRelative = (from: string, target: string): string | undefined => {
   } catch {
     return "bad escape";
   }
-  const dest = decoded === "" ? from : NodePath.posix.join(NodePath.posix.dirname(from), decoded);
+  // GitHub resolves a leading slash from the repository root.
+  const dest =
+    decoded === ""
+      ? from
+      : decoded.startsWith("/")
+        ? NodePath.posix.normalize(decoded.slice(1) || ".")
+        : NodePath.posix.join(NodePath.posix.dirname(from), decoded);
   return checkTarget(dest, anchor);
 };
 
@@ -113,11 +145,9 @@ const findProblems = () => {
     if (/\.test\.tsx?$/.test(file)) continue;
     const text = read(file);
     if (text.includes("\0")) continue;
-    const isMarkdown = file.endsWith(".md");
     const guideLinkBase = guideLinkBasePattern.exec(
       text.replaceAll(contextRepoPattern, "toolspell/toolspell"),
     )?.[1];
-    let inFence = false;
     for (const [index, rawLine] of text.split("\n").entries()) {
       const where = `${file}:${index + 1}`;
       const line = rawLine.replaceAll(contextRepoPattern, "toolspell/toolspell");
@@ -131,14 +161,11 @@ const findProblems = () => {
           report(where, url, checkOwnUrl(url));
         }
       }
-      if (!isMarkdown) continue;
-      if (isFence(line)) inFence = !inFence;
-      if (inFence) continue;
-      for (const [, target = ""] of line
-        .replaceAll(inlineCodePattern, "")
-        .matchAll(mdLinkPattern)) {
-        if (!schemePattern.test(target)) report(where, target, checkRelative(file, target));
-      }
+    }
+    if (!file.endsWith(".md")) continue;
+    for (const { line, target } of markdownLinks(text)) {
+      if (!schemePattern.test(target))
+        report(`${file}:${line}`, target, checkRelative(file, target));
     }
   }
   return problems;
@@ -156,6 +183,25 @@ describe("doc links", () => {
     ["Closure and reconsideration", "closure-and-reconsideration"],
   ])("slugs %j as GitHub does", (heading, slug) => {
     expect(headingSlug(heading)).toBe(slug);
+  });
+
+  it.each([
+    ["[a](x.md) `[b](code.md)`", ["x.md"]],
+    ['[guide]: <ref.md> "Title"', ["ref.md"]],
+    ["```\n[a](fenced.md)\n```\n[b](after.md)", ["after.md"]],
+    ["````md\n```\n[a](quoted.md)\n````\n[b](after.md)", ["after.md"]],
+    ["~~~\n```\n[a](mixed.md)\n~~~\n[b](after.md)", ["after.md"]],
+  ])("finds the links in %j", (text, targets) => {
+    expect(markdownLinks(text).map(({ target }) => target)).toEqual(targets);
+  });
+
+  it.each([
+    ["docs/internals/testing.md", "/SECURITY.md", true],
+    ["docs/internals/testing.md", "../../SECURITY.md#reporting", false],
+    ["docs/internals/testing.md", "../operations/development.md", true],
+    ["docs/internals/testing.md", "../../../outside.md", false],
+  ])("from %s resolves %s (ok: %s)", (from, target, ok) => {
+    expect(checkRelative(from, target) === undefined).toBe(ok);
   });
 
   it.each([
