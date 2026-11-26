@@ -23,7 +23,8 @@ const files = NodeChildProcess.execFileSync(
   );
 
 const mdLinkPattern = /\]\(<?([^)\s>]+)>?(?:\s+"[^"]*")?\)/g;
-const refDefinitionPattern = /^ {0,3}\[[^\]]+\]:\s*<?([^\s>]+)>?/;
+// A footnote definition (`[^1]: text`) shares the syntax but holds prose, not a destination.
+const refDefinitionPattern = /^ {0,3}\[(?!\^)[^\]]+\]:\s*<?([^\s>]+)>?/;
 const inlineCodePattern = /`[^`]*`/g;
 const ownUrlPattern = /https:\/\/github\.com\/toolspell\/toolspell[^\s"'`)<>\]]*/g;
 const schemePattern = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
@@ -188,6 +189,7 @@ describe("doc links", () => {
   it.each([
     ["[a](x.md) `[b](code.md)`", ["x.md"]],
     ['[guide]: <ref.md> "Title"', ["ref.md"]],
+    ["[^note]: Explanation of the result.", []],
     ["```\n[a](fenced.md)\n```\n[b](after.md)", ["after.md"]],
     ["````md\n```\n[a](quoted.md)\n````\n[b](after.md)", ["after.md"]],
     ["~~~\n```\n[a](mixed.md)\n~~~\n[b](after.md)", ["after.md"]],
